@@ -52,6 +52,7 @@ function SessionActivePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const presenceChannelRef = useRef<any>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completionCalledRef = useRef(false);
 
   // ---------- Load session data ----------
   useEffect(() => {
@@ -179,7 +180,9 @@ function SessionActivePage() {
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
-        // Süre doldu → complete
+        // Süre doldu → interval temizle, complete çağır (bir kez)
+        if (timerRef.current) clearInterval(timerRef.current);
+        setTimerRunning(false);
         handleSessionComplete();
       }
     };
@@ -356,14 +359,25 @@ function SessionActivePage() {
 
   // ---------- Handlers ----------
   const handleSessionComplete = async () => {
-    if (!sessionId || !userId) return;
+    if (!sessionId || !userId || !session) return;
+    if (completionCalledRef.current) return;
+    completionCalledRef.current = true;
+
     const supabase = createClient();
 
-    // RPC ile session'ı tamamla (trust, xp, streak hesaplanır)
-    await supabase.rpc('complete_session', {
-      p_session_id: sessionId,
-      p_user_id: userId,
-    });
+    // Solo → complete_solo_session (rehabilitation bonus +5 trust)
+    // Duo  → complete_session (normal +2 trust, session.status update)
+    if (session.mode === 'solo') {
+      await supabase.rpc('complete_solo_session', {
+        p_session_id: sessionId,
+        p_user_id: userId,
+      });
+    } else {
+      await supabase.rpc('complete_session', {
+        p_session_id: sessionId,
+        p_user_id: userId,
+      });
+    }
   };
 
   const handleEarlyExit = async () => {
