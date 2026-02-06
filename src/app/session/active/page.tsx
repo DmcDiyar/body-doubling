@@ -41,6 +41,8 @@ function SessionActivePage() {
   } = useSessionStore();
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [partnerLeft, setPartnerLeft] = useState(false);
+  const [continuingAlone, setContinuingAlone] = useState(false);
   const [myPresenceStatus, setMyPresenceStatus] = useState<PresenceStatus>('active');
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -339,8 +341,18 @@ function SessionActivePage() {
   useEffect(() => {
     if (session?.status === 'completed') {
       router.push(`/session/end?id=${sessionId}`);
+    } else if (session?.status === 'abandoned') {
+      reset();
+      router.push('/dashboard');
     }
-  }, [session?.status, sessionId, router]);
+  }, [session?.status, sessionId, router, reset]);
+
+  // ---------- Partner left detection (duo) ----------
+  useEffect(() => {
+    if (session?.mode === 'duo' && partnerParticipation?.status === 'left_early' && !continuingAlone) {
+      setPartnerLeft(true);
+    }
+  }, [session?.mode, partnerParticipation?.status, continuingAlone]);
 
   // ---------- Handlers ----------
   const handleSessionComplete = async () => {
@@ -368,6 +380,29 @@ function SessionActivePage() {
     if (presenceChannelRef.current) {
       presenceChannelRef.current.unsubscribe();
     }
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+
+    reset();
+    router.push('/dashboard');
+  };
+
+  // ---------- Solo/safe exit (no trust penalty) ----------
+  const handleSoloExit = async () => {
+    if (!sessionId || !userId) return;
+    const supabase = createClient();
+
+    await supabase
+      .from('session_participants')
+      .update({ status: 'completed', left_at: new Date().toISOString() })
+      .eq('session_id', sessionId)
+      .eq('user_id', userId);
+
+    await supabase
+      .from('sessions')
+      .update({ status: 'completed', ended_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    if (presenceChannelRef.current) presenceChannelRef.current.unsubscribe();
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
 
     reset();
@@ -528,45 +563,84 @@ function SessionActivePage() {
           </span>
         </div>
 
+        {/* Partner left modal (duo) */}
+        {partnerLeft && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center bg-white/5 rounded-2xl p-6"
+          >
+            <p className="text-white text-sm mb-1">Ortağın ayrıldı</p>
+            <p className="text-gray-500 text-xs mb-4">Devam edebilir veya bitirebilirsin.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setPartnerLeft(false); setContinuingAlone(true); }}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#ffcb77]/20 text-[#ffcb77] text-sm hover:bg-[#ffcb77]/30 transition-colors"
+              >
+                Tek başıma devam et
+              </button>
+              <button
+                onClick={handleSoloExit}
+                className="flex-1 py-2 px-4 rounded-xl bg-white/5 text-gray-300 text-sm hover:bg-white/10 transition-colors"
+              >
+                Bitir
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Exit button */}
-        <AnimatePresence>
-          {!showExitConfirm ? (
-            <motion.button
-              key="exit-btn"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowExitConfirm(true)}
-              className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
-            >
-              {COPY.SESSION_EXIT}
-            </motion.button>
-          ) : (
-            <motion.div
-              key="exit-confirm"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="text-center"
-            >
-              <p className="text-gray-400 text-sm mb-3">{COPY.TRUST_WARNING}</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowExitConfirm(false)}
-                  className="flex-1 py-2 px-4 rounded-xl bg-white/5 text-gray-300 text-sm hover:bg-white/10 transition-colors"
-                >
-                  Devam Et
-                </button>
-                <button
-                  onClick={handleEarlyExit}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors"
-                >
-                  Ayrıl
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!partnerLeft && (
+          <AnimatePresence>
+            {(session.mode === 'solo' || continuingAlone) ? (
+              <motion.button
+                key="solo-exit-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleSoloExit}
+                className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
+              >
+                {COPY.SESSION_EXIT}
+              </motion.button>
+            ) : !showExitConfirm ? (
+              <motion.button
+                key="exit-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowExitConfirm(true)}
+                className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
+              >
+                {COPY.SESSION_EXIT}
+              </motion.button>
+            ) : (
+              <motion.div
+                key="exit-confirm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="text-center"
+              >
+                <p className="text-gray-400 text-sm mb-3">{COPY.TRUST_WARNING}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowExitConfirm(false)}
+                    className="flex-1 py-2 px-4 rounded-xl bg-white/5 text-gray-300 text-sm hover:bg-white/10 transition-colors"
+                  >
+                    Devam Et
+                  </button>
+                  <button
+                    onClick={handleEarlyExit}
+                    className="flex-1 py-2 px-4 rounded-xl bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors"
+                  >
+                    Ayrıl
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Ambient animation dots */}
