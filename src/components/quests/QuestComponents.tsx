@@ -187,8 +187,6 @@ export function WeeklyQuestPanel({ quest }: WeeklyQuestPanelProps) {
     const info = WEEKLY_QUEST_INFO[quest.id];
     if (!info) return null;
 
-    const progress = Math.min(quest.progress / quest.target, 1);
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -213,10 +211,10 @@ export function WeeklyQuestPanel({ quest }: WeeklyQuestPanelProps) {
                     <div
                         key={i}
                         className={`flex-1 h-2 rounded-full ${i < quest.progress
-                                ? quest.completed
-                                    ? 'bg-green-500'
-                                    : 'bg-[#ffcb77]'
-                                : 'bg-white/10'
+                            ? quest.completed
+                                ? 'bg-green-500'
+                                : 'bg-[#ffcb77]'
+                            : 'bg-white/10'
                             }`}
                     />
                 ))}
