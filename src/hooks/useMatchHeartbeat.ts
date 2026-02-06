@@ -38,6 +38,15 @@ export function useMatchHeartbeat({
     const sendHeartbeat = useCallback(async () => {
         if (!matchId) return;
 
+        // STOP if match already broken or completed
+        if (matchState === 'broken' || matchState === 'completed') {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            return;
+        }
+
         const supabase = createClient();
         const { data, error } = await supabase.rpc('match_heartbeat', {
             p_match_id: matchId,
@@ -66,7 +75,7 @@ export function useMatchHeartbeat({
         if (result.match_state === 'active' && callbacksRef.current.onMatchActive) {
             callbacksRef.current.onMatchActive();
         }
-    }, [matchId]);
+    }, [matchId, matchState]);
 
     // Start/stop heartbeat
     useEffect(() => {
