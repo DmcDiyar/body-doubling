@@ -135,23 +135,29 @@ export default function QuickMatchPage() {
     }
 
     // Eşleşme dene (RPC)
-    const { data: matchResult } = await supabase.rpc('find_match', {
+    const { data: sessionId } = await supabase.rpc('find_match', {
       p_user_id: authUser.id,
       p_duration: duration,
       p_theme: theme,
     });
 
-    // find_match returns { session_id, match_id } or empty
-    if (matchResult && matchResult.length > 0) {
-      const { session_id: foundSessionId, match_id: foundMatchId } = matchResult[0];
-
+    if (sessionId) {
       // Eşleşme bulundu!
-      await loadSession(foundSessionId, authUser.id);
+      await loadSession(sessionId as string, authUser.id);
       setPhase('found');
 
-      // 3sn sonra prepare ekranına git (matchId ve duration ile)
+      // Fetch matchId from matches table
+      const { data: matchData } = await supabase
+        .from('matches')
+        .select('id')
+        .eq('session_id', sessionId)
+        .single();
+
+      const matchId = matchData?.id || '';
+
+      // 3sn sonra prepare ekranına git
       setTimeout(() => {
-        router.push(`/session/prepare?id=${foundSessionId}&matchId=${foundMatchId}&duration=${duration}`);
+        router.push(`/session/prepare?id=${sessionId}&matchId=${matchId}&duration=${duration}`);
       }, 3000);
       return;
     }

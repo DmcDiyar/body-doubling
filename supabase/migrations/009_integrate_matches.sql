@@ -1,18 +1,18 @@
 -- ============================================================
--- 009_integrate_matches.sql
--- Integrate matches table into existing find_match flow
+-- 009_integrate_matches.sql (SIMPLIFIED)
+-- Keep original find_match, add separate match creation
 -- ============================================================
 
--- Drop existing function (return type changed)
+-- Step 1: Drop any existing find_match
 DROP FUNCTION IF EXISTS public.find_match(UUID, INTEGER, TEXT);
 
--- Update find_match to also create match record for duo sessions
-CREATE OR REPLACE FUNCTION public.find_match(
+-- Step 2: Recreate with simple UUID return (ORIGINAL behavior)
+CREATE FUNCTION public.find_match(
   p_user_id UUID,
   p_duration INTEGER,
   p_theme TEXT DEFAULT 'rainy_cafe'
 )
-RETURNS TABLE(session_id UUID, match_id UUID)
+RETURNS UUID -- Returns session_id or NULL
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -29,12 +29,12 @@ BEGIN
     AND user_id != p_user_id
     AND duration = p_duration
     AND expires_at > NOW()
-  ORDER BY priority DESC, created_at ASC
+  ORDER BY COALESCE(priority, 1) DESC, created_at ASC
   LIMIT 1
   FOR UPDATE SKIP LOCKED;
 
   IF v_partner IS NULL THEN
-    RETURN; -- No match found
+    RETURN NULL;
   END IF;
 
   -- Create session
@@ -58,9 +58,8 @@ BEGIN
   SET status = 'matched' 
   WHERE user_id IN (v_partner.user_id, p_user_id);
 
-  RETURN QUERY SELECT v_session_id, v_match_id;
+  RETURN v_session_id;
 END;
 $$;
 
--- Grant execute
 GRANT EXECUTE ON FUNCTION public.find_match(UUID, INTEGER, TEXT) TO authenticated;
