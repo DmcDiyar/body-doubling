@@ -253,7 +253,7 @@ function SessionEndPage() {
                 { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
                 { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
                 { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
-              ].map(({ star, emoji, label, trust: _trust }) => (
+              ].map(({ star, emoji, label }) => (
                 <motion.button
                   key={star}
                   whileHover={{ scale: 1.15 }}
