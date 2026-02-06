@@ -132,7 +132,7 @@ export function RehabBanner({ userId }: RehabBannerProps) {
 
                             {/* CTA */}
                             <a
-                                href="/session/solo"
+                                href="/session/quick-match?mode=solo"
                                 className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
                             >
                                 Solo Seans Başlat
