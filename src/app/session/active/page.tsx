@@ -367,17 +367,23 @@ function SessionActivePage() {
   };
 
   const handleEarlyExit = async () => {
-    if (!sessionId || !userId) return;
+    if (!sessionId || !userId || !session) return;
     const supabase = createClient();
 
+    // Calculate elapsed minutes
+    const totalDuration = session.duration;
+    const elapsedSeconds = (session.duration * 60) - timeRemaining;
+    const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+
     // Queue cleanup - kullanıcı session'dan çıkınca kuyruktan da temizle
-    // (Backend trigger da yapacak ama frontend'de de garantiye alalım)
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
-    // RPC ile erken çıkışı işle
+    // RPC ile erken çıkışı işle (trust penalty)
     await supabase.rpc('handle_early_exit', {
       p_session_id: sessionId,
       p_user_id: userId,
+      p_elapsed_minutes: elapsedMinutes,
+      p_total_duration: totalDuration,
     });
 
     // Presence'tan çık

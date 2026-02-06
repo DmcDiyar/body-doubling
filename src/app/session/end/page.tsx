@@ -4,8 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useSessionStore } from '@/stores/session-store';
-import { AVATARS, COPY } from '@/lib/constants';
-import { motion } from 'framer-motion';
+import { AVATARS, COPY, getTrustLevel } from '@/lib/constants';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Session, SessionParticipant, User, CompleteSessionResult } from '@/types/database';
 
 export default function SessionEndWrapper() {
@@ -204,9 +204,8 @@ function SessionEndPage() {
 
           {/* Trust change */}
           <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className={`text-xl font-bold ${
-              (results?.trust_change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-            }`}>
+            <p className={`text-xl font-bold ${(results?.trust_change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+              }`}>
               {(results?.trust_change ?? 0) >= 0 ? '+' : ''}{results?.trust_change ?? 0}
             </p>
             <p className="text-gray-500 text-xs mt-1">Güven</p>
@@ -245,33 +244,54 @@ function SessionEndPage() {
             className="mb-8 text-center"
           >
             <p className="text-gray-400 text-sm mb-3">{COPY.SESSION_RATE}</p>
-            <div className="flex justify-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
+
+            {/* Rating emojis with labels */}
+            <div className="flex justify-center gap-2 mb-3">
+              {[
+                { star: 1, emoji: '😫', label: 'Kötü', trust: -5 },
+                { star: 2, emoji: '😐', label: 'Sorunlu', trust: -2 },
+                { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
+                { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
+                { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
+              ].map(({ star, emoji, label, trust }) => (
                 <motion.button
                   key={star}
-                  whileHover={{ scale: 1.2 }}
+                  whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleRating(star)}
                   disabled={ratingSubmitted}
-                  className={`text-3xl transition-all ${
-                    star <= rating
-                      ? 'opacity-100'
-                      : 'opacity-30 hover:opacity-60'
-                  } ${ratingSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                  className={`flex flex-col items-center p-2 rounded-lg transition-all ${star === rating
+                      ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77]'
+                      : ratingSubmitted
+                        ? 'opacity-30'
+                        : 'hover:bg-white/5'
+                    } ${ratingSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
                 >
-                  ⭐
+                  <span className="text-2xl mb-1">{emoji}</span>
+                  <span className="text-xs text-gray-500">{label}</span>
                 </motion.button>
               ))}
             </div>
-            {ratingSubmitted && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-gray-500 text-xs mt-2"
-              >
-                Teşekkürler!
-              </motion.p>
-            )}
+
+            {/* Rating submitted feedback */}
+            <AnimatePresence>
+              {ratingSubmitted && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/5 rounded-lg p-3 mt-3"
+                >
+                  <p className="text-gray-400 text-sm">
+                    Teşekkürler! Partner'ın
+                    <span className={rating >= 4 ? 'text-green-400' : rating <= 2 ? 'text-red-400' : 'text-gray-400'}>
+                      {rating >= 4 && ' +'}
+                      {rating === 5 ? '5' : rating === 4 ? '2' : rating === 2 ? '-2' : rating === 1 ? '-5' : '0'}
+                    </span>
+                    {' '}güven puanı {rating >= 3 ? 'kazandı' : 'kaybetti'}.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
