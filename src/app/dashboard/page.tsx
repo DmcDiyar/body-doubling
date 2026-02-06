@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
-import { COPY, AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
+import { COPY, AVATARS, FREE_DAILY_LIMIT, getTrustLevel } from '@/lib/constants';
 import { motion } from 'framer-motion';
+import { RehabBanner, TrustBadge } from '@/components/trust/TrustComponents';
 import type { User, UserLimit } from '@/types/database';
 
 export default function DashboardPage() {
@@ -115,11 +116,9 @@ export default function DashboardPage() {
     );
   }
 
-  // Trust score rengi
-  const trustColor =
-    user.trust_score >= 90 ? 'text-green-400' :
-      user.trust_score >= 70 ? 'text-yellow-400' :
-        user.trust_score >= 50 ? 'text-orange-400' : 'text-red-400';
+  // Trust level info
+  const trustLevel = user ? getTrustLevel(user.trust_score) : null;
+  const isRestricted = user && user.trust_score < 50;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-4 py-8">
@@ -161,10 +160,16 @@ export default function DashboardPage() {
             transition={{ delay: 0.2 }}
             className="bg-white/5 rounded-xl p-4 text-center"
           >
-            <p className={`text-2xl font-bold ${trustColor}`}>
-              {user.trust_score}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_TRUST}</p>
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <span className="text-lg">{trustLevel?.emoji}</span>
+              <span
+                className="text-2xl font-bold"
+                style={{ color: trustLevel?.color }}
+              >
+                {user.trust_score}
+              </span>
+            </div>
+            <p className="text-gray-500 text-xs">{COPY.DASHBOARD_TRUST}</p>
           </motion.div>
 
           <motion.div
@@ -201,21 +206,31 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Rehabilitation Banner (trust < 50) */}
+        {isRestricted && (
+          <RehabBanner userId={user.id} />
+        )}
+
         {/* Ana CTA */}
         <motion.button
-          whileHover={{ scale: canStartSession ? 1.02 : 1 }}
-          whileTap={{ scale: canStartSession ? 0.98 : 1 }}
-          onClick={() => canStartSession && router.push('/session/quick-match')}
-          disabled={!canStartSession}
+          whileHover={{ scale: (canStartSession && !isRestricted) ? 1.02 : 1 }}
+          whileTap={{ scale: (canStartSession && !isRestricted) ? 0.98 : 1 }}
+          onClick={() => {
+            if (!canStartSession || isRestricted) return;
+            router.push('/session/quick-match');
+          }}
+          disabled={!canStartSession || isRestricted}
           className={`
             w-full py-4 rounded-2xl font-semibold text-lg transition-all
-            ${canStartSession
+            ${(canStartSession && !isRestricted)
               ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/20'
               : 'bg-white/10 text-gray-500 cursor-not-allowed'
             }
           `}
         >
-          {canStartSession ? COPY.DASHBOARD_CTA : 'Günlük limit doldu'}
+          {isRestricted
+            ? 'Solo Modda Devam Et'
+            : (canStartSession ? COPY.DASHBOARD_CTA : 'Günlük limit doldu')}
         </motion.button>
 
         {!canStartSession && (
