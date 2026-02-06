@@ -1,0 +1,219 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase-client';
+import { useAuthStore } from '@/stores/auth-store';
+import { COPY, AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
+import { motion } from 'framer-motion';
+import type { User, UserLimit } from '@/types/database';
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user, setUser } = useAuthStore();
+  const [dailyUsed, setDailyUsed] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function load() {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        router.push('/auth');
+        return;
+      }
+
+      // User profili
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Profil yüklenemedi:', profileError.message);
+        // Tablo yoksa veya trigger çalışmadıysa → kullanıcıyı manuel oluştur
+        if (profileError.code === '42P01' || !profile) {
+          const { data: newProfile } = await supabase
+            .from('users')
+            .upsert({
+              id: authUser.id,
+              email: authUser.email ?? '',
+              name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
+              avatar_id: 1,
+            })
+            .select('*')
+            .single();
+          if (newProfile) setUser(newProfile as User);
+        }
+      } else if (profile) {
+        setUser(profile as User);
+      } else {
+        // Profil yok — trigger çalışmamış, manuel oluştur
+        const { data: newProfile } = await supabase
+          .from('users')
+          .upsert({
+            id: authUser.id,
+            email: authUser.email ?? '',
+            name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
+            avatar_id: 1,
+          })
+          .select('*')
+          .single();
+        if (newProfile) setUser(newProfile as User);
+      }
+
+      // Günlük limit (maybeSingle — satır yoksa null döner, 406 hata vermez)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: limit } = await supabase
+        .from('user_limits')
+        .select('sessions_used')
+        .eq('user_id', authUser.id)
+        .eq('date', today)
+        .maybeSingle();
+
+      setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
+      setIsLoading(false);
+    }
+
+    load();
+  }, [router, setUser]);
+
+  const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
+  const avatar = AVATARS.find(a => a.id === user?.avatar_id) ?? AVATARS[0];
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/auth');
+  };
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
+        <div className="text-white/50 text-lg">Yükleniyor...</div>
+      </div>
+    );
+  }
+
+  // Trust score rengi
+  const trustColor =
+    user.trust_score >= 90 ? 'text-green-400' :
+    user.trust_score >= 70 ? 'text-yellow-400' :
+    user.trust_score >= 50 ? 'text-orange-400' : 'text-red-400';
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-4 py-8">
+      <div className="max-w-sm mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{avatar.emoji}</span>
+            <div>
+              <h1 className="text-white font-semibold">{user.name}</h1>
+              <p className="text-gray-500 text-sm">Lv.{user.level} · {user.xp} XP</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
+          >
+            Çıkış
+          </button>
+        </div>
+
+        {/* Stat kartları */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white/5 rounded-xl p-4 text-center"
+          >
+            <p className="text-2xl font-bold text-[#ffcb77]">
+              {user.current_streak}
+            </p>
+            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_STREAK}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white/5 rounded-xl p-4 text-center"
+          >
+            <p className={`text-2xl font-bold ${trustColor}`}>
+              {user.trust_score}
+            </p>
+            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_TRUST}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/5 rounded-xl p-4 text-center"
+          >
+            <p className="text-2xl font-bold text-white">
+              {user.completed_sessions}
+            </p>
+            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_SESSIONS}</p>
+          </motion.div>
+        </div>
+
+        {/* Streak göstergesi */}
+        {user.current_streak > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-[#ffcb77]/10 border border-[#ffcb77]/20 rounded-xl p-4 mb-6 text-center"
+          >
+            <span className="text-2xl">🔥</span>
+            <p className="text-[#ffcb77] text-sm mt-1">
+              {user.current_streak} günlük seri! Devam et.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Günlük kullanım */}
+        {!user.is_premium && (
+          <div className="text-center text-gray-500 text-sm mb-4">
+            Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans
+          </div>
+        )}
+
+        {/* Ana CTA */}
+        <motion.button
+          whileHover={{ scale: canStartSession ? 1.02 : 1 }}
+          whileTap={{ scale: canStartSession ? 0.98 : 1 }}
+          onClick={() => canStartSession && router.push('/session/quick-match')}
+          disabled={!canStartSession}
+          className={`
+            w-full py-4 rounded-2xl font-semibold text-lg transition-all
+            ${canStartSession
+              ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/20'
+              : 'bg-white/10 text-gray-500 cursor-not-allowed'
+            }
+          `}
+        >
+          {canStartSession ? COPY.DASHBOARD_CTA : 'Günlük limit doldu'}
+        </motion.button>
+
+        {!canStartSession && (
+          <p className="text-gray-600 text-xs text-center mt-3">
+            Yarın tekrar gel veya sınırsız erişim için premium&apos;a geç.
+          </p>
+        )}
+
+        {/* Toplam odak */}
+        <div className="mt-10 text-center">
+          <p className="text-gray-600 text-sm">
+            Toplam {Math.floor(user.total_minutes / 60)} saat {user.total_minutes % 60} dk odaklandın
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
