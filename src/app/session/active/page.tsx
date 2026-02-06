@@ -343,7 +343,7 @@ function SessionActivePage() {
   // ---------- Session tamamlandığında yönlendir ----------
   useEffect(() => {
     if (session?.status === 'completed') {
-      router.push(`/session/end?id=${sessionId}`);
+      router.push(`/session/cooldown?id=${sessionId}`);
     } else if (session?.status === 'abandoned') {
       reset();
       router.push('/dashboard');

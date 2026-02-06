@@ -146,9 +146,9 @@ export default function QuickMatchPage() {
       await loadSession(sessionId as string, authUser.id);
       setPhase('found');
 
-      // 5sn sonra session ekranına git
+      // 3sn sonra prepare ekranına git (pomodoro + ritual)
       setTimeout(() => {
-        router.push(`/session/active?id=${sessionId}`);
+        router.push(`/session/prepare?id=${sessionId}`);
       }, 3000);
       return;
     }
@@ -171,7 +171,7 @@ export default function QuickMatchPage() {
           channel.unsubscribe();
 
           setTimeout(() => {
-            router.push(`/session/active?id=${participant.session_id}`);
+            router.push(`/session/prepare?id=${participant.session_id}`);
           }, 3000);
         }
       )
