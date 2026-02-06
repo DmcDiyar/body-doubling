@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase-client';
-import { REHABILITATION, getTrustLevel, TRUST_LEVELS } from '@/lib/constants';
+import { REHABILITATION, getTrustLevel } from '@/lib/constants';
 
 interface RehabBannerProps {
     userId: string;
@@ -123,8 +123,8 @@ export function RehabBanner({ userId }: RehabBannerProps) {
                                     <div
                                         key={i}
                                         className={`flex-1 h-1 rounded-full ${i < status.completedSessions
-                                                ? 'bg-green-500'
-                                                : 'bg-white/20'
+                                            ? 'bg-green-500'
+                                            : 'bg-white/20'
                                             }`}
                                     />
                                 ))}

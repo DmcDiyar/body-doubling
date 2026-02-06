@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { COPY, AVATARS, FREE_DAILY_LIMIT, getTrustLevel } from '@/lib/constants';
 import { motion } from 'framer-motion';
-import { RehabBanner, TrustBadge } from '@/components/trust/TrustComponents';
+import { RehabBanner } from '@/components/trust/TrustComponents';
 import type { User, UserLimit } from '@/types/database';
 
 export default function DashboardPage() {

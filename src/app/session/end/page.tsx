@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useSessionStore } from '@/stores/session-store';
-import { AVATARS, COPY, getTrustLevel } from '@/lib/constants';
+import { AVATARS, COPY } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Session, SessionParticipant, User, CompleteSessionResult } from '@/types/database';
 
@@ -253,7 +253,7 @@ function SessionEndPage() {
                 { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
                 { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
                 { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
-              ].map(({ star, emoji, label, trust }) => (
+              ].map(({ star, emoji, label, trust: _trust }) => (
                 <motion.button
                   key={star}
                   whileHover={{ scale: 1.15 }}
@@ -261,10 +261,10 @@ function SessionEndPage() {
                   onClick={() => handleRating(star)}
                   disabled={ratingSubmitted}
                   className={`flex flex-col items-center p-2 rounded-lg transition-all ${star === rating
-                      ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77]'
-                      : ratingSubmitted
-                        ? 'opacity-30'
-                        : 'hover:bg-white/5'
+                    ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77]'
+                    : ratingSubmitted
+                      ? 'opacity-30'
+                      : 'hover:bg-white/5'
                     } ${ratingSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                   <span className="text-2xl mb-1">{emoji}</span>
@@ -282,7 +282,7 @@ function SessionEndPage() {
                   className="bg-white/5 rounded-lg p-3 mt-3"
                 >
                   <p className="text-gray-400 text-sm">
-                    Teşekkürler! Partner'ın
+                    Teşekkürler! Partner&apos;ın
                     <span className={rating >= 4 ? 'text-green-400' : rating <= 2 ? 'text-red-400' : 'text-gray-400'}>
                       {rating >= 4 && ' +'}
                       {rating === 5 ? '5' : rating === 4 ? '2' : rating === 2 ? '-2' : rating === 1 ? '-5' : '0'}
