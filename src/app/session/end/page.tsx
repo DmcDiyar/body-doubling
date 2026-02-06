@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-client';
 import { useSessionStore } from '@/stores/session-store';
 import { AVATARS, COPY } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TrustChangeSummary } from '@/components/trust/AnimatedTrustCounter';
 import type { Session, SessionParticipant, User, CompleteSessionResult } from '@/types/database';
 
 export default function SessionEndWrapper() {
@@ -33,6 +34,12 @@ function SessionEndPage() {
   const [rating, setRating] = useState<number>(0);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [results, setResults] = useState<CompleteSessionResult | null>(null);
+
+  // Early exit params
+  const isEarlyExit = searchParams.get('earlyExit') === 'true';
+  const beforeScore = parseInt(searchParams.get('before') || '0', 10);
+  const elapsedPercent = parseInt(searchParams.get('elapsed') || '0', 10);
+  const [afterScore, setAfterScore] = useState<number>(0);
 
   // ---------- Load data ----------
   useEffect(() => {
@@ -64,18 +71,21 @@ function SessionEndPage() {
         if (pData) setMyPart(pData as SessionParticipant);
       }
 
-      // User profile (güncel XP, streak vs.)
+      // User profile (güncel XP, streak, trust vs.)
       const { data: userData } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
-      if (userData) setUser(userData as User);
+      if (userData) {
+        setUser(userData as User);
+        setAfterScore((userData as User).trust_score);
+      }
 
       // Results from participation
       setResults({
         xp_earned: myPart?.xp_earned ?? 0,
-        trust_change: myPart?.trust_score_change ?? 0,
+        trust_change: isEarlyExit ? (afterScore - beforeScore) : (myPart?.trust_score_change ?? 0),
         new_streak: (userData as User | null)?.current_streak ?? 0,
         goal_completed: myPart?.goal_completed ?? false,
       });
@@ -84,7 +94,7 @@ function SessionEndPage() {
     };
 
     loadData();
-  }, [sessionId]);
+  }, [sessionId, isEarlyExit, beforeScore, afterScore]);
 
   // ---------- Rating submit ----------
   const handleRating = async (stars: number) => {
@@ -145,179 +155,217 @@ function SessionEndPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Celebration */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-          className="text-center mb-8"
-        >
+
+        {/* EARLY EXIT VIEW */}
+        {isEarlyExit && beforeScore > 0 && (
           <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            className="text-6xl mb-4"
+            key="early-exit"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
-            {user ? getAvatar(user.avatar_id) : '🎉'}
+            <TrustChangeSummary
+              beforeScore={beforeScore}
+              afterScore={afterScore || user?.trust_score || beforeScore}
+              eventType="early_exit"
+              elapsedPercent={elapsedPercent}
+            />
+
+            {/* Return to dashboard button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2 }}
+              className="flex flex-col gap-3 mt-8"
+            >
+              <button
+                onClick={handleDone}
+                className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl text-lg"
+              >
+                Dashboard&apos;a Dön
+              </button>
+            </motion.div>
           </motion.div>
+        )}
 
-          <motion.h2
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-2xl font-bold text-white mb-1"
-          >
-            {COPY.SESSION_COMPLETE}
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-gray-400 text-sm"
-          >
-            {sessionData?.duration} dakika tamamlandı
-          </motion.p>
-        </motion.div>
-
-        {/* Stats cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="grid grid-cols-3 gap-3 mb-8"
-        >
-          {/* XP earned */}
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className="text-[#ffcb77] text-xl font-bold">
-              +{results?.xp_earned ?? 0}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">XP</p>
-          </div>
-
-          {/* Streak */}
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className="text-white text-xl font-bold">
-              {results?.new_streak ?? 0}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">Seri</p>
-          </div>
-
-          {/* Trust change */}
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className={`text-xl font-bold ${(results?.trust_change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
-              {(results?.trust_change ?? 0) >= 0 ? '+' : ''}{results?.trust_change ?? 0}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">Güven</p>
-          </div>
-        </motion.div>
-
-        {/* Level progress */}
-        {user && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mb-8"
-          >
-            <div className="flex justify-between text-xs text-gray-500 mb-2">
-              <span>Seviye {user.level}</span>
-              <span>{user.xp} / {user.level * 100} XP</span>
-            </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        {/* NORMAL COMPLETION VIEW */}
+        {!isEarlyExit && (
+          <>
+            {/* Celebration */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+              className="text-center mb-8"
+            >
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, (user.xp / (user.level * 100)) * 100)}%` }}
-                transition={{ delay: 0.8, duration: 1, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-[#ffcb77] to-[#ff9f1c] rounded-full"
-              />
-            </div>
-          </motion.div>
+                animate={{ y: [0, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                className="text-6xl mb-4"
+              >
+                {user ? getAvatar(user.avatar_id) : '🎉'}
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-2xl font-bold text-white mb-1"
+              >
+                {COPY.SESSION_COMPLETE}
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-gray-400 text-sm"
+              >
+                {sessionData?.duration} dakika tamamlandı
+              </motion.p>
+            </motion.div>
+
+            {/* Stats cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="grid grid-cols-3 gap-3 mb-8"
+            >
+              {/* XP earned */}
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <p className="text-[#ffcb77] text-xl font-bold">
+                  +{results?.xp_earned ?? 0}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">XP</p>
+              </div>
+
+              {/* Streak */}
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <p className="text-white text-xl font-bold">
+                  {results?.new_streak ?? 0}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">Seri</p>
+              </div>
+
+              {/* Trust change */}
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <p className={`text-xl font-bold ${(results?.trust_change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                  {(results?.trust_change ?? 0) >= 0 ? '+' : ''}{results?.trust_change ?? 0}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">Güven</p>
+              </div>
+            </motion.div>
+
+            {/* Level progress */}
+            {user && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="mb-8"
+              >
+                <div className="flex justify-between text-xs text-gray-500 mb-2">
+                  <span>Seviye {user.level}</span>
+                  <span>{user.xp} / {user.level * 100} XP</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (user.xp / (user.level * 100)) * 100)}%` }}
+                    transition={{ delay: 0.8, duration: 1, ease: 'easeOut' }}
+                    className="h-full bg-gradient-to-r from-[#ffcb77] to-[#ff9f1c] rounded-full"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Rating (duo modunda) */}
+            {sessionData?.mode === 'duo' && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="mb-8 text-center"
+              >
+                <p className="text-gray-400 text-sm mb-3">{COPY.SESSION_RATE}</p>
+
+                {/* Rating emojis with labels */}
+                <div className="flex justify-center gap-2 mb-3">
+                  {[
+                    { star: 1, emoji: '😫', label: 'Kötü', trust: -5 },
+                    { star: 2, emoji: '😐', label: 'Sorunlu', trust: -2 },
+                    { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
+                    { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
+                    { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
+                  ].map(({ star, emoji, label }) => (
+                    <motion.button
+                      key={star}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleRating(star)}
+                      disabled={ratingSubmitted}
+                      className={`flex flex-col items-center p-2 rounded-lg transition-all ${star === rating
+                        ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77]'
+                        : ratingSubmitted
+                          ? 'opacity-30'
+                          : 'hover:bg-white/5'
+                        } ${ratingSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                    >
+                      <span className="text-2xl mb-1">{emoji}</span>
+                      <span className="text-xs text-gray-500">{label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Rating submitted feedback */}
+                <AnimatePresence>
+                  {ratingSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white/5 rounded-lg p-3 mt-3"
+                    >
+                      <p className="text-gray-400 text-sm">
+                        Teşekkürler! Partner&apos;ın
+                        <span className={rating >= 4 ? 'text-green-400' : rating <= 2 ? 'text-red-400' : 'text-gray-400'}>
+                          {rating >= 4 && ' +'}
+                          {rating === 5 ? '5' : rating === 4 ? '2' : rating === 2 ? '-2' : rating === 1 ? '-5' : '0'}
+                        </span>
+                        {' '}güven puanı {rating >= 3 ? 'kazandı' : 'kaybetti'}.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              className="flex flex-col gap-3"
+            >
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleAgain}
+                className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl text-lg"
+              >
+                {COPY.SESSION_AGAIN}
+              </motion.button>
+              <button
+                onClick={handleDone}
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                {COPY.SESSION_DONE}
+              </button>
+            </motion.div>
+          </>
         )}
-
-        {/* Rating (duo modunda) */}
-        {sessionData?.mode === 'duo' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mb-8 text-center"
-          >
-            <p className="text-gray-400 text-sm mb-3">{COPY.SESSION_RATE}</p>
-
-            {/* Rating emojis with labels */}
-            <div className="flex justify-center gap-2 mb-3">
-              {[
-                { star: 1, emoji: '😫', label: 'Kötü', trust: -5 },
-                { star: 2, emoji: '😐', label: 'Sorunlu', trust: -2 },
-                { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
-                { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
-                { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
-              ].map(({ star, emoji, label }) => (
-                <motion.button
-                  key={star}
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleRating(star)}
-                  disabled={ratingSubmitted}
-                  className={`flex flex-col items-center p-2 rounded-lg transition-all ${star === rating
-                    ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77]'
-                    : ratingSubmitted
-                      ? 'opacity-30'
-                      : 'hover:bg-white/5'
-                    } ${ratingSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  <span className="text-2xl mb-1">{emoji}</span>
-                  <span className="text-xs text-gray-500">{label}</span>
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Rating submitted feedback */}
-            <AnimatePresence>
-              {ratingSubmitted && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/5 rounded-lg p-3 mt-3"
-                >
-                  <p className="text-gray-400 text-sm">
-                    Teşekkürler! Partner&apos;ın
-                    <span className={rating >= 4 ? 'text-green-400' : rating <= 2 ? 'text-red-400' : 'text-gray-400'}>
-                      {rating >= 4 && ' +'}
-                      {rating === 5 ? '5' : rating === 4 ? '2' : rating === 2 ? '-2' : rating === 1 ? '-5' : '0'}
-                    </span>
-                    {' '}güven puanı {rating >= 3 ? 'kazandı' : 'kaybetti'}.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="flex flex-col gap-3"
-        >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleAgain}
-            className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl text-lg"
-          >
-            {COPY.SESSION_AGAIN}
-          </motion.button>
-          <button
-            onClick={handleDone}
-            className="text-gray-400 hover:text-white text-sm transition-colors"
-          >
-            {COPY.SESSION_DONE}
-          </button>
-        </motion.div>
       </div>
     </div>
   );
 }
+

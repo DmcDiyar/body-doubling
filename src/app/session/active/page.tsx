@@ -370,12 +370,21 @@ function SessionActivePage() {
     if (!sessionId || !userId || !session) return;
     const supabase = createClient();
 
-    // Calculate elapsed minutes
+    // Calculate elapsed time
     const totalDuration = session.duration;
     const elapsedSeconds = (session.duration * 60) - timeRemaining;
     const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+    const elapsedPercent = Math.floor((elapsedSeconds / (totalDuration * 60)) * 100);
 
-    // Queue cleanup - kullanıcı session'dan çıkınca kuyruktan da temizle
+    // Get current trust score before penalty
+    const { data: userData } = await supabase
+      .from('users')
+      .select('trust_score')
+      .eq('id', userId)
+      .single();
+    const beforeScore = userData?.trust_score || 100;
+
+    // Queue cleanup
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
     // RPC ile erken çıkışı işle (trust penalty)
@@ -386,14 +395,16 @@ function SessionActivePage() {
       p_total_duration: totalDuration,
     });
 
-    // Presence'tan çık
+    // Presence cleanup
     if (presenceChannelRef.current) {
       presenceChannelRef.current.unsubscribe();
     }
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
 
     reset();
-    router.push('/dashboard');
+
+    // Redirect to session end with early exit info
+    router.push(`/session/end?id=${sessionId}&earlyExit=true&before=${beforeScore}&elapsed=${elapsedPercent}`);
   };
 
   // ---------- Solo/safe exit (no trust penalty, but no reward either) ----------
