@@ -147,7 +147,7 @@ export function RehabBanner({ userId }: RehabBannerProps) {
                                 href="/session/quick-match"
                                 className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
                             >
-                                Hemen Eşleş
+                                Solo Çalışmaya Başla
                             </a>
                         </>
                     )}

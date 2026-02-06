@@ -396,24 +396,25 @@ function SessionActivePage() {
     router.push('/dashboard');
   };
 
-  // ---------- Solo/safe exit (no trust penalty) ----------
-  // Solo mode çıkışı tamamen nötr: trust cezası yok, uyarı yok
+  // ---------- Solo/safe exit (no trust penalty, but no reward either) ----------
+  // Solo mode erken çıkışı: trust cezası yok, ama ödül de yok
   const handleSoloExit = async () => {
     if (!sessionId || !userId) return;
     const supabase = createClient();
 
-    // Queue cleanup - solo exit'te de kuyruğu temizle
+    // Queue cleanup
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
+    // Mark as abandoned (NOT completed - no trust reward)
     await supabase
       .from('session_participants')
-      .update({ status: 'completed', left_at: new Date().toISOString() })
+      .update({ status: 'left_early', left_at: new Date().toISOString() })
       .eq('session_id', sessionId)
       .eq('user_id', userId);
 
     await supabase
       .from('sessions')
-      .update({ status: 'completed', ended_at: new Date().toISOString() })
+      .update({ status: 'abandoned', ended_at: new Date().toISOString() })
       .eq('id', sessionId);
 
     if (presenceChannelRef.current) presenceChannelRef.current.unsubscribe();
