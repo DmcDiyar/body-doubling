@@ -7,3 +7,5 @@ export type { RitualResult, Intent } from './FocusRitual';
 
 export { MindfulCooldown } from './MindfulCooldown';
 export type { CooldownResult, Mood, Reflection } from './MindfulCooldown';
+
+export { MatchBrokenModal } from './MatchBrokenModal';
