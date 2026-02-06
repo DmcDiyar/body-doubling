@@ -39,18 +39,37 @@ export default function QuickMatchPage() {
 
     setPhase('matching');
 
-    // Kuyruğa ekle
+    // Kuyruğa ekle - CHECK FIRST pattern (409 Conflict fix)
+    // Önce kullanıcının kuyrukta bekleyen kaydı var mı kontrol et
     const priority = (profile as User).trust_score >= TRUST.HIGH_PRIORITY_THRESHOLD ? 2 :
                      (profile as User).trust_score >= TRUST.LOW_PRIORITY_THRESHOLD ? 1 : 0;
 
-    await supabase.from('matching_queue').upsert({
-      user_id: authUser.id,
-      duration,
-      theme,
-      priority,
-      status: 'waiting',
-      expires_at: new Date(Date.now() + MATCHING_TIMEOUT_MS).toISOString(),
-    });
+    const { data: existingQueue } = await supabase
+      .from('matching_queue')
+      .select('id, status')
+      .eq('user_id', authUser.id)
+      .eq('status', 'waiting')
+      .maybeSingle();
+
+    // Eğer zaten bekleyen kayıt varsa, yeni insert yapma
+    // Sadece kayıt yoksa veya başka status'teyse insert yap
+    if (!existingQueue) {
+      // Önce eski kayıtları temizle (expired, cancelled, matched olabilir)
+      await supabase
+        .from('matching_queue')
+        .delete()
+        .eq('user_id', authUser.id);
+
+      // Yeni kayıt ekle
+      await supabase.from('matching_queue').insert({
+        user_id: authUser.id,
+        duration,
+        theme,
+        priority,
+        status: 'waiting',
+        expires_at: new Date(Date.now() + MATCHING_TIMEOUT_MS).toISOString(),
+      });
+    }
 
     // Eşleşme dene (RPC)
     const { data: sessionId } = await supabase.rpc('find_match', {

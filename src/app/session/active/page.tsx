@@ -370,6 +370,10 @@ function SessionActivePage() {
     if (!sessionId || !userId) return;
     const supabase = createClient();
 
+    // Queue cleanup - kullanıcı session'dan çıkınca kuyruktan da temizle
+    // (Backend trigger da yapacak ama frontend'de de garantiye alalım)
+    await supabase.from('matching_queue').delete().eq('user_id', userId);
+
     // RPC ile erken çıkışı işle
     await supabase.rpc('handle_early_exit', {
       p_session_id: sessionId,
@@ -387,9 +391,13 @@ function SessionActivePage() {
   };
 
   // ---------- Solo/safe exit (no trust penalty) ----------
+  // Solo mode çıkışı tamamen nötr: trust cezası yok, uyarı yok
   const handleSoloExit = async () => {
     if (!sessionId || !userId) return;
     const supabase = createClient();
+
+    // Queue cleanup - solo exit'te de kuyruğu temizle
+    await supabase.from('matching_queue').delete().eq('user_id', userId);
 
     await supabase
       .from('session_participants')
@@ -559,7 +567,7 @@ function SessionActivePage() {
           <span className={`w-2 h-2 rounded-full ${getPartnerStatusColor(myPresenceStatus)}`} />
           <span className="text-gray-400 text-xs">
             {myPresenceStatus === 'active' ? 'Odaklanıyorsun' :
-             myPresenceStatus === 'idle' ? 'Düşünüyorsun' : 'Uzaktasın'}
+              myPresenceStatus === 'idle' ? 'Düşünüyorsun' : 'Uzaktasın'}
           </span>
         </div>
 

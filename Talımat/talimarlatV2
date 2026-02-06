@@ -1,0 +1,2369 @@
+# 🎯 SESSIZ ORTAK - KAPSAMLI PROJE TALİMATLARI v2.0
+
+**Tarih:** 4 Şubat 2026  
+**Hedef:** Focusmate benzeri body doubling uygulaması  
+**Fark:** Avatar mode + Türkçe odaklı + Gamification  
+
+---
+
+## 📋 İÇİNDEKİLER
+
+1. [Kritik Eksikler & Çözümler](#kritik-eksikler)
+2. [Yeni Paradigma: Hybrid Focus System](#yeni-paradigma)
+3. [Teknik Altyapı Detayları](#teknik-altyapı)
+4. [Ekran Yapısı & Roadmap](#ekran-roadmap)
+5. [Özellik Önceliklendirmesi](#öncelikler)
+6. [Lansman Stratejisi](#lansman)
+7. [Metrikler & KPI'lar](#metrikler)
+8. [Risk Yönetimi](#riskler)
+
+---
+
+## 🚨 KRİTİK EKSİKLER & ÇÖZÜMLER {#kritik-eksikler}
+
+### 1. ❌ **WebRTC Altyapısı Belirsiz**
+
+**Sorun:**
+- Daily.co "opsiyonel" ama video/ses olmadan body doubling çalışmaz
+- Avatar mode için bile presence sistemi gerekli
+
+**✅ ÇÖZÜM:**
+
+```javascript
+// Altyapı Kararı: Supabase Realtime + Opsiyonel Daily.co
+
+// Tier 1: Avatar Mode (Sadece Presence)
+const avatarSession = {
+  connection: "supabase_realtime", // Ücretsiz, yeterli
+  video: false,
+  audio: false,
+  presence: {
+    status: "online", // active, idle, away
+    activity: "typing", // Real-time durum
+    lastSeen: Date.now()
+  }
+};
+
+// Tier 2: Video Mode (Premium)
+const videoSession = {
+  connection: "daily_co", // Ücretli
+  video: true,
+  audio: true,
+  quality: "auto" // bandwidth'e göre
+};
+
+// Maliyet Optimizasyonu
+const videoUsage = {
+  free: 0, // Sadece avatar
+  pro: 150 // 150dk/ay video (5dk * 30 seans)
+};
+```
+
+**Karar:** 
+- MVP: Sadece Supabase Realtime (ücretsiz)
+- v1.5: Daily.co entegrasyonu (Pro özellik)
+
+---
+
+### 2. ❌ **Mobil Arka Plan Çalışması**
+
+**Sorun:**
+- iOS/Android'de timer arka planda durabilir
+- WebSocket bağlantısı ekran kapandığında kesilir
+
+**✅ ÇÖZÜM:**
+
+```javascript
+// Expo Background Tasks
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
+
+const BACKGROUND_TIMER_TASK = 'background-timer';
+
+// Task tanımı
+TaskManager.defineTask(BACKGROUND_TIMER_TASK, async () => {
+  const now = Date.now();
+  const sessionEnd = await AsyncStorage.getItem('sessionEndTime');
+  
+  if (now >= sessionEnd) {
+    // Seans bitti
+    await sendNotification('Seans tamamlandı! 🎉');
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  }
+  
+  return BackgroundFetch.BackgroundFetchResult.NoData;
+});
+
+// Kayıt
+async function registerBackgroundTimer() {
+  await BackgroundFetch.registerTaskAsync(BACKGROUND_TIMER_TASK, {
+    minimumInterval: 60, // Her 1dk kontrol et
+    stopOnTerminate: false,
+    startOnBoot: true,
+  });
+}
+```
+
+**Ek Gereksinimler:**
+- iOS: Background Modes capability (Audio, Background fetch)
+- Android: Foreground Service permission
+- Notification her 5dk'da bir hatırlatma
+
+---
+
+### 3. ❌ **Spam & Bot Koruması Zayıf**
+
+**Sorun:**
+- Telefon doğrulama fake SMS servisleri ile bypass edilebilir
+- Multi-accounting riski
+
+**✅ ÇÖZÜM:**
+
+```javascript
+// Anti-Spam Sistemi
+const userTrustLevels = {
+  newbie: {
+    level: 0,
+    restrictions: {
+      canMatchWith: ["newbie"], // Sadece newbie'lerle eşleş
+      dailySessionLimit: 3,
+      requiresPhoneVerification: true,
+      canReportOthers: false
+    },
+    requirements: {
+      completedSessions: 0,
+      trustScore: 0
+    }
+  },
+  
+  verified: {
+    level: 1,
+    restrictions: {
+      canMatchWith: ["newbie", "verified"],
+      dailySessionLimit: 10,
+      canReportOthers: true
+    },
+    requirements: {
+      completedSessions: 3,
+      trustScore: 30,
+      emailVerified: true,
+      phoneVerified: true
+    }
+  },
+  
+  trusted: {
+    level: 2,
+    restrictions: {
+      canMatchWith: ["all"],
+      dailySessionLimit: null, // Sınırsız
+      canReportOthers: true,
+      canBeReported: false // İmmunity
+    },
+    requirements: {
+      completedSessions: 20,
+      trustScore: 100,
+      noViolations: true,
+      accountAge: "30_days"
+    }
+  }
+};
+
+// IP-based Rate Limiting
+const rateLimits = {
+  accountCreation: {
+    maxPerIP: 1,
+    period: "24_hours"
+  },
+  sessionStart: {
+    maxPerIP: 5,
+    period: "1_hour"
+  }
+};
+
+// Captcha Sistemi
+const captchaRequirements = {
+  newAccount: true, // İlk kayıt
+  afterSuspicion: true, // 3 no-show sonrası
+  beforePremium: true // Premium satın almadan önce
+};
+```
+
+**Ek Önlemler:**
+- Google reCAPTCHA v3 (invisible)
+- Device fingerprinting (aynı cihazdan çoklu hesap tespiti)
+- Email domain blacklist (temporary mail servisleri)
+
+---
+
+### 4. ❌ **No-Show Problemi**
+
+**Sorun:**
+- Eşleşme oldu ama karşı taraf gelmedi → 30sn boşa bekletme
+
+**✅ ÇÖZÜM:**
+
+```javascript
+// No-Show Prevention System
+
+const sessionFlow = {
+  matching: {
+    timeout: 30, // 30sn içinde eşleşme
+    onTimeout: "solo_mode" // Eşleşme yoksa solo
+  },
+  
+  waiting: {
+    maxWait: 120, // 2dk bekle
+    checkInterval: 15, // Her 15sn kontrol
+    
+    onPartnerNotJoined: async (sessionId) => {
+      // 1. Otomatik yeni eşleşme
+      await rematchUser(sessionId);
+      
+      // 2. No-show kaydı
+      await recordNoShow(partnerId);
+      
+      // 3. Trust score düşür
+      await decreaseTrustScore(partnerId, -10);
+    }
+  },
+  
+  penalties: {
+    firstNoShow: {
+      action: "warning",
+      message: "Lütfen eşleşme sonrası 2dk içinde katıl"
+    },
+    
+    secondNoShow: {
+      action: "temp_ban",
+      duration: "1_hour",
+      trustScore: -15
+    },
+    
+    thirdNoShow: {
+      action: "temp_ban",
+      duration: "24_hours",
+      trustScore: -30,
+      message: "3 no-show → 1 gün ban"
+    },
+    
+    fifthNoShow: {
+      action: "perm_ban",
+      message: "Hesabın kalıcı olarak askıya alındı"
+    }
+  }
+};
+
+// Otomatik Rematch Sistemi
+async function rematchUser(sessionId) {
+  const user = await getSessionUser(sessionId);
+  
+  // Kullanıcıyı tekrar kuyruğa al
+  await addToQueue({
+    userId: user.id,
+    priority: "high", // No-show mağduru öncelikli
+    preferredMatch: {
+      trustScoreMin: 50 // Düşük trust score'lu eşleşme
+    }
+  });
+  
+  // Bildirim
+  await sendNotification(user.id, {
+    title: "Yeni eşleşme aranıyor...",
+    body: "Partnerın gelmedi, hemen yeni eşleşme buluyoruz!"
+  });
+}
+```
+
+**İstatistikler:**
+- No-show oranı hedef: <5%
+- Average rematch time: <45sn
+
+---
+
+### 5. ❌ **Ghosting (Yarıda Bırakma)**
+
+**Sorun:**
+- Seans sırasında biri ayrılırsa ne olacak?
+
+**✅ ÇÖZÜM:**
+
+```javascript
+// Inactivity Detection System
+
+const inactivityMonitor = {
+  checkInterval: 30, // Her 30sn kontrol
+  
+  thresholds: {
+    idle_warning: 120, // 2dk hareketsizlik
+    idle_critical: 300, // 5dk hareketsizlik
+    auto_end: 600 // 10dk hareketsizlik (otomatik bitir)
+  },
+  
+  actions: {
+    at_2min: async (userId, sessionId) => {
+      // Partner'a bildirim
+      await notifyPartner(sessionId, {
+        type: "partner_idle",
+        message: "Partnerin hareketsiz görünüyor..."
+      });
+      
+      // Idle kullanıcıya uyarı
+      await sendInAppAlert(userId, {
+        title: "Hâlâ burada mısın?",
+        body: "2 dakikadır hareketsizsin",
+        action: "DOKUNARAK DEVAM ET"
+      });
+    },
+    
+    at_5min: async (userId, sessionId) => {
+      // Otomatik seans sonu
+      await endSession(sessionId, {
+        reason: "inactivity",
+        completedBy: "partner_only"
+      });
+      
+      // Trust score cezası
+      await decreaseTrustScore(userId, -20);
+      
+      // Partner'a telafi
+      await compensatePartner(sessionId, {
+        reward: "1_free_session",
+        message: "Üzgünüz, partnerın ayrıldı. 1 seans hediye!"
+      });
+    }
+  }
+};
+
+// Activity Tracking
+const activityEvents = [
+  "mouse_move",
+  "keyboard_press",
+  "screen_tap", // Mobile
+  "camera_movement", // Video mode
+  "goal_update", // Hedef güncelleme
+  "reaction_sent" // Emoji gönderme
+];
+
+// Her aktivite timestamp günceller
+let lastActivity = Date.now();
+
+activityEvents.forEach(event => {
+  window.addEventListener(event, () => {
+    lastActivity = Date.now();
+  });
+});
+```
+
+**Ghosting Oranı Hedefi:** <3%
+
+---
+
+## 🎯 YENİ PARADIGMA: HYBRID FOCUS SYSTEM {#yeni-paradigma}
+
+### 🎬 Lofi Girl vs StudyStream vs SİZİN SİSTEM
+
+| Özellik | Lofi Girl | StudyStream | SESSIZ ORTAK |
+|---------|-----------|-------------|--------------|
+| Format | Pasif izleme | Canlı yayın | Dinamik odalar |
+| Etkileşim | Yok | Kalabalık | Küçük grup (2-8) |
+| Müzik | Statik playlist | Yok/DJ | AI-generated |
+| Görsel | Sabit animasyon | Gerçek insanlar | Tema + Avatar |
+| Accountability | Yok | Zayıf | Güçlü (1v1/grup) |
+| Kişiselleştirme | Yok | Yok | Tam (tema, müzik, mod) |
+
+---
+
+### 🏗️ SISTEM MİMARİSİ: 3 Katmanlı Oda Sistemi
+
+#### **Tier 1: Silent Duo (MVP - Şu anki sistem)**
+
+```javascript
+const silentDuo = {
+  type: "1v1_avatar",
+  duration: 25, // Pomodoro
+  maxParticipants: 2,
+  
+  features: {
+    video: false,
+    audio: false,
+    chat: false, // Sadece seans sonunda
+    presence: true, // Avatar hareketleri
+    sharedTimer: true,
+    goalVisibility: "private" // Hedefler gizli
+  },
+  
+  modes: {
+    standard: "Her ikisi de ekranda",
+    ghost: "Karakter gizli, sadece presence"
+  }
+};
+```
+
+---
+
+#### **Tier 2: Focus Lounge (v1.5 - Ana Fark)**
+
+**Konsept:** Küçük grup + AI ambiance + Dinamik tema
+
+```javascript
+const focusLounge = {
+  type: "small_group",
+  duration: 50, // 25dk + 5dk break + 20dk
+  maxParticipants: 6,
+  minParticipants: 3,
+  
+  // AI Ambiance System
+  ambiance: {
+    theme: "rainy_cafe", // 7+ tema
+    music: {
+      type: "ai_generated",
+      mood: "chill", // Katılımcı oylaması
+      volume: "adaptive" // Arka plan
+    },
+    soundscape: [
+      "rain_sound",
+      "keyboard_typing",
+      "page_turning",
+      "coffee_pouring"
+    ],
+    lighting: "warm_dim",
+    animation: "subtle_rain" // Görsel efekt
+  },
+  
+  // Sosyal Özellikler
+  social: {
+    sharedTimer: true,
+    breakRoom: {
+      enabled: true,
+      duration: 5, // 5dk mola (ortak)
+      activities: [
+        "quick_poll", // Hızlı anket
+        "emoji_reactions",
+        "stretch_reminder"
+      ]
+    },
+    goalSharing: "optional", // İsteyen gösterir
+    reactions: ["👍", "🔥", "☕", "💪", "🎯"],
+    presenceIndicators: {
+      active: "💻",
+      idle: "⏸️",
+      break: "☕"
+    }
+  },
+  
+  // Matching Algoritması
+  matching: {
+    preferredLanguage: true, // TR/EN
+    timezone: "auto",
+    workType: "optional", // Study/Work/Creative
+    musicPreference: true // Oy kullanır
+  }
+};
+```
+
+**Tema Örnekleri:**
+1. 🌧️ **Rainy Cafe** - Yağmur sesi + kahve dükkanı
+2. 🌲 **Forest Library** - Kuş sesleri + yaprak hışırtısı
+3. 🌊 **Beach Sunset** - Dalga sesi + hafif rüzgar
+4. 🌌 **Space Station** - Ambient hum + uzay müziği
+5. 🏔️ **Mountain Lodge** - Şömine + kar fırtınası
+6. 🎓 **University Hall** - Kalem sesi + sayfa çevirme
+7. 🌃 **Night City** - Uzak trafik + lofi beat
+
+---
+
+#### **Tier 3: Deep Work Arena (v2.0)**
+
+**Konsept:** Turnuva tarzı, yarışmalı, uzun süreli
+
+```javascript
+const deepWorkArena = {
+  type: "tournament",
+  duration: 120, // 2 saat
+  maxParticipants: 16,
+  
+  gamification: {
+    leaderboard: true,
+    scoring: {
+      focusTime: 50, // %50 ağırlık
+      consistency: 30, // Düzenli aktivite
+      goalCompletion: 20 // Hedef başarısı
+    },
+    rewards: {
+      top3: "special_badge",
+      winner: "1_month_pro"
+    }
+  },
+  
+  rules: {
+    noEarlyExit: true, // Yarıda çıkamazsın
+    mandatoryBreaks: [30, 60, 90], // Zorunlu molalar
+    focusTracking: "strict" // Sıkı takip
+  }
+};
+```
+
+---
+
+### 🎵 AI MÜZİK & TEMA SİSTEMİ (Lofi Girl'den Fark)
+
+#### **AI Müzik Üretimi:**
+
+```javascript
+// Müzik Servisleri (En İyi Seçenekler)
+
+const musicServices = {
+  option1: {
+    provider: "Suno AI",
+    pros: ["Özel müzik üretir", "Telif yok", "Ucuz"],
+    cons: ["API yavaş", "Kalite değişken"],
+    cost: "$0.50/song"
+  },
+  
+  option2: {
+    provider: "Mubert API",
+    pros: ["Real-time generation", "Lofi özel", "API hızlı"],
+    cons: ["Aylık ücretli"],
+    cost: "$29/ay (sınırsız)"
+  },
+  
+  option3: {
+    provider: "YouTube Audio Library + Remix",
+    pros: ["Ücretsiz", "Telif sorun yok", "Büyük katalog"],
+    cons: ["Manuel kürasyon gerekir"],
+    cost: "$0"
+  },
+  
+  // ÖNERİ: Hybrid yaklaşım
+  recommended: {
+    mvp: "YouTube Audio Library", // İlk 3 ay
+    v1_5: "Mubert API", // Ücretli kullanıcılar için
+    v2_0: "Suno AI custom tracks" // Premium özellik
+  }
+};
+
+// Müzik Seçim Akışı
+async function selectSessionMusic(roomParticipants) {
+  // 1. Katılımcı tercihlerini topla
+  const preferences = await Promise.all(
+    roomParticipants.map(p => getUserMusicPreference(p.id))
+  );
+  
+  // 2. Dominant mood belirle
+  const moodCounts = preferences.reduce((acc, pref) => {
+    acc[pref.mood] = (acc[pref.mood] || 0) + 1;
+    return acc;
+  }, {});
+  
+  const dominantMood = Object.keys(moodCounts).sort(
+    (a, b) => moodCounts[b] - moodCounts[a]
+  )[0];
+  
+  // 3. AI'dan müzik iste (v1.5+) veya playlist seç (MVP)
+  if (isPremiumRoom) {
+    const track = await generateAIMusic({
+      mood: dominantMood,
+      duration: 50, // dk
+      genre: "lofi",
+      bpm: "70-90",
+      instruments: ["piano", "bass", "light_drums"],
+      vibe: preferences[0].theme // Tema uyumlu
+    });
+    
+    return track;
+  } else {
+    // Free tier: Pre-curated playlist
+    return selectFromPlaylist(dominantMood);
+  }
+}
+```
+
+#### **Tema Sistemi (Görsel + Ses):**
+
+```javascript
+const themeSystem = {
+  rainy_cafe: {
+    visual: {
+      scene: "3d_cafe_interior", // Three.js scene
+      lighting: "warm_dim",
+      weather: "rain_outside_window",
+      time: "afternoon",
+      details: ["steaming_coffee", "book_on_table"]
+    },
+    
+    audio: {
+      music: "lofi_chill",
+      soundscape: [
+        { type: "rain", volume: 0.3 },
+        { type: "distant_thunder", volume: 0.1, interval: "random" },
+        { type: "coffee_machine", volume: 0.15, interval: 120 }
+      ]
+    },
+    
+    interaction: {
+      clickableCoffee: true, // Tıklayınca dolduruluyor animasyonu
+      windowView: "rain_intensity_slider" // Yağmur şiddeti ayarla
+    }
+  },
+  
+  forest_library: {
+    visual: {
+      scene: "3d_treehouse_library",
+      lighting: "natural_sunlight",
+      weather: "light_breeze",
+      time: "morning",
+      details: ["birds_flying", "leaves_falling"]
+    },
+    
+    audio: {
+      music: "acoustic_folk",
+      soundscape: [
+        { type: "bird_chirp", volume: 0.25, interval: "random" },
+        { type: "wind_rustle", volume: 0.2 },
+        { type: "page_turning", volume: 0.1, interval: 45 }
+      ]
+    }
+  }
+  
+  // 7+ tema daha...
+};
+```
+
+---
+
+### 📹 VİDEO MOD vs AVATAR MOD Karşılaştırması
+
+```javascript
+const comparisonTable = {
+  video_mode: {
+    pros: [
+      "Gerçek accountability",
+      "İnsan bağlantısı",
+      "Focusmate standart"
+    ],
+    cons: [
+      "Utangaçlık",
+      "Bandwidth yük",
+      "Gizlilik endişesi",
+      "Maliyet (Daily.co)"
+    ],
+    use_cases: [
+      "Premium kullanıcılar",
+      "Önemli sınavlar",
+      "Grup çalışması"
+    ]
+  },
+  
+  avatar_mode: {
+    pros: [
+      "Düşük bandwidth",
+      "Gizlilik",
+      "Eğlenceli",
+      "Unique selling point"
+    ],
+    cons: [
+      "Az accountability",
+      "İlk başta tuhaf gelebilir"
+    ],
+    use_cases: [
+      "Free tier",
+      "Rahat günler",
+      "Solo-esque deneyim"
+    ]
+  }
+};
+
+// Karar: Her ikisini de sun, kullanıcı seçsin
+const modeSelection = {
+  default: "avatar", // MVP
+  premium: "video_option", // v1.5
+  user_choice: true // Her seans önce sor
+};
+```
+
+---
+
+## 🔧 TEKNİK ALTYAPI DETAYLARI {#teknik-altyapı}
+
+### **Tech Stack (Final)**
+
+```javascript
+const techStack = {
+  frontend: {
+    web: "Next.js 14 (App Router)",
+    mobile: "React Native (Expo)",
+    desktop: "Electron (v3.0)",
+    ui: "Tailwind CSS + shadcn/ui"
+  },
+  
+  backend: {
+    framework: "Next.js API Routes (serverless)",
+    database: "Supabase (PostgreSQL)",
+    realtime: "Supabase Realtime",
+    storage: "Supabase Storage",
+    auth: "Supabase Auth"
+  },
+  
+  third_party: {
+    video: "Daily.co (v1.5+, premium only)",
+    payments: "Stripe",
+    analytics: "Posthog",
+    monitoring: "Sentry",
+    email: "Resend",
+    sms: "Twilio Verify"
+  },
+  
+  ai: {
+    music_generation: "Mubert API (v1.5+)",
+    trust_scoring: "Custom algorithm",
+    smart_matching: "PostgreSQL functions"
+  },
+  
+  infrastructure: {
+    hosting: "Vercel (frontend + API)",
+    cdn: "Vercel Edge Network",
+    database_hosting: "Supabase Cloud"
+  }
+};
+```
+
+---
+
+### **Database Schema (PostgreSQL)**
+
+```sql
+-- USERS TABLE
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(20),
+  full_name VARCHAR(100),
+  avatar_url TEXT,
+  
+  -- Preferences
+  preferred_language VARCHAR(5) DEFAULT 'tr',
+  timezone VARCHAR(50),
+  music_preference JSONB DEFAULT '{"mood": "chill", "genre": "lofi"}',
+  work_type VARCHAR(20), -- study, work, creative
+  
+  -- Trust System
+  trust_score INTEGER DEFAULT 0,
+  trust_level VARCHAR(20) DEFAULT 'newbie', -- newbie, verified, trusted
+  
+  -- Stats
+  total_sessions INTEGER DEFAULT 0,
+  completed_sessions INTEGER DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  total_focus_minutes INTEGER DEFAULT 0,
+  
+  -- Flags
+  is_premium BOOLEAN DEFAULT false,
+  is_banned BOOLEAN DEFAULT false,
+  is_verified BOOLEAN DEFAULT false,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_active_at TIMESTAMP DEFAULT NOW()
+);
+
+-- SESSIONS TABLE
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Session Details
+  type VARCHAR(20) NOT NULL, -- silent_duo, focus_lounge, deep_work
+  duration INTEGER NOT NULL, -- minutes
+  scheduled_start TIMESTAMP NOT NULL,
+  actual_start TIMESTAMP,
+  actual_end TIMESTAMP,
+  status VARCHAR(20) DEFAULT 'waiting', -- waiting, active, completed, cancelled
+  
+  -- Theme & Music
+  theme VARCHAR(50),
+  music_track_id UUID,
+  
+  -- Participants
+  participant_ids UUID[] NOT NULL,
+  host_id UUID,
+  
+  -- Completion
+  completion_rate FLOAT, -- %
+  average_rating FLOAT,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- SESSION_PARTICIPANTS TABLE (Many-to-Many)
+CREATE TABLE session_participants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Participation
+  joined_at TIMESTAMP,
+  left_at TIMESTAMP,
+  status VARCHAR(20), -- waiting, active, completed, left_early
+  
+  -- Activity Tracking
+  last_activity_at TIMESTAMP,
+  inactivity_warnings INTEGER DEFAULT 0,
+  
+  -- Goal
+  session_goal TEXT,
+  goal_completed BOOLEAN DEFAULT false,
+  
+  -- Rating
+  rating INTEGER, -- 1-5
+  feedback TEXT,
+  
+  -- Trust Impact
+  trust_score_change INTEGER DEFAULT 0,
+  
+  UNIQUE(session_id, user_id)
+);
+
+-- MATCHING_QUEUE TABLE (Real-time Matching)
+CREATE TABLE matching_queue (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Preferences
+  session_type VARCHAR(20),
+  preferred_duration INTEGER,
+  preferred_language VARCHAR(5),
+  preferred_theme VARCHAR(50),
+  
+  -- Matching
+  priority INTEGER DEFAULT 0, -- No-show victims get higher
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP,
+  
+  -- Status
+  status VARCHAR(20) DEFAULT 'waiting' -- waiting, matched, expired
+);
+
+-- TRUST_EVENTS TABLE (Audit Log)
+CREATE TABLE trust_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  event_type VARCHAR(50), -- no_show, early_exit, positive_rating, etc.
+  score_change INTEGER,
+  session_id UUID REFERENCES sessions(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- BADGES TABLE
+CREATE TABLE badges (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(50) UNIQUE, -- streak_master_7, early_bird, etc.
+  name VARCHAR(100),
+  description TEXT,
+  icon_url TEXT,
+  rarity VARCHAR(20), -- common, rare, epic, legendary
+  category VARCHAR(20) -- streak, social, achievement
+);
+
+-- USER_BADGES TABLE (User Achievements)
+CREATE TABLE user_badges (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  badge_id UUID REFERENCES badges(id),
+  earned_at TIMESTAMP DEFAULT NOW(),
+  
+  UNIQUE(user_id, badge_id)
+);
+
+-- SUBSCRIPTIONS TABLE (Premium)
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  stripe_subscription_id VARCHAR(255),
+  status VARCHAR(20), -- active, cancelled, expired
+  plan VARCHAR(20), -- pro_monthly, pro_yearly
+  current_period_start TIMESTAMP,
+  current_period_end TIMESTAMP,
+  cancel_at_period_end BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- INDEXES (Performance)
+CREATE INDEX idx_users_trust_score ON users(trust_score);
+CREATE INDEX idx_sessions_status ON sessions(status);
+CREATE INDEX idx_sessions_scheduled_start ON sessions(scheduled_start);
+CREATE INDEX idx_matching_queue_status ON matching_queue(status);
+CREATE INDEX idx_matching_queue_created_at ON matching_queue(created_at);
+```
+
+---
+
+### **Supabase Realtime Presence (Avatar Mode)**
+
+```javascript
+// Real-time presence tracking
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10 // Throttle
+    }
+  }
+});
+
+// Join session room
+const channel = supabase.channel(`session:${sessionId}`, {
+  config: {
+    presence: {
+      key: userId
+    }
+  }
+});
+
+// Track user presence
+channel
+  .on('presence', { event: 'sync' }, () => {
+    const state = channel.presenceState();
+    const users = Object.keys(state).map(key => state[key][0]);
+    
+    // Update UI with active users
+    updateActiveUsers(users);
+  })
+  .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+    console.log('User joined:', newPresences);
+  })
+  .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+    console.log('User left:', leftPresences);
+  })
+  .subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      // Send initial presence
+      await channel.track({
+        userId,
+        username,
+        avatar,
+        status: 'active',
+        goal: sessionGoal,
+        lastActivity: Date.now()
+      });
+    }
+  });
+
+// Update activity
+function updateActivity() {
+  channel.track({
+    userId,
+    lastActivity: Date.now(),
+    status: 'typing' // or 'idle', 'away'
+  });
+}
+
+// Activity listeners
+document.addEventListener('mousemove', throttle(updateActivity, 5000));
+document.addEventListener('keypress', throttle(updateActivity, 5000));
+```
+
+---
+
+### **Matching Algorithm (PostgreSQL Function)**
+
+```sql
+-- Smart Matching Function
+CREATE OR REPLACE FUNCTION match_users(
+  p_session_type VARCHAR,
+  p_max_participants INTEGER DEFAULT 2
+)
+RETURNS TABLE (
+  session_id UUID,
+  matched_user_ids UUID[]
+) AS $$
+DECLARE
+  v_session_id UUID;
+  v_matched_users UUID[];
+BEGIN
+  -- 1. Get waiting users with similar preferences
+  WITH eligible_users AS (
+    SELECT 
+      mq.user_id,
+      u.trust_level,
+      u.preferred_language,
+      mq.preferred_theme,
+      mq.priority,
+      mq.created_at
+    FROM matching_queue mq
+    JOIN users u ON mq.user_id = u.id
+    WHERE 
+      mq.status = 'waiting'
+      AND mq.session_type = p_session_type
+      AND mq.expires_at > NOW()
+      AND u.is_banned = false
+    ORDER BY 
+      mq.priority DESC,
+      mq.created_at ASC
+  ),
+  
+  -- 2. Group by similar preferences
+  grouped_users AS (
+    SELECT 
+      user_id,
+      trust_level,
+      ROW_NUMBER() OVER (
+        PARTITION BY trust_level, preferred_language
+        ORDER BY priority DESC, created_at ASC
+      ) as rn
+    FROM eligible_users
+  )
+  
+  -- 3. Select top N users
+  SELECT ARRAY_AGG(user_id)
+  INTO v_matched_users
+  FROM grouped_users
+  WHERE rn <= p_max_participants
+  LIMIT p_max_participants;
+  
+  -- 4. Create session if enough users found
+  IF array_length(v_matched_users, 1) >= 2 THEN
+    INSERT INTO sessions (
+      type,
+      duration,
+      scheduled_start,
+      participant_ids,
+      host_id,
+      status
+    ) VALUES (
+      p_session_type,
+      25,
+      NOW(),
+      v_matched_users,
+      v_matched_users[1],
+      'waiting'
+    ) RETURNING id INTO v_session_id;
+    
+    -- 5. Update queue status
+    UPDATE matching_queue
+    SET status = 'matched'
+    WHERE user_id = ANY(v_matched_users);
+    
+    RETURN QUERY SELECT v_session_id, v_matched_users;
+  END IF;
+  
+  RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Run matching every 10 seconds (via cron job)
+-- SELECT * FROM match_users('silent_duo', 2);
+```
+
+---
+
+### **Trust Score Algoritması**
+
+```javascript
+// Trust Score Calculation
+
+const trustScoreSystem = {
+  events: {
+    session_completed: +15,
+    session_rated_5_stars: +10,
+    session_rated_4_stars: +5,
+    session_rated_3_stars: 0,
+    session_rated_2_stars: -5,
+    session_rated_1_star: -10,
+    
+    no_show: -15,
+    early_exit: -10,
+    inactivity_timeout: -8,
+    
+    reported_by_user: -25,
+    false_report: -30,
+    
+    streak_milestone: +20, // 7, 14, 30 gün
+    first_session_referral: +5,
+    
+    premium_subscription: +10 // One-time
+  },
+  
+  levels: {
+    newbie: { min: 0, max: 29 },
+    verified: { min: 30, max: 99 },
+    trusted: { min: 100, max: 199 },
+    elite: { min: 200, max: Infinity }
+  },
+  
+  decay: {
+    enabled: true,
+    amount: -1, // -1 puan
+    interval: 7 // Her 7 günde bir (inaktifse)
+  }
+};
+
+// Update trust score
+async function updateTrustScore(userId, eventType) {
+  const scoreChange = trustScoreSystem.events[eventType];
+  
+  if (!scoreChange) return;
+  
+  // Update user trust score
+  const { data: user } = await supabase
+    .from('users')
+    .select('trust_score')
+    .eq('id', userId)
+    .single();
+  
+  const newScore = Math.max(0, user.trust_score + scoreChange);
+  
+  // Determine new level
+  const newLevel = Object.keys(trustScoreSystem.levels).find(level => {
+    const { min, max } = trustScoreSystem.levels[level];
+    return newScore >= min && newScore <= max;
+  });
+  
+  // Update database
+  await supabase
+    .from('users')
+    .update({
+      trust_score: newScore,
+      trust_level: newLevel
+    })
+    .eq('id', userId);
+  
+  // Log event
+  await supabase.from('trust_events').insert({
+    user_id: userId,
+    event_type: eventType,
+    score_change: scoreChange
+  });
+  
+  // Check for level up
+  if (newLevel !== user.trust_level) {
+    await awardLevelUpBadge(userId, newLevel);
+  }
+}
+```
+
+---
+
+## 📱 EKRAN YAPISI & ROADMAP {#ekran-roadmap}
+
+### **MVP (0-2 Hafta) - 10 Ekran**
+
+| # | Ekran Adı | Durum | Açıklama |
+|---|-----------|-------|----------|
+| 1 | Landing Page | ✅ Hazır | Hero + Features + Pricing |
+| 2 | Sign Up/In | ✅ Hazır | Google OAuth only (MVP) |
+| 3 | Onboarding | 🔴 Tasarlanacak | 2 adım: İsim + Tercihler |
+| 4 | Dashboard | ✅ Hazır | Ultra basit: Quick match + Stats |
+| 5 | Quick Match | 🔴 **YENİ** | Hemen eşleş (1 tık) |
+| 6 | Custom Match | 🔴 **YENİ** | Süre/Tema seç |
+| 7 | Matching Wait | 🔴 Tasarlanacak | Animated loading + "Solo mode" |
+| 8 | Session Screen | ✅ Hazır | Timer + Partner presence |
+| 9 | Session End | ✅ Hazır | Rating + Özet |
+| 10 | Profile (Minimal) | ✅ Hazır | Stats + Settings |
+
+**MVP Odak:**
+- Sadece **Silent Duo (1v1)**
+- Sadece **Avatar Mode**
+- Sadece **25dk Pomodoro**
+- Sadece **Google Login**
+
+---
+
+### **v1.5 (3-8 Hafta) - +18 Ekran**
+
+| # | Ekran Adı | Yeni Mi? | Açıklama |
+|---|-----------|----------|----------|
+| 11 | Ghost Mode Toggle | 🔴 **YENİ** | Karakter görünürlük ayarı |
+| 12 | Music Library | ✅ Hazır | Pre-curated playlists |
+| 13 | Theme Selector | 🔴 **YENİ** | 7+ tema seç |
+| 14 | Pomodoro Variations | 🔴 **YENİ** | 15/25/50/90dk |
+| 15 | Focus Rituals | 🔴 **YENİ** | Pre-session: Breath/Stretch |
+| 16 | Mindful Cooldown | 🔴 **YENİ** | Post-session: Reflect |
+| 17 | Treasure Chest | ✅ Hazır | Daily rewards |
+| 18 | Collection Room | ✅ Hazır | Badge koleksiyonu |
+| 19 | Character Shop | ✅ Hazır | Avatar customization |
+| 20 | Leaderboard | ✅ Hazır | Weekly top 10 |
+| 21 | Friends List | ✅ Hazır | Add/Favorite partners |
+| 22 | Streak Dashboard | 🔴 **YENİ** | Daily + Monthly + All-time |
+| 23 | Binge Prevention | 🔴 **YENİ** | "5 seans üst üste!" uyarı |
+| 24 | Smart Notifications | 🔴 **YENİ** | Optimal zamanlar |
+| 25 | Simple Journal | ✅ Hazır | Günlük not |
+| 26 | Payment Page | 🔴 Tasarlanacak | Stripe checkout |
+| 27 | Subscription Management | 🔴 Tasarlanacak | Cancel/Upgrade |
+| 28 | Referral Dashboard | 🔴 **YENİ** | Invite friends |
+
+**v1.5 Eklentileri:**
+- **Video Mode** (Premium, Daily.co)
+- **AI Music** (Mubert API)
+- **Advanced Gamification** (Badges, Streaks)
+- **Premium Subscription**
+
+---
+
+### **v2.0 (9-20 Hafta) - +14 Ekran**
+
+| # | Ekran Adı | Yeni Mi? | Açıklama |
+|---|-----------|----------|----------|
+| 29 | Focus Lounge Lobby | 🔴 **YENİ** | 4-8 kişilik oda |
+| 30 | Lounge Session | 🔴 **YENİ** | Grup timer + Reactions |
+| 31 | Break Room | 🔴 **YENİ** | 5dk mola (ortak) |
+| 32 | Micro-Breaks | 🔴 **YENİ** | 1-2dk stretch |
+| 33 | Solo Mode | 🔴 Tasarlanacak | Eşleşme yoksa solo |
+| 34 | Social Gallery | ✅ Hazır | Goal sharing wall |
+| 35 | Guest Visit | ✅ Hazır | Profile visits |
+| 36 | Accountability Partners | 🔴 **YENİ** | Dedicated study buddy |
+| 37 | Study Groups | 🔴 **YENİ** | Recurring sessions |
+| 38 | Star Map Report | ✅ Hazır | Weekly progress |
+| 39 | Focus Score AI | 🔴 **YENİ** | AI-driven insights |
+| 40 | Guided Journal | 🔴 **YENİ** | Prompts + Insights |
+| 41 | Inspiration Wall | 🔴 **YENİ** | User-shared quotes |
+| 42 | Weekly Challenge | ✅ Hazır | Community events |
+
+**v2.0 Eklentileri:**
+- **Focus Lounge** (Grup çalışma)
+- **AI Insights** (Focus Score)
+- **Study Groups** (Recurring)
+- **Community Features**
+
+---
+
+### **v3.0 (21-36 Hafta) - +8 Ekran**
+
+| # | Ekran Adı | Yeni Mi? | Açıklama |
+|---|-----------|----------|----------|
+| 43 | Co-working Space | 🔴 **YENİ** | Enterprise teams |
+| 44 | Admin Panel | 🔴 **YENİ** | Team manager |
+| 45 | Custom Theme Builder | 🔴 **YENİ** | Create own themes |
+| 46 | Integration Hub | 🔴 **YENİ** | Notion/Todoist/Cal |
+| 47 | AI Coach | 🔴 **YENİ** | Personalized tips |
+| 48 | Deep Work Arena | 🔴 **YENİ** | Tournament mode |
+| 49 | Parental Controls | 🔴 **YENİ** | For teens (16-18) |
+| 50 | Offline Mode | 🔴 **YENİ** | Local timer |
+
+**v3.0 Eklentileri:**
+- **Enterprise B2B**
+- **API for Integrations**
+- **AI Coach**
+- **Offline Support**
+
+---
+
+## 🎯 ÖZELLİK ÖNCELİKLENDİRMESİ {#öncelikler}
+
+### 🔥 **KESINLIKLE OLMALI (MVP/v1.5)**
+
+1. ✅ **Quick Match / Custom Match** (UX kritik)
+2. ✅ **Ghost Mode** (Unique selling point)
+3. ✅ **No-Show Prevention** (Kalite kontrolü)
+4. ✅ **Trust Score System** (Spam koruması)
+5. ✅ **Streak System** (Gamification temel)
+6. ✅ **Theme System (7+ tema)** (Lofi Girl'den fark)
+7. ✅ **Background Timer** (Mobil zorunlu)
+8. ✅ **Smart Notifications** (Retention)
+9. ✅ **Focus Rituals** (Premium feel)
+10. ✅ **Badge System** (Gamification)
+
+---
+
+### ⭐ **GÜ ZEL OLUR (v1.5/v2.0)**
+
+11. 🟡 **AI Music Generation** (Premium feature)
+12. 🟡 **Video Mode** (Premium, Focusmate parity)
+13. 🟡 **Focus Lounge** (Sosyal boyut)
+14. 🟡 **Accountability Partners** (Long-term retention)
+15. 🟡 **Study Groups** (Recurring sessions)
+16. 🟡 **Pomodoro Variations** (Flexibility)
+17. 🟡 **Micro-Breaks** (Wellness)
+18. 🟡 **Guided Journal** (Self-reflection)
+19. 🟡 **Focus Score AI** (Advanced insights)
+20. 🟡 **Binge Prevention** (Sağlık odak)
+
+---
+
+### 💭 **v3.0'A BIRAKILABİLİR**
+
+21. 🔵 **Deep Work Arena** (Niche)
+22. 🔵 **Custom Theme Builder** (Advanced)
+23. 🔵 **Parental Controls** (Özel segment)
+24. 🔵 **Offline Mode** (Edge case)
+25. 🔵 **API for Developers** (Ölçek sonrası)
+26. 🔵 **Co-working Spaces** (B2B)
+27. 🔵 **Voice Rooms** (Experimental)
+28. 🔵 **Focus Olympics** (Seasonal event)
+29. 🔵 **Focus Passport** (Gamification v2)
+30. 🔵 **Focus NFTs** (Web3, hype)
+
+---
+
+## 🚀 LANSMAN STRATEJİSİ {#lansman}
+
+### **Beta Test Timeline (8 Hafta)**
+
+```
+Week 1-2: Kapalı Beta (50 kişi)
+├─ Hedef: Arkadaş çevresi + erken destekçiler
+├─ Odak: Bug fixing + UX feedback
+└─ Metrik: Session completion rate
+
+Week 3-4: Açık Beta (500 kişi)
+├─ Hedef: Waitlist'ten seçilmiş kullanıcılar
+├─ Odak: Scaling test + matching algorithm
+└─ Metrik: Daily active users, retention
+
+Week 5-6: Soft Launch (1000+ kullanıcı)
+├─ Hedef: Organik büyüme başlat
+├─ Odak: Referral system + word-of-mouth
+└─ Metrik: Conversion rate (free → paid)
+
+Week 7: Pre-Launch Buzz
+├─ Hedef: Medya coverage + influencer outreach
+├─ Odak: Product Hunt hazırlığı
+└─ Metrik: Waitlist growth
+
+Week 8: Product Hunt Launch 🚀
+├─ Hedef: Top 5 of the day
+├─ Odak: Community engagement
+└─ Metrik: Upvotes, sign-ups, virality
+```
+
+---
+
+### **Pazarlama Kanalları**
+
+#### **Organik (Ücretsiz)**
+
+1. **TikTok** 🎯 **EN ÖNEMLİ**
+   - Study-with-me içerikleri viral oluyor
+   - #studytok #productivitytok
+   - Hedef: 10K+ followers (3 ay)
+
+2. **YouTube Shorts**
+   - "25dk odaklandım" challenge
+   - Pomodoro tips & tricks
+   - Avatar customization showcase
+
+3. **Instagram Reels**
+   - Aesthetic study setups
+   - Before/after focus sessions
+   - Student testimonials
+
+4. **Reddit**
+   - r/GetStudying (320K members)
+   - r/productivity (2.5M members)
+   - r/Pomodoro (18K members)
+   - r/studytips (70K members)
+
+5. **Discord**
+   - Productivity sunucularına katıl
+   - Study-with-me sessions organize et
+   - Community-first approach
+
+6. **LinkedIn**
+   - Remote worker kitlesine ulaş
+   - Freelancer grupları
+   - Startup/entrepreneur hikayesi
+
+7. **Twitch**
+   - Studystream benzeri canlı yayınlar
+   - "Study with me" streamleri
+   - Affiliate program
+
+---
+
+#### **Ücretli (Budget: $500/ay başlangıç)**
+
+1. **Google Ads**
+   - Keywords: "focusmate alternative", "study buddy app"
+   - Budget: $200/ay
+
+2. **Meta Ads** (Facebook + Instagram)
+   - Hedef: 18-25 yaş, öğrenciler
+   - Budget: $150/ay
+
+3. **TikTok Ads**
+   - Viral potansiyeli yüksek
+   - Budget: $150/ay
+
+4. **Influencer Marketing**
+   - Micro-influencers (10-50K followers)
+   - Study/productivity niche
+   - Barter: Free premium
+
+---
+
+### **İçerik Stratejisi**
+
+#### **Blog (SEO için)**
+
+1. "Pomodoro Tekniği Nedir? (Kapsamlı Rehber)"
+2. "Focusmate Alternatifleri (2026)"
+3. "Evden Çalışırken Odaklanma İpuçları"
+4. "Body Doubling: Yalnız Çalışmanın Çözümü"
+5. "Avatar Modu ile Çalışmak: Gelecek Burada"
+
+#### **Video İçerikleri**
+
+1. "Gününü Sessiz Ortak ile Geçir" (Vlog tarzı)
+2. "25dk Challenge: Ne Kadar Odaklanabilirsin?"
+3. "Avatar Customization Showcase"
+4. "Study-with-me: Lofi + Rainy Cafe Teması"
+5. "Kullanıcı Hikayeleri: 30 Günlük Streak"
+
+---
+
+### **Referral Program**
+
+```javascript
+const referralSystem = {
+  referrer_reward: "1_week_pro", // Arkadaşını davet et, 1 hafta Pro kazan
+  referee_reward: "3_free_sessions", // Davet edilen 3 seans bonus
+  
+  tiered_rewards: {
+    3_referrals: "1_month_pro",
+    10_referrals: "3_months_pro",
+    25_referrals: "1_year_pro",
+    50_referrals: "lifetime_pro" // Ömür boyu ücretsiz!
+  },
+  
+  tracking: {
+    unique_code: true, // Her kullanıcı benzersiz kod
+    cookie_duration: "30_days",
+    attribution: "first_touch" // İlk tıklayan alır
+  }
+};
+```
+
+---
+
+## 📊 METRİKLER & KPI'LAR {#metrikler}
+
+### **MVP Metrikleri (İlk 3 Ay)**
+
+```javascript
+const mvpMetrics = {
+  acquisition: {
+    daily_signups: { target: 50, critical: 20 },
+    waitlist_conversion: { target: 0.30, critical: 0.15 }, // %30
+    referral_rate: { target: 0.20, critical: 0.10 }
+  },
+  
+  engagement: {
+    daily_active_users: { target: 200, critical: 100 },
+    sessions_per_user_per_week: { target: 4, critical: 2 },
+    session_completion_rate: { target: 0.85, critical: 0.70 }, // %85
+    average_session_rating: { target: 4.5, critical: 4.0 }
+  },
+  
+  retention: {
+    d1: { target: 0.60, critical: 0.40 }, // Day 1: %60
+    d7: { target: 0.35, critical: 0.20 }, // Day 7: %35
+    d30: { target: 0.20, critical: 0.10 } // Day 30: %20
+  },
+  
+  matching: {
+    average_matching_time: { target: 30, critical: 60 }, // seconds
+    matching_success_rate: { target: 0.90, critical: 0.75 }, // %90
+    no_show_rate: { target: 0.05, critical: 0.15 } // %5
+  },
+  
+  monetization: {
+    free_to_paid_conversion: { target: 0.05, critical: 0.02 }, // %5
+    monthly_recurring_revenue: { target: 500, critical: 200 }, // $500
+    average_revenue_per_user: { target: 2, critical: 1 } // $2
+  }
+};
+```
+
+---
+
+### **v1.5 Metrikleri (3-6 Ay)**
+
+```javascript
+const v1_5_metrics = {
+  acquisition: {
+    daily_signups: { target: 150, critical: 75 },
+    organic_vs_paid: { target: 0.70, critical: 0.50 } // %70 organic
+  },
+  
+  engagement: {
+    daily_active_users: { target: 800, critical: 400 },
+    video_mode_adoption: { target: 0.30, critical: 0.15 }, // %30 video kullanır
+    premium_feature_usage: { target: 0.50, critical: 0.25 }
+  },
+  
+  retention: {
+    d30: { target: 0.30, critical: 0.15 },
+    d90: { target: 0.15, critical: 0.08 }
+  },
+  
+  monetization: {
+    free_to_paid_conversion: { target: 0.08, critical: 0.04 }, // %8
+    monthly_recurring_revenue: { target: 2500, critical: 1000 }, // $2500
+    churn_rate: { target: 0.10, critical: 0.20 } // %10 monthly churn
+  },
+  
+  quality: {
+    average_trust_score: { target: 60, critical: 40 },
+    ban_rate: { target: 0.01, critical: 0.05 }, // %1
+    support_ticket_rate: { target: 0.05, critical: 0.10 } // %5
+  }
+};
+```
+
+---
+
+### **v2.0+ Metrikleri (6-12 Ay)**
+
+```javascript
+const v2_metrics = {
+  scale: {
+    daily_active_users: { target: 3000, critical: 1500 },
+    concurrent_sessions: { target: 200, critical: 100 }
+  },
+  
+  social: {
+    focus_lounge_usage: { target: 0.40, critical: 0.20 }, // %40 grup kullanır
+    accountability_partner_pairs: { target: 500, critical: 250 },
+    study_group_count: { target: 100, critical: 50 }
+  },
+  
+  monetization: {
+    monthly_recurring_revenue: { target: 10000, critical: 5000 }, // $10K
+    enterprise_accounts: { target: 5, critical: 2 },
+    lifetime_value: { target: 50, critical: 25 } // $50 LTV
+  },
+  
+  virality: {
+    viral_coefficient: { target: 1.2, critical: 1.0 }, // K-factor
+    nps_score: { target: 60, critical: 40 } // Net Promoter Score
+  }
+};
+```
+
+---
+
+### **Dashboard (PostHog + Custom)**
+
+```javascript
+// Analytics events to track
+
+const analyticsEvents = {
+  // User Journey
+  "user_signed_up": { provider, method },
+  "onboarding_completed": { steps_completed },
+  "first_session_started": { mode, duration },
+  "first_session_completed": { rating, goal_achieved },
+  
+  // Matching
+  "matching_started": { type, preferences },
+  "matching_completed": { time_elapsed, partner_id },
+  "matching_failed": { reason, fallback_action },
+  
+  // Session
+  "session_started": { mode, theme, music },
+  "session_paused": { elapsed_time },
+  "session_resumed": {},
+  "session_completed": { rating, feedback, goal_achieved },
+  "session_abandoned": { reason, elapsed_time },
+  
+  // Engagement
+  "theme_changed": { from, to },
+  "music_changed": { from, to },
+  "avatar_customized": { item_purchased },
+  "badge_earned": { badge_id, rarity },
+  "streak_extended": { current_streak },
+  "streak_broken": { lost_streak },
+  
+  // Monetization
+  "paywall_viewed": { feature },
+  "subscription_started": { plan, price },
+  "subscription_cancelled": { reason, tenure },
+  "referral_code_used": { referrer_id },
+  
+  // Social
+  "partner_favorited": { partner_id },
+  "study_group_joined": { group_id },
+  "inspiration_posted": { content_type },
+  
+  // Quality
+  "user_reported": { reason, reporter_id },
+  "no_show_recorded": { user_id },
+  "inactivity_detected": { duration }
+};
+```
+
+---
+
+## ⚠️ RİSK YÖNETİMİ {#riskler}
+
+### **Teknik Riskler**
+
+#### **1. Eşleşme Kuyruğu Sorunları**
+
+**Risk:** Gece 3'te kullanıcı yoksa eşleşme olmaz
+
+**Çözümler:**
+
+```javascript
+const matchingSolutions = {
+  solo_mode: {
+    enabled: true,
+    trigger: "no_match_in_60s",
+    benefits: [
+      "Streak kopmaz",
+      "Ücretsiz seans sayılır",
+      "Trust score etkilenmez"
+    ],
+    ui: "Eşleşme bulunamadı → Solo modda devam et"
+  },
+  
+  timezone_matching: {
+    algorithm: "UTC_based",
+    priority: "same_timezone_first",
+    fallback: "global_pool",
+    display: "Local time + Partner timezone"
+  },
+  
+  async_matching: {
+    enabled: true,
+    description: "Eşleşme beklerken başka şeyler yapabilir",
+    notification: "Eşleşme bulundu!" (push)
+  },
+  
+  bot_partners: {
+    enabled: false, // MVP'de yok
+    v2_consideration: "AI study partner (last resort)"
+  }
+};
+```
+
+---
+
+#### **2. Supabase Realtime Limitleri**
+
+**Risk:** Free tier 500 eşzamanlı bağlantı
+
+**Ölçekleme Planı:**
+
+```javascript
+const scalingPlan = {
+  free_tier: {
+    limit: 500,
+    sufficient_for: "250 concurrent sessions",
+    timeline: "İlk 3-6 ay"
+  },
+  
+  pro_tier: {
+    cost: "$25/mo",
+    limit: "Unlimited*", // Fair use policy
+    upgrade_trigger: ">300 concurrent sessions"
+  },
+  
+  optimization: {
+    connection_pooling: true,
+    throttling: "10 events/sec (already set)",
+    lazy_loading: "Sadece aktif seanslar connect"
+  },
+  
+  fallback: {
+    service: "Ably (alternative realtime)",
+    cost: "$29/mo",
+    reason: "If Supabase overloads"
+  }
+};
+```
+
+---
+
+#### **3. Video Call Maliyetleri (Daily.co)**
+
+**Risk:** Video mode çok kullanılırsa maliyet patlar
+
+**Maliyet Kontrolü:**
+
+```javascript
+const videoCostManagement = {
+  pricing: {
+    daily_co_free: "10K minutes/month", // ~66 saat
+    daily_co_scale: "$0.004/min", // $0.24/saat
+  },
+  
+  restrictions: {
+    free_users: "Video yok",
+    pro_users: "150 min/month", // 5dk * 30 seans
+    unlimited_tier: "$9.99/month" // Sınırsız video
+  },
+  
+  optimization: {
+    auto_quality: true, // Bandwidth'e göre 360p/720p
+    max_resolution: "720p", // 1080p yok (maliyet)
+    recording: false // Storage maliyet
+  },
+  
+  monthly_cost_estimate: {
+    100_pro_users: "15K min = $60",
+    1000_pro_users: "150K min = $600",
+    mitigation: "Çoğu avatar tercih eder (%70)"
+  }
+};
+```
+
+---
+
+### **İş Modeli Riskleri**
+
+#### **1. Fiyatlandırma Stratejisi**
+
+**Risk:** $2.99 çok ucuz, sürdürülebilir değil
+
+**Revize Fiyatlandırma:**
+
+```javascript
+const pricing = {
+  free: {
+    price: "$0",
+    features: [
+      "3 seans/gün",
+      "Avatar mode only",
+      "Basic themes (3)",
+      "Basic stats"
+    ],
+    limitations: [
+      "Video yok",
+      "AI music yok",
+      "Solo mode yok",
+      "Premium themes yok"
+    ]
+  },
+  
+  pro_monthly: {
+    price: "$4.99", // $2.99'dan $4.99'a
+    features: [
+      "Sınırsız seans",
+      "Video mode (150dk)",
+      "AI music",
+      "All themes (7+)",
+      "Solo mode",
+      "Advanced stats",
+      "Priority matching",
+      "Ad-free"
+    ],
+    target_conversion: "5%"
+  },
+  
+  pro_yearly: {
+    price: "$49.99", // $4.99 * 12 = $59.88, %17 indirim
+    features: "Pro monthly + lifetime badge",
+    target_conversion: "30% of pro users"
+  },
+  
+  unlimited: {
+    price: "$9.99",
+    features: [
+      "Pro + Sınırsız video",
+      "Custom themes",
+      "API access",
+      "White-label option"
+    ],
+    target: "Power users (%1)"
+  },
+  
+  // İndirimler
+  promotions: {
+    first_month: "$0.99", // İlk ay deneme
+    student: "$3.99", // Öğrenci indirimi
+    annual_sale: "$39.99" // Black Friday
+  }
+};
+```
+
+**Gelir Projeksiyonu (v1.5):**
+
+```
+1000 kullanıcı
+├─ 950 free (%95)
+├─ 40 pro monthly (%4)
+└─ 10 pro yearly (%1)
+
+Aylık gelir:
+= (40 * $4.99) + (10 * $49.99 / 12)
+= $199.60 + $41.66
+= $241.26
+
+Hedef: 3 ayda $1000 MRR
+Gereken: ~4000 kullanıcı, %5 conversion
+```
+
+---
+
+#### **2. Free Tier Abuse**
+
+**Risk:** Çoklu hesap açarak limiti aşma
+
+**Çözümler:**
+
+```javascript
+const abusePrevent ion = {
+  ip_limiting: {
+    max_accounts_per_ip: 1,
+    period: "24_hours",
+    exemption: "School/office IPs (manual whitelist)"
+  },
+  
+  device_fingerprinting: {
+    library: "FingerprintJS",
+    track: ["browser", "os", "screen_size", "timezone"],
+    action: "Flag multiple accounts from same device"
+  },
+  
+  email_verification: {
+    required: true,
+    blacklist: [
+      "tempmail.com",
+      "10minutemail.com",
+      "guerrillamail.com"
+      // ... 100+ temporary email domains
+    ]
+  },
+  
+  behavioral_analysis: {
+    red_flags: [
+      "Account created + immediate session",
+      "Same goal text across accounts",
+      "Matching patterns (always with specific user)"
+    ],
+    action: "Manual review + possible ban"
+  },
+  
+  captcha: {
+    trigger: [
+      "Signup",
+      "After 3 no-shows",
+      "Suspicious activity"
+    ],
+    provider: "hCaptcha (privacy-focused)"
+  }
+};
+```
+
+---
+
+#### **3. Churn (Kullanıcı Kaybı)**
+
+**Risk:** Kullanıcılar ilk haftada ayrılıyor
+
+**Retention Stratejileri:**
+
+```javascript
+const retentionTactics = {
+  onboarding: {
+    quality: "Interactive, 2 step max",
+    first_session_reward: "50 XP bonus",
+    personal_welcome: "Email from founder"
+  },
+  
+  early_engagement: {
+    day_1: "First session reminder (push)",
+    day_2: "Streak started! Keep it going",
+    day_7: "1 hafta tamamladın! 🎉 Badge",
+    day_30: "30 günlük rapor + AI insights"
+  },
+  
+  habit_formation: {
+    same_time_reminder: "Her gün 14:00'te çalışıyorsun, bugün de?",
+    streak_protection: "3 günlük streak kopmak üzere!",
+    accountability_partner: "Favori partnerın seni bekliyor"
+  },
+  
+  win_back: {
+    inactive_7_days: "Özledik! 1 seans hediye",
+    inactive_30_days: "Geri dön: 1 hafta Pro ücretsiz",
+    inactive_90_days: "Final email: Hesabın silinecek"
+  },
+  
+  feedback_loops: {
+    nps_survey: "Day 14, 30, 90",
+    exit_survey: "Subscription cancel anında",
+    feature_requests: "Upvote system (Canny.io)"
+  }
+};
+```
+
+---
+
+### **Operasyonel Riskler**
+
+#### **1. Moderasyon & Kötüye Kullanım**
+
+**Risk:** Taciz, spam, uygunsuz davranışlar
+
+**Moderasyon Sistemi:**
+
+```javascript
+const moderationSystem = {
+  auto_moderation: {
+    text_filter: {
+      enabled: true,
+      library: "bad-words-next",
+      languages: ["tr", "en"],
+      action: "Block + warning"
+    },
+    
+    image_moderation: {
+      provider: "AWS Rekognition",
+      checks: ["nudity", "violence", "explicit_content"],
+      action: "Auto-reject + flag"
+    }
+  },
+  
+  user_reports: {
+    categories: [
+      "Harassment",
+      "Spam",
+      "No-show",
+      "Inappropriate behavior",
+      "Other"
+    ],
+    
+    priority: {
+      high: ["Harassment", "Inappropriate"],
+      medium: ["Spam"],
+      low: ["No-show", "Other"]
+    },
+    
+    response_time: {
+      high: "< 1 hour",
+      medium: "< 24 hours",
+      low: "< 3 days"
+    }
+  },
+  
+  human_moderation: {
+    team_size: {
+      mvp: 0, // Founder handles
+      v1_5: 1, // Part-time moderator
+      v2_0: 2 // Full-time team
+    },
+    
+    tools: [
+      "Admin panel (custom)",
+      "Discord (community)",
+      "Intercom (support)"
+    ]
+  },
+  
+  penalties: {
+    first_offense: "Warning",
+    second_offense: "3-day ban",
+    third_offense: "30-day ban",
+    fourth_offense: "Permanent ban",
+    
+    appeal_process: {
+      email: "support@sessizortak.com",
+      review_time: "48 hours",
+      overturned_rate_target: "< 10%"
+    }
+  }
+};
+```
+
+---
+
+#### **2. Müşteri Desteği**
+
+**Risk:** Support ticket yoğunluğu, yanıt gecikmesi
+
+**Support Stratejisi:**
+
+```javascript
+const customerSupport = {
+  channels: {
+    in_app_chat: {
+      provider: "Intercom",
+      availability: "24/7 (bot) + business hours (human)",
+      response_target: "< 5 min (bot), < 2 hours (human)"
+    },
+    
+    email: {
+      address: "support@sessizortak.com",
+      response_target: "< 24 hours"
+    },
+    
+    faq: {
+      location: "Help Center (Notion public page)",
+      topics: [
+        "Nasıl eşleşirim?",
+        "Avatar nasıl özelleştirilir?",
+        "Trust score nedir?",
+        "Premium iptal nasıl yapılır?",
+        "Teknik sorunlar"
+      ]
+    },
+    
+    community: {
+      platform: "Discord",
+      roles: ["Admin", "Moderator", "Helper", "Member"],
+      channels: ["#help", "#bugs", "#features", "#general"]
+    }
+  },
+  
+  automation: {
+    chatbot: {
+      provider: "Intercom bot",
+      can_handle: [
+        "Password reset",
+        "Subscription status",
+        "Refund policy",
+        "Feature explanations"
+      ]
+    },
+    
+    macros: {
+      tool: "Intercom saved replies",
+      templates: [
+        "No-show complaint",
+        "Technical issue",
+        "Refund request",
+        "Feature request"
+      ]
+    }
+  },
+  
+  sla: {
+    critical: "< 1 hour", // Can't login, payment issue
+    high: "< 4 hours", // Matching broken
+    medium: "< 24 hours", // Feature not working
+    low: "< 3 days" // General questions
+  }
+};
+```
+
+---
+
+## 🎨 EK FİKİRLER & FUTURE VISION
+
+### **1. Focus Olympics (Seasonal Event)**
+
+```javascript
+const focusOlympics = {
+  frequency: "Quarterly", // 3 ayda bir
+  duration: "4 weeks",
+  
+  structure: {
+    week_1: "Qualifying round",
+    week_2: "Group stage",
+    week_3: "Playoffs",
+    week_4: "Finals"
+  },
+  
+  challenges: [
+    "Most total focus time",
+    "Longest streak maintained",
+    "Most study partners",
+    "Best session ratings",
+    "Team challenges (study groups)"
+  ],
+  
+  prizes: {
+    top_1: "1 year Pro + Altın badge + $100 gift card",
+    top_3: "6 months Pro + Gümüş/Bronz badge",
+    top_10: "3 months Pro + Special badge",
+    all_participants: "Olympics badge"
+  },
+  
+  engagement_boost: "+200% DAU during event"
+};
+```
+
+---
+
+### **2. Focus Passport (Global Themes)**
+
+```javascript
+const focusPassport = {
+  concept: "Dünya turuna çık, her hafta farklı şehir",
+  
+  weekly_rotation: [
+    { week: 1, city: "Tokyo", theme: "zen_library" },
+    { week: 2, city: "Paris", theme: "cafe_louvre" },
+    { week: 3, city: "Reykjavik", theme: "aurora_cabin" },
+    { week: 4, city: "Bali", theme: "beach_hut" },
+    // ... 48 more cities
+  ],
+  
+  progression: {
+    session_in_theme: "Passport stamp",
+    all_cities: "World Traveler badge (ultimate)",
+    favorite_city: "Can revisit anytime (unlock)"
+  },
+  
+  social: {
+    share: "I just studied in Tokyo! 🇯🇵",
+    leaderboard: "Most cities visited this year"
+  }
+};
+```
+
+---
+
+### **3. Voice Rooms (Ambient Sounds)**
+
+```javascript
+const voiceRooms = {
+  concept: "Sessiz ama arka planda gerçekçi ses",
+  
+  soundscapes: [
+    {
+      name: "Busy Cafe",
+      sounds: [
+        "distant_chatter",
+        "espresso_machine",
+        "cups_clinking",
+        "door_opening_occasionally"
+      ]
+    },
+    {
+      name: "Library Hall",
+      sounds: [
+        "page_turning",
+        "whispers",
+        "footsteps",
+        "pencil_scratching"
+      ]
+    },
+    {
+      name: "Open Office",
+      sounds: [
+        "keyboard_typing",
+        "mouse_clicks",
+        "phone_ringing_distant",
+        "printer"
+      ]
+    }
+  ],
+  
+  customization: {
+    volume_per_sound: true,
+    add_own_sounds: "Premium feature",
+    save_presets: true
+  },
+  
+  use_case: "Evde sessizlik rahatsız ediyorsa"
+};
+```
+
+---
+
+### **4. AI Study Coach (v3.0)**
+
+```javascript
+const aiCoach = {
+  features: {
+    pattern_recognition: {
+      analysis: [
+        "Best focus hours",
+        "Optimal session length",
+        "Theme preferences",
+        "Partner compatibility"
+      ],
+      
+      insights: [
+        "Sabahları daha odaklısın, 9-11 arası öncelik ver",
+        "Rainy Cafe temasında %20 daha verimlisin",
+        "50dk seans > 25dk senin için"
+      ]
+    },
+    
+    personalized_tips: {
+      frequency: "Weekly email + in-app",
+      examples: [
+        "Bu hafta 3 gün üst üste çalıştın, yarın mola ver",
+        "Trust score 85'e ulaştın, Trusted seviyesine 15 puan kaldı",
+        "Son 5 seansında telefon en çok dikkat dağıttı"
+      ]
+    },
+    
+    goal_setting: {
+      smart_goals: "AI suggests achievable goals",
+      reminders: "Hedefin bu hafta tamamlanmalı!",
+      adjustments: "Hedef çok ambitious, küçült?"
+    }
+  },
+  
+  technology: {
+    backend: "GPT-4 API (minimal usage)",
+    data: "User session history + preferences",
+    privacy: "All data anonymized, opt-in"
+  }
+};
+```
+
+---
+
+### **5. Notion/Todoist Integration (v2.5)**
+
+```javascript
+const integrations = {
+  notion: {
+    sync: "bidirectional",
+    features: [
+      "Daily goals → Notion tasks",
+      "Session notes → Notion page",
+      "Weekly report → Notion database"
+    ],
+    
+    setup: {
+      auth: "OAuth 2.0",
+      mapping: "User selects which database",
+      frequency: "Real-time"
+    }
+  },
+  
+  todoist: {
+    sync: "bidirectional",
+    features: [
+      "Today's tasks → Session goal",
+      "Completed tasks → Auto-check",
+      "Focus time → Todoist productivity chart"
+    ]
+  },
+  
+  google_calendar: {
+    sync: "export only",
+    features: [
+      "Scheduled sessions → Calendar event",
+      "Reminders",
+      "Recurring study blocks"
+    ]
+  },
+  
+  forest_app: {
+    concept: "Grow trees while studying",
+    integration: "Session time = Tree growth",
+    gamification: "Forest badge in Sessiz Ortak"
+  }
+};
+```
+
+---
+
+## ✅ FİNAL CHECKLIST & ACTION PLAN
+
+### **Şimdi Yapılacaklar (Bu Hafta)**
+
+- [ ] Bu dökümanı onaylayın ✅
+- [ ] MVP özellik listesini finalize edin
+- [ ] Teknoloji stack'i onayla (Supabase + Next.js)
+- [ ] Domain al: sessizortak.com
+- [ ] Landing page tasarımı başlat
+- [ ] Waitlist form ekle
+- [ ] Figma'da ilk 5 ekranı tasarla:
+  - [ ] Landing page
+  - [ ] Dashboard
+  - [ ] Quick Match
+  - [ ] Session Screen
+  - [ ] Session End
+
+### **Önümüzdeki 2 Hafta (MVP Dev)**
+
+- [ ] Supabase projesini setup et
+- [ ] Database schema'yı deploy et
+- [ ] Auth flow (Google OAuth)
+- [ ] Matching queue backend
+- [ ] Real-time presence (Supabase Realtime)
+- [ ] Frontend: Dashboard + Quick Match
+- [ ] Frontend: Session screen (timer + presence)
+- [ ] Deploy to Vercel (staging)
+
+### **3-4. Hafta (Beta Testing)**
+
+- [ ] 50 beta kullanıcı davet et
+- [ ] Bug fixing
+- [ ] UX iyileştirmeleri
+- [ ] Metrikleri izle (PostHog)
+- [ ] Feedback topla (Typeform)
+
+### **5-6. Hafta (Public Beta)**
+
+- [ ] Waitlist'ten 500 kişi davet
+- [ ] Referral sistemi aktif
+- [ ] Landing page v2 (testimonials)
+- [ ] SEO optimizasyonu
+- [ ] İlk blog postları (3 adet)
+
+### **7-8. Hafta (Product Hunt Launch)**
+
+- [ ] Product Hunt profil hazırla
+- [ ] Launch video (1dk)
+- [ ] Medya listesi (50 site/influencer)
+- [ ] Discord community başlat
+- [ ] Email sequence (onboarding)
+
+---
+
+## 🎯 BAŞARI KRİTERLERİ
+
+### **MVP Başarısı (3 Ay)**
+
+- ✅ 1000+ kayıtlı kullanıcı
+- ✅ 200+ günlük aktif kullanıcı
+- ✅ %30+ D7 retention
+- ✅ %85+ session completion rate
+- ✅ $500+ MRR
+- ✅ 4.5+ ortalama rating
+
+### **v1.5 Başarısı (6 Ay)**
+
+- ✅ 5000+ kullanıcı
+- ✅ 1000+ günlük aktif
+- ✅ %35+ D30 retention
+- ✅ $2500+ MRR
+- ✅ Product Hunt top 10
+- ✅ Medyada 5+ mention
+
+### **v2.0 Başarısı (12 Ay)**
+
+- ✅ 20K+ kullanıcı
+- ✅ 5000+ günlük aktif
+- ✅ $10K+ MRR
+- ✅ Break-even (profitable)
+- ✅ 10K+ Discord members
+- ✅ 5+ enterprise clients
+
+---
+
+## 📞 SONRAKI ADIMLAR
+
+1. **Bu dökümanı inceleyin** - Eklemek/çıkarmak istediğiniz var mı?
+2. **Öncelikleri belirleyin** - Hangi özellikler kesin olmalı?
+3. **İlk 5 ekranı seçin** - Tasarıma nereden başlamalıyız?
+4. **Bütçeyi netleştirin** - İlk 6 ay için kaç $ ayırabilirsiniz?
+5. **Timeline'ı onaylayın** - 2 ay MVP yetecek mi?
+
+---
+
+## 📚 KAYNAKLAR & İLHAM
+
+### **Benchmark Uygulamalar**
+
+1. **Focusmate** - Video body doubling
+2. **StudyStream** - Canlı yayın study rooms
+3. **Forest App** - Gamification done right
+4. **Centered** - AI flow state coach
+5. **Llama Life** - ADHD-friendly focus timer
+6. **Serene** - Website blocker + planner
+
+### **Öğrenme Kaynakları**
+
+- **Atomic Habits** (James Clear) - Habit formation
+- **Hooked** (Nir Eyal) - Habit-forming products
+- **The Mom Test** (Rob Fitzpatrick) - User interviews
+- **Traction** (Gabriel Weinberg) - Growth channels
+
+---
+
+**SON NOT:** Bu dokümantasyon **yaşayan bir doküman**dır. Kullanıcı feedback'i ve metrikler doğrultusunda güncellenmelidir. Her sprint sonunda revize edilmeli ve yeni learningslere göre optimize edilmelidir.
+
+**İyi şanslar! 🚀 Sessiz Ortak çok özel bir proje olacak.**
