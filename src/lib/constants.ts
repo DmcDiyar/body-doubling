@@ -22,6 +22,7 @@ export const DURATIONS = [
   { value: 15, label: '15 dk', description: 'Hızlı görev' },
   { value: 25, label: '25 dk', description: 'Klasik Pomodoro', recommended: true },
   { value: 50, label: '50 dk', description: 'Derin odak' },
+  { value: 90, label: '90 dk', description: 'Uzun maraton' },
 ] as const;
 
 // Trust score sınırları

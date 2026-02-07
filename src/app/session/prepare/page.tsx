@@ -7,6 +7,7 @@ import { useSessionStore } from '@/stores/session-store';
 import { FocusRitual } from '@/components/session';
 import { MatchBrokenModal } from '@/components/session/MatchBrokenModal';
 import { useMatchHeartbeat, markMatchReady, requeueAfterBreak } from '@/hooks/useMatchHeartbeat';
+import { logEvent, EVENTS } from '@/lib/analytics';
 import type { RitualResult } from '@/components/session';
 
 type Phase = 'ritual' | 'waiting' | 'starting';
@@ -115,6 +116,18 @@ function SessionPreparePage() {
             })
             .eq('session_id', sessionId)
             .eq('user_id', user.id);
+
+        // Log ritual analytics
+        if (result.completed) {
+            logEvent(EVENTS.RITUAL_COMPLETED, {
+                intent: result.intent,
+                duration_s: result.completedAt && result.startedAt
+                    ? Math.round((new Date(result.completedAt).getTime() - new Date(result.startedAt).getTime()) / 1000)
+                    : 80,
+            }, sessionId);
+        } else {
+            logEvent(EVENTS.RITUAL_INCOMPLETE, { step: 'force_close' }, sessionId);
+        }
 
         // If duo match, mark ready and wait for partner
         if (matchId) {

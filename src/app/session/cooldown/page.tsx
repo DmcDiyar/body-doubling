@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { MindfulCooldown } from '@/components/session';
+import { logEvent, EVENTS } from '@/lib/analytics';
 import type { CooldownResult } from '@/components/session';
 
 export default function SessionCooldownWrapper() {
@@ -91,6 +92,20 @@ function SessionCooldownPage() {
             .update({ metadata: updatedMetadata })
             .eq('session_id', sessionId)
             .eq('user_id', user.id);
+
+        // Apply skip penalty if cooldown was skipped
+        if (result.skipped) {
+            await supabase.rpc('handle_cooldown_skip', {
+                p_session_id: sessionId,
+                p_user_id: user.id,
+            });
+            logEvent(EVENTS.COOLDOWN_SKIPPED, { step: 'skip_button' }, sessionId);
+        } else {
+            logEvent(EVENTS.COOLDOWN_COMPLETED, {
+                mood: result.mood,
+                reflection: result.reflection,
+            }, sessionId);
+        }
 
         // Navigate to session end
         router.push(`/session/end?id=${sessionId}`);
