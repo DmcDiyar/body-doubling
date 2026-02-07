@@ -9,11 +9,18 @@ import { motion } from 'framer-motion';
 import { RehabBanner } from '@/components/trust/TrustComponents';
 import type { User, UserLimit } from '@/types/database';
 
+interface ActiveMatchInfo {
+  matchId: string;
+  sessionId: string;
+  state: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [dailyUsed, setDailyUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -92,6 +99,39 @@ export default function DashboardPage() {
         .maybeSingle();
 
       setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
+
+      // Check for active or broken matches (rejoin opportunity)
+      const { data: matchData } = await supabase
+        .from('matches')
+        .select('id, session_id, state, updated_at')
+        .or(`user_a_id.eq.${authUser.id},user_b_id.eq.${authUser.id}`)
+        .in('state', ['active', 'broken'])
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (matchData) {
+        if (matchData.state === 'active') {
+          // Still has an active session running
+          setActiveMatch({
+            matchId: matchData.id,
+            sessionId: matchData.session_id,
+            state: 'active',
+          });
+        } else if (matchData.state === 'broken') {
+          // Check 3-minute rejoin window
+          const brokenAt = new Date(matchData.updated_at).getTime();
+          const threeMinutes = 3 * 60 * 1000;
+          if (Date.now() - brokenAt < threeMinutes) {
+            setActiveMatch({
+              matchId: matchData.id,
+              sessionId: matchData.session_id,
+              state: 'broken',
+            });
+          }
+        }
+      }
+
       setIsLoading(false);
     }
 
@@ -106,6 +146,28 @@ export default function DashboardPage() {
     await supabase.auth.signOut();
     setUser(null);
     router.push('/auth');
+  };
+
+  const handleRejoin = async () => {
+    if (!activeMatch) return;
+
+    if (activeMatch.state === 'active') {
+      // Session still running, navigate directly
+      router.push(`/session/active?id=${activeMatch.sessionId}`);
+    } else if (activeMatch.state === 'broken') {
+      // Try rejoin via RPC
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('rejoin_match', {
+        p_match_id: activeMatch.matchId,
+      });
+
+      if (error || !(data as { success: boolean })?.success) {
+        setActiveMatch(null);
+        return;
+      }
+
+      router.push(`/session/active?id=${activeMatch.sessionId}`);
+    }
   };
 
   if (isLoading || !user) {
@@ -196,6 +258,37 @@ export default function DashboardPage() {
             <p className="text-[#ffcb77] text-sm mt-1">
               {user.current_streak} günlük seri! Devam et.
             </p>
+          </motion.div>
+        )}
+
+        {/* Active match rejoin banner */}
+        {activeMatch && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{activeMatch.state === 'active' ? '⏱️' : '🔄'}</span>
+              <div className="flex-1">
+                <p className="text-white text-sm font-medium">
+                  {activeMatch.state === 'active'
+                    ? 'Devam eden seansın var!'
+                    : 'Eşleşmeye geri dönebilirsin!'}
+                </p>
+                <p className="text-gray-400 text-xs">
+                  {activeMatch.state === 'active'
+                    ? 'Aktif bir seans devam ediyor.'
+                    : 'Eşin hala bekliyor olabilir.'}
+                </p>
+              </div>
+              <button
+                onClick={handleRejoin}
+                className="bg-[#ffcb77] text-[#1a1a2e] px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap"
+              >
+                Geri Dön
+              </button>
+            </div>
           </motion.div>
         )}
 

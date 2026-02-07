@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-client';
 import { useSessionStore } from '@/stores/session-store';
 import { AVATARS, COPY, HEARTBEAT_INTERVAL_MS, THEMES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMatchHeartbeat, breakMatch } from '@/hooks/useMatchHeartbeat';
 import type { Session, SessionParticipant, RealtimePresence, PresenceStatus } from '@/types/database';
 
 export default function SessionActiveWrapper() {
@@ -46,6 +47,7 @@ function SessionActivePage() {
   const [myPresenceStatus, setMyPresenceStatus] = useState<PresenceStatus>('active');
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [matchId, setMatchId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -53,6 +55,7 @@ function SessionActivePage() {
   const presenceChannelRef = useRef<any>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completionCalledRef = useRef(false);
+  const authTokenRef = useRef<string | null>(null);
 
   // ---------- Load session data ----------
   useEffect(() => {
@@ -94,7 +97,20 @@ function SessionActivePage() {
           .single();
 
         if (partnerPart) setPartnerParticipation(partnerPart as SessionParticipant);
+
+        // Fetch match ID for heartbeat
+        const { data: matchData } = await supabase
+          .from('matches')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (matchData) setMatchId(matchData.id);
       }
+
+      // Store auth token for beforeunload handler
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      authTokenRef.current = authSession?.access_token ?? null;
 
       setLoading(false);
     };
@@ -166,6 +182,20 @@ function SessionActivePage() {
       }
     }
   }, [session, myParticipation, partnerParticipation, loading, startSession]);
+
+  // ---------- Match heartbeat (duo) — detects partner disconnect via DB ----------
+  const handleMatchBroken = useCallback(() => {
+    if (!continuingAlone) {
+      setPartnerLeft(true);
+    }
+  }, [continuingAlone]);
+
+  useMatchHeartbeat({
+    matchId,
+    intervalMs: 5000,
+    onMatchBroken: handleMatchBroken,
+    enabled: !!matchId && session?.status === 'active',
+  });
 
   // ---------- Timer ----------
   useEffect(() => {
@@ -350,6 +380,34 @@ function SessionActivePage() {
     }
   }, [session?.status, sessionId, router, reset]);
 
+  // ---------- beforeunload: best-effort break_match on tab close ----------
+  useEffect(() => {
+    if (!matchId || session?.mode !== 'duo') return;
+
+    const handleBeforeUnload = () => {
+      const token = authTokenRef.current;
+      if (!token) return;
+
+      try {
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/break_match`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ p_match_id: matchId, p_reason: 'tab_closed' }),
+          keepalive: true,
+        });
+      } catch {
+        // Best effort — heartbeat timeout (15s) is the fallback
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [matchId, session?.mode]);
+
   // ---------- Partner left detection (duo) ----------
   useEffect(() => {
     if (session?.mode === 'duo' && partnerParticipation?.status === 'left_early' && !continuingAlone) {
@@ -377,12 +435,22 @@ function SessionActivePage() {
         p_session_id: sessionId,
         p_user_id: userId,
       });
+
+      // Also complete the match record
+      if (matchId) {
+        await supabase.rpc('complete_match', { p_match_id: matchId });
+      }
     }
   };
 
   const handleEarlyExit = async () => {
     if (!sessionId || !userId || !session) return;
     const supabase = createClient();
+
+    // Break match first (so partner gets notified via realtime)
+    if (matchId) {
+      await breakMatch(matchId, 'user_exit');
+    }
 
     // Calculate elapsed time
     const totalDuration = session.duration;
