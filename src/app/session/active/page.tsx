@@ -380,7 +380,7 @@ function SessionActivePage() {
     }
   }, [session?.status, sessionId, router, reset]);
 
-  // ---------- beforeunload: best-effort break_match on tab close ----------
+  // ---------- beforeunload: mark user as left on tab close ----------
   useEffect(() => {
     if (!matchId || session?.mode !== 'duo') return;
 
@@ -388,15 +388,16 @@ function SessionActivePage() {
       const token = authTokenRef.current;
       if (!token) return;
 
+      // Use mark_user_left which sets heartbeat to old and breaks match
       try {
-        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/break_match`, {
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/mark_user_left`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ p_match_id: matchId, p_reason: 'tab_closed' }),
+          body: JSON.stringify({ p_match_id: matchId }),
           keepalive: true,
         });
       } catch {

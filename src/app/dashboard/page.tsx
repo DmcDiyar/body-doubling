@@ -100,36 +100,15 @@ export default function DashboardPage() {
 
       setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
 
-      // Check for active or broken matches (rejoin opportunity)
-      const { data: matchData } = await supabase
-        .from('matches')
-        .select('id, session_id, state, updated_at')
-        .or(`user_a_id.eq.${authUser.id},user_b_id.eq.${authUser.id}`)
-        .in('state', ['active', 'broken'])
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Check for active or broken matches using RPC (validates heartbeat recency)
+      const { data: activeMatchResult } = await supabase.rpc('get_active_match');
 
-      if (matchData) {
-        if (matchData.state === 'active') {
-          // Still has an active session running
-          setActiveMatch({
-            matchId: matchData.id,
-            sessionId: matchData.session_id,
-            state: 'active',
-          });
-        } else if (matchData.state === 'broken') {
-          // Check 3-minute rejoin window
-          const brokenAt = new Date(matchData.updated_at).getTime();
-          const threeMinutes = 3 * 60 * 1000;
-          if (Date.now() - brokenAt < threeMinutes) {
-            setActiveMatch({
-              matchId: matchData.id,
-              sessionId: matchData.session_id,
-              state: 'broken',
-            });
-          }
-        }
+      if (activeMatchResult && activeMatchResult.has_active) {
+        setActiveMatch({
+          matchId: activeMatchResult.match_id,
+          sessionId: activeMatchResult.session_id,
+          state: activeMatchResult.can_rejoin ? 'broken' : 'active',
+        });
       }
 
       setIsLoading(false);
