@@ -131,10 +131,10 @@ export default function DashboardPage() {
     if (!activeMatch) return;
 
     if (activeMatch.state === 'active') {
-      // Session still running, navigate directly
       router.push(`/session/active?id=${activeMatch.sessionId}`);
+    } else if (activeMatch.state === 'preparing') {
+      router.push(`/session/prepare?id=${activeMatch.sessionId}`);
     } else if (activeMatch.state === 'broken') {
-      // Try rejoin via RPC
       const supabase = createClient();
       const { data, error } = await supabase.rpc('rejoin_match', {
         p_match_id: activeMatch.matchId,
@@ -147,6 +147,23 @@ export default function DashboardPage() {
 
       router.push(`/session/active?id=${activeMatch.sessionId}`);
     }
+  };
+
+  const handleDismissMatch = async () => {
+    if (!activeMatch) return;
+    const supabase = createClient();
+
+    // Complete the match so it's no longer found
+    await supabase.rpc('complete_match', { p_match_id: activeMatch.matchId });
+
+    // Abandon the session
+    await supabase
+      .from('sessions')
+      .update({ status: 'abandoned', ended_at: new Date().toISOString() })
+      .eq('id', activeMatch.sessionId)
+      .in('status', ['waiting', 'preparing', 'active']);
+
+    setActiveMatch(null);
   };
 
   if (isLoading || !user) {
@@ -261,12 +278,20 @@ export default function DashboardPage() {
                     : 'Eşin hala bekliyor olabilir.'}
                 </p>
               </div>
-              <button
-                onClick={handleRejoin}
-                className="bg-[#ffcb77] text-[#1a1a2e] px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap"
-              >
-                Geri Dön
-              </button>
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={handleRejoin}
+                  className="bg-[#ffcb77] text-[#1a1a2e] px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap"
+                >
+                  Geri Dön
+                </button>
+                <button
+                  onClick={handleDismissMatch}
+                  className="text-gray-500 text-xs hover:text-gray-300 transition-colors"
+                >
+                  Kapat
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

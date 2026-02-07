@@ -499,6 +499,11 @@ function SessionActivePage() {
     // Queue cleanup
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
+    // Complete match first (so it doesn't stay as broken/active ghost)
+    if (matchId) {
+      await supabase.rpc('complete_match', { p_match_id: matchId });
+    }
+
     // Mark as abandoned (NOT completed - no trust reward)
     await supabase
       .from('session_participants')
