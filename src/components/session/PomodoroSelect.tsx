@@ -65,10 +65,10 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
                     className="text-center mb-8"
                 >
                     <h1 className="text-2xl font-bold text-white mb-2">
-                        Bu seans ne kadar sÃ¼recek?
+                        Bu seans ne kadar sürecek?
                     </h1>
                     <p className="text-gray-400 text-sm">
-                        SÃ¼reyi seÃ§.<br />
+                        Süreyi seç.<br />
                         Bitene kadar orada kal.
                     </p>
                 </motion.div>
