@@ -17,8 +17,8 @@ interface FocusRitualProps {
 }
 
 const INTENT_OPTIONS: { value: Intent; label: string }[] = [
-    { value: 'finish', label: 'Bir şeyi bitirmek' },
-    { value: 'start', label: 'Düşünmeden başlamak' },
+    { value: 'finish', label: 'Bir seyi bitirmek' },
+    { value: 'start', label: 'D�s�nmeden baslamak' },
     { value: 'calm', label: 'Sakin kalmak' },
     { value: 'presence', label: 'Sadece orada olmak' },
 ];
@@ -128,7 +128,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             </h2>
                             <p className="text-gray-400">
                                 Nefesini fark et.<br />
-                                Şu an buradasın.
+                                Su an buradasin.
                             </p>
                         </motion.div>
                     )}
@@ -144,7 +144,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Bu seans için niyetin ne?
+                                Bu seans i�in niyetin ne?
                             </h2>
 
                             <div className="space-y-3 mb-6">
@@ -169,7 +169,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             </div>
 
                             <p className="text-gray-500 text-sm">
-                                Seç ve devam et.
+                                Se� ve devam et.
                             </p>
                             <p className="text-gray-600 text-xs mt-2">{timeLeft}s</p>
                         </motion.div>
@@ -186,13 +186,13 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-2">
-                                Omuzlarını gevşet.
+                                Omuzlarini gevset.
                             </h2>
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Çeneni bırak.
+                                �eneni birak.
                             </h2>
                             <p className="text-gray-400 text-lg">
-                                Hazırsın.
+                                Hazirsin.
                             </p>
                         </motion.div>
                     )}
@@ -208,7 +208,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-8">
-                                Seans başlamak üzere.
+                                Seans baslamak �zere.
                             </h2>
 
                             <motion.button
@@ -217,7 +217,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                                 onClick={handleStartSession}
                                 className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-4 rounded-xl text-lg mb-4"
                             >
-                                Başla
+                                Basla
                             </motion.button>
 
                             <p className="text-gray-500 text-sm">{timeLeft}s</p>
@@ -230,3 +230,4 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
 }
 
 export type { RitualResult, Intent };
+

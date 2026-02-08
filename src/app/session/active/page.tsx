@@ -71,7 +71,7 @@ function SessionActivePage() {
       if (!user) { router.push('/auth'); return; }
       setUserId(user.id);
 
-      // Session verisini çek
+      // Session verisini �ek
       const { data: sessionData } = await supabase
         .from('sessions')
         .select('*')
@@ -81,7 +81,7 @@ function SessionActivePage() {
       if (!sessionData) { router.push('/dashboard'); return; }
       setSession(sessionData as Session);
 
-      // Kendi participation'ımızı çek
+      // Kendi participation'imizi �ek
       const { data: myPart } = await supabase
         .from('session_participants')
         .select('*')
@@ -141,7 +141,7 @@ function SessionActivePage() {
     const supabase = createClient();
     const now = new Date().toISOString();
 
-    // Session'ı active yap (maybeSingle: zaten active ise 0 satır döner, hata vermez)
+    // Session'i active yap (maybeSingle: zaten active ise 0 satir d�ner, hata vermez)
     const { data: updatedSession } = await supabase
       .from('sessions')
       .update({ status: 'active', started_at: now })
@@ -153,7 +153,7 @@ function SessionActivePage() {
     if (updatedSession) {
       setSession(updatedSession as Session);
     } else {
-      // Zaten active olmuş olabilir — güncel halini çek
+      // Zaten active olmus olabilir — g�ncel halini �ek
       const { data: currentSession } = await supabase
         .from('sessions')
         .select('*')
@@ -162,7 +162,7 @@ function SessionActivePage() {
       if (currentSession) setSession(currentSession as Session);
     }
 
-    // Participation'ı active yap
+    // Participation'i active yap
     const { data: updatedPart } = await supabase
       .from('session_participants')
       .update({ status: 'active', joined_at: now })
@@ -175,7 +175,7 @@ function SessionActivePage() {
     if (updatedPart) {
       setMyParticipation(updatedPart as SessionParticipant);
     } else {
-      // Zaten active — güncel halini çek
+      // Zaten active — g�ncel halini �ek
       const { data: currentPart } = await supabase
         .from('session_participants')
         .select('*')
@@ -191,7 +191,7 @@ function SessionActivePage() {
     if (!session || !myParticipation || loading) return;
 
     if (session.status === 'waiting') {
-      // Solo mode → hemen başla, Duo → partner da ready ise başla
+      // Solo mode → hemen basla, Duo → partner da ready ise basla
       if (session.mode === 'solo') {
         startSession();
       } else if (partnerParticipation) {
@@ -227,7 +227,7 @@ function SessionActivePage() {
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
-        // Süre doldu → interval temizle, complete çağır (bir kez)
+        // S�re doldu → interval temizle, complete �agir (bir kez)
         if (timerRef.current) clearInterval(timerRef.current);
         setTimerRunning(false);
         handleSessionComplete();
@@ -256,7 +256,7 @@ function SessionActivePage() {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        // Partner'ı bul
+        // Partner'i bul
         for (const key of Object.keys(state)) {
           if (key !== userId) {
             const presence = state[key]?.[0] as unknown as RealtimePresence | undefined;
@@ -271,7 +271,7 @@ function SessionActivePage() {
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          // Kendi presence'ımızı gönder
+          // Kendi presence'imizi g�nder
           const { data: myUser } = await supabase
             .from('users')
             .select('avatar_id, name')
@@ -291,7 +291,7 @@ function SessionActivePage() {
 
     presenceChannelRef.current = channel;
 
-    // Heartbeat interval — presence durumunu güncelle
+    // Heartbeat interval — presence durumunu g�ncelle
     heartbeatRef.current = setInterval(() => {
       if (presenceChannelRef.current) {
         presenceChannelRef.current.track({
@@ -387,7 +387,7 @@ function SessionActivePage() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
-  // ---------- Session tamamlandığında yönlendir ----------
+  // ---------- Session tamamlandiginda y�nlendir ----------
   useEffect(() => {
     if (session?.status === 'completed') {
       router.push(`/session/cooldown?id=${sessionId}`);
@@ -487,7 +487,7 @@ function SessionActivePage() {
     // Queue cleanup
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
-    // RPC ile erken çıkışı işle (trust penalty)
+    // RPC ile erken �ikisi isle (trust penalty)
     await supabase.rpc('handle_early_exit', {
       p_session_id: sessionId,
       p_user_id: userId,
@@ -508,7 +508,7 @@ function SessionActivePage() {
   };
 
   // ---------- Solo/safe exit (no trust penalty, but no reward either) ----------
-  // Solo mode erken çıkışı: trust cezası yok, ama ödül de yok
+  // Solo mode erken �ikisi: trust cezasi yok, ama �d�l de yok
   const handleSoloExit = async () => {
     if (!sessionId || !userId) return;
     const supabase = createClient();
@@ -689,8 +689,8 @@ function SessionActivePage() {
         <div className="flex items-center gap-2 mb-12">
           <span className={`w-2 h-2 rounded-full ${getPartnerStatusColor(myPresenceStatus)}`} />
           <span className="text-gray-400 text-xs">
-            {myPresenceStatus === 'active' ? 'Odaklanıyorsun' :
-              myPresenceStatus === 'idle' ? 'Düşünüyorsun' : 'Uzaktasın'}
+            {myPresenceStatus === 'active' ? 'Odaklaniyorsun' :
+              myPresenceStatus === 'idle' ? 'D�s�n�yorsun' : 'Uzaktasin'}
           </span>
         </div>
 
@@ -701,14 +701,14 @@ function SessionActivePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center bg-white/5 rounded-2xl p-6"
           >
-            <p className="text-white text-sm mb-1">Ortağın ayrıldı</p>
+            <p className="text-white text-sm mb-1">Ortagin ayrildi</p>
             <p className="text-gray-500 text-xs mb-4">Devam edebilir veya bitirebilirsin.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => { setPartnerLeft(false); setContinuingAlone(true); }}
                 className="flex-1 py-2 px-4 rounded-xl bg-[#ffcb77]/20 text-[#ffcb77] text-sm hover:bg-[#ffcb77]/30 transition-colors"
               >
-                Tek başıma devam et
+                Tek basima devam et
               </button>
               <button
                 onClick={handleSoloExit}
@@ -765,7 +765,7 @@ function SessionActivePage() {
                     onClick={handleEarlyExit}
                     className="flex-1 py-2 px-4 rounded-xl bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors"
                   >
-                    Ayrıl
+                    Ayril
                   </button>
                 </div>
               </motion.div>
@@ -803,3 +803,4 @@ function SessionActivePage() {
     </div>
   );
 }
+

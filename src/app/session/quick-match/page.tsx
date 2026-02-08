@@ -95,15 +95,15 @@ export default function QuickMatchPage() {
       .single();
 
     if (!profile || (profile as User).trust_score < TRUST.SOLO_ONLY_THRESHOLD) {
-      // Trust çok düşük, sadece solo
+      // Trust �ok d�s�k, sadece solo
       handleStartSolo(authUser.id);
       return;
     }
 
     setPhase('matching');
 
-    // Kuyruğa ekle - CHECK FIRST pattern (409 Conflict fix)
-    // Önce kullanıcının kuyrukta bekleyen kaydı var mı kontrol et
+    // Kuyruga ekle - CHECK FIRST pattern (409 Conflict fix)
+    // �nce kullanicinin kuyrukta bekleyen kaydi var mi kontrol et
     const priority = (profile as User).trust_score >= TRUST.HIGH_PRIORITY_THRESHOLD ? 2 :
       (profile as User).trust_score >= TRUST.LOW_PRIORITY_THRESHOLD ? 1 : 0;
 
@@ -114,16 +114,16 @@ export default function QuickMatchPage() {
       .eq('status', 'waiting')
       .maybeSingle();
 
-    // Eğer zaten bekleyen kayıt varsa, yeni insert yapma
-    // Sadece kayıt yoksa veya başka status'teyse insert yap
+    // Eger zaten bekleyen kayit varsa, yeni insert yapma
+    // Sadece kayit yoksa veya baska status'teyse insert yap
     if (!existingQueue) {
-      // Önce eski kayıtları temizle (expired, cancelled, matched olabilir)
+      // �nce eski kayitlari temizle (expired, cancelled, matched olabilir)
       await supabase
         .from('matching_queue')
         .delete()
         .eq('user_id', authUser.id);
 
-      // Yeni kayıt ekle
+      // Yeni kayit ekle
       await supabase.from('matching_queue').insert({
         user_id: authUser.id,
         duration,
@@ -134,7 +134,7 @@ export default function QuickMatchPage() {
       });
     }
 
-    // Eşleşme dene (RPC)
+    // Eslesme dene (RPC)
     const { data: sessionId } = await supabase.rpc('find_match', {
       p_user_id: authUser.id,
       p_duration: duration,
@@ -142,7 +142,7 @@ export default function QuickMatchPage() {
     });
 
     if (sessionId) {
-      // Eşleşme bulundu!
+      // Eslesme bulundu!
       await loadSession(sessionId as string, authUser.id);
       setPhase('found');
 
@@ -155,14 +155,14 @@ export default function QuickMatchPage() {
 
       const matchId = matchData?.id || '';
 
-      // 3sn sonra prepare ekranına git
+      // 3sn sonra prepare ekranina git
       setTimeout(() => {
         router.push(`/session/prepare?id=${sessionId}&matchId=${matchId}&duration=${duration}`);
       }, 3000);
       return;
     }
 
-    // Eşleşme bulunamadı, realtime dinle
+    // Eslesme bulunamadi, realtime dinle
     const channel = supabase
       .channel('matching')
       .on(
@@ -201,7 +201,7 @@ export default function QuickMatchPage() {
         if (prev <= 1) {
           clearInterval(interval);
           channel.unsubscribe();
-          // Kuyruktan çık
+          // Kuyruktan �ik
           supabase.from('matching_queue')
             .update({ status: 'expired' })
             .eq('user_id', authUser.id)
@@ -243,7 +243,7 @@ export default function QuickMatchPage() {
     }
     if (!userId) return;
 
-    // Solo session oluştur
+    // Solo session olustur
     const { data: session } = await supabase
       .from('sessions')
       .insert({
@@ -286,10 +286,10 @@ export default function QuickMatchPage() {
                 ← Dashboard
               </button>
 
-              <h2 className="text-xl font-bold text-white mb-6">Hızlı Eşleşme</h2>
+              <h2 className="text-xl font-bold text-white mb-6">Hizli Eslesme</h2>
 
-              {/* Süre seçimi */}
-              <p className="text-gray-400 text-sm mb-3">Kaç dakika çalışacaksın?</p>
+              {/* S�re se�imi */}
+              <p className="text-gray-400 text-sm mb-3">Ka� dakika �alisacaksin?</p>
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {DURATIONS.map((d) => (
                   <button
@@ -309,7 +309,7 @@ export default function QuickMatchPage() {
                 ))}
               </div>
 
-              {/* Tema seçimi */}
+              {/* Tema se�imi */}
               <p className="text-gray-400 text-sm mb-3">Tema</p>
               <div className="flex flex-col gap-2 mb-8">
                 {THEMES.map((t) => (
@@ -337,7 +337,7 @@ export default function QuickMatchPage() {
                 onClick={handleStartMatching}
                 className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-4 rounded-2xl text-lg"
               >
-                Eşleş
+                Esles
               </motion.button>
             </motion.div>
           )}
@@ -400,7 +400,7 @@ export default function QuickMatchPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-xl">💡</span>
                   <div>
-                    <p className="text-[#ffcb77] text-xs font-semibold mb-1">Bilgin var mıydı?</p>
+                    <p className="text-[#ffcb77] text-xs font-semibold mb-1">Bilgin var miydi?</p>
                     <p className="text-white/80 text-sm">{funFact}</p>
                   </div>
                 </div>
@@ -413,7 +413,7 @@ export default function QuickMatchPage() {
               {queueCount > 0 && (
                 <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mb-4">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>{queueCount} kişi şu an bekliyor</span>
+                  <span>{queueCount} kisi su an bekliyor</span>
                 </div>
               )}
 
@@ -437,7 +437,7 @@ export default function QuickMatchPage() {
                 {COPY.MATCHING_SOLO}
               </button>
               <p className="text-gray-600 text-xs mt-2">
-                (İsterseniz hemen)
+                (Isterseniz hemen)
               </p>
             </motion.div>
           )}
@@ -462,7 +462,7 @@ export default function QuickMatchPage() {
               <h2 className="text-2xl font-bold text-white mb-2">
                 {COPY.MATCHING_FOUND}
               </h2>
-              <p className="text-gray-400">Seans başlıyor...</p>
+              <p className="text-gray-400">Seans basliyor...</p>
             </motion.div>
           )}
 
@@ -500,7 +500,7 @@ export default function QuickMatchPage() {
                   onClick={() => router.push('/dashboard')}
                   className="text-gray-600 hover:text-gray-400 text-sm"
                 >
-                  Vazgeç
+                  Vazge�
                 </button>
               </div>
             </motion.div>
@@ -510,3 +510,4 @@ export default function QuickMatchPage() {
     </div>
   );
 }
+

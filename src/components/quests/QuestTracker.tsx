@@ -40,7 +40,7 @@ export function QuestTracker({ dailyQuest, weeklyQuest }: QuestTrackerProps) {
                                 ? dailyInfo.title
                                 : weeklyInfo && !weeklyQuest?.completed
                                     ? weeklyInfo.title
-                                    : 'GÃ¶revler'}
+                                    : 'Görevler'}
                         </span>
                         {activeDailyProgress && !dailyQuest?.completed && (
                             <span className="text-xs text-[#ffcb77] font-medium">{activeDailyProgress}</span>
@@ -58,7 +58,7 @@ export function QuestTracker({ dailyQuest, weeklyQuest }: QuestTrackerProps) {
                         className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4"
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <p className="text-gray-500 text-xs uppercase tracking-wide">GÃ¶revler</p>
+                            <p className="text-gray-500 text-xs uppercase tracking-wide">Görevler</p>
                             <button
                                 onClick={() => setExpanded(false)}
                                 className="text-gray-500 text-xs hover:text-gray-300"
@@ -122,3 +122,4 @@ export function QuestTracker({ dailyQuest, weeklyQuest }: QuestTrackerProps) {
         </div>
     );
 }
+

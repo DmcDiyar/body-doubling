@@ -79,7 +79,7 @@ function SessionEndPage() {
         if (pData) setMyPart(pData as SessionParticipant);
       }
 
-      // User profile (güncel XP, streak, trust vs.)
+      // User profile (g�ncel XP, streak, trust vs.)
       const { data: userData } = await supabase
         .from('users')
         .select('*')
@@ -221,7 +221,7 @@ function SessionEndPage() {
                 onClick={handleDone}
                 className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl text-lg"
               >
-                Dashboard&apos;a Dön
+                Dashboard&apos;a D�n
               </button>
             </motion.div>
           </motion.div>
@@ -260,7 +260,7 @@ function SessionEndPage() {
                 transition={{ delay: 0.5 }}
                 className="text-gray-400 text-sm"
               >
-                {sessionData?.duration} dakika tamamlandı
+                {sessionData?.duration} dakika tamamlandi
               </motion.p>
             </motion.div>
 
@@ -293,7 +293,7 @@ function SessionEndPage() {
                   }`}>
                   {(results?.trust_change ?? 0) >= 0 ? '+' : ''}{results?.trust_change ?? 0}
                 </p>
-                <p className="text-gray-500 text-xs mt-1">Güven</p>
+                <p className="text-gray-500 text-xs mt-1">G�ven</p>
               </div>
             </motion.div>
 
@@ -328,7 +328,7 @@ function SessionEndPage() {
                 transition={{ delay: 0.65 }}
                 className="mb-8 space-y-3"
               >
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Görevler</p>
+                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">G�revler</p>
                 <DailyQuestCard quest={dailyQuest} />
                 <WeeklyQuestPanel quest={weeklyQuest} />
               </motion.div>
@@ -366,11 +366,11 @@ function SessionEndPage() {
                 {/* Rating emojis with labels */}
                 <div className="flex justify-center gap-2 mb-3">
                   {[
-                    { star: 1, emoji: '😫', label: 'Kötü', trust: -5 },
+                    { star: 1, emoji: '😫', label: 'K�t�', trust: -5 },
                     { star: 2, emoji: '😐', label: 'Sorunlu', trust: -2 },
-                    { star: 3, emoji: '🙂', label: 'İyi', trust: 0 },
-                    { star: 4, emoji: '😊', label: 'Çok iyi', trust: 2 },
-                    { star: 5, emoji: '🤩', label: 'Mükemmel', trust: 5 },
+                    { star: 3, emoji: '🙂', label: 'Iyi', trust: 0 },
+                    { star: 4, emoji: '😊', label: '�ok iyi', trust: 2 },
+                    { star: 5, emoji: '🤩', label: 'M�kemmel', trust: 5 },
                   ].map(({ star, emoji, label }) => (
                     <motion.button
                       key={star}
@@ -400,12 +400,12 @@ function SessionEndPage() {
                       className="bg-white/5 rounded-lg p-3 mt-3"
                     >
                       <p className="text-gray-400 text-sm">
-                        Teşekkürler! Partner&apos;ın
+                        Tesekk�rler! Partner&apos;in
                         <span className={rating >= 4 ? 'text-green-400' : rating <= 2 ? 'text-red-400' : 'text-gray-400'}>
                           {rating >= 4 && ' +'}
                           {rating === 5 ? '5' : rating === 4 ? '2' : rating === 2 ? '-2' : rating === 1 ? '-5' : '0'}
                         </span>
-                        {' '}güven puanı {rating >= 3 ? 'kazandı' : 'kaybetti'}.
+                        {' '}g�ven puani {rating >= 3 ? 'kazandi' : 'kaybetti'}.
                       </p>
                     </motion.div>
                   )}
@@ -441,4 +441,5 @@ function SessionEndPage() {
     </div>
   );
 }
+
 

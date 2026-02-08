@@ -18,10 +18,11 @@ export async function createServerSupabaseClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Server Component'te set yapılamaz, middleware halleder
+            // Server Component'te set yapilamaz, middleware halleder
           }
         },
       },
     }
   );
 }
+

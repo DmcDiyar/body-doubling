@@ -87,7 +87,7 @@ export function AnimatedTrustCounter({
                             }`}
                     >
                         <span className="text-2xl">{isPositive ? '📈' : '📉'}</span>
-                        {isPositive ? '+' : ''}{change} Güven Puanı
+                        {isPositive ? '+' : ''}{change} G�ven Puani
                     </span>
                 </motion.div>
             )}
@@ -134,25 +134,25 @@ export function TrustChangeSummary({
         switch (eventType) {
             case 'completed':
                 return {
-                    title: 'Seans Tamamlandı! 🎉',
-                    subtitle: 'Harika iş çıkardın.',
+                    title: 'Seans Tamamlandi! 🎉',
+                    subtitle: 'Harika is �ikardin.',
                     emoji: '✨',
                 };
             case 'solo_completed':
                 return {
-                    title: 'Solo Seans Tamamlandı!',
+                    title: 'Solo Seans Tamamlandi!',
                     subtitle: 'Rehabilitasyon ilerliyorsun.',
                     emoji: '🧘',
                 };
             case 'early_exit':
                 const severity = elapsedPercent && elapsedPercent < 20
-                    ? 'Çok erken ayrıldın'
+                    ? '�ok erken ayrildin'
                     : elapsedPercent && elapsedPercent < 60
-                        ? 'Erken ayrıldın'
-                        : 'Neredeyse tamamlamıştın';
+                        ? 'Erken ayrildin'
+                        : 'Neredeyse tamamlamistin';
                 return {
                     title: severity,
-                    subtitle: 'Bir dahaki sefere tamamlamayı dene.',
+                    subtitle: 'Bir dahaki sefere tamamlamayi dene.',
                     emoji: '😔',
                 };
         }
@@ -180,7 +180,7 @@ export function TrustChangeSummary({
                 transition={{ delay: 0.3 }}
                 className="bg-white/5 rounded-2xl p-8 mb-6"
             >
-                <p className="text-gray-500 text-sm mb-4">Güven Puanın</p>
+                <p className="text-gray-500 text-sm mb-4">G�ven Puanin</p>
                 <AnimatedTrustCounter from={beforeScore} to={afterScore} />
             </motion.div>
 
@@ -193,11 +193,12 @@ export function TrustChangeSummary({
                     className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300"
                 >
                     <p>
-                        <strong>İpucu:</strong> Seansları tamamlamak güven puanını artırır ve
-                        daha iyi eşleşmeler sağlar.
+                        <strong>Ipucu:</strong> Seanslari tamamlamak g�ven puanini artirir ve
+                        daha iyi eslesmeler saglar.
                     </p>
                 </motion.div>
             )}
         </div>
     );
 }
+

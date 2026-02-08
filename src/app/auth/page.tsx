@@ -24,7 +24,7 @@ export default function AuthPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-sm text-center"
       >
-        {/* Logo / Başlık */}
+        {/* Logo / Baslik */}
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
@@ -81,9 +81,10 @@ export default function AuthPage() {
 
         {/* Alt bilgi */}
         <p className="text-gray-500 text-xs mt-6">
-          Devam ederek kullanım şartlarını kabul etmiş olursun.
+          Devam ederek kullanim sartlarini kabul etmis olursun.
         </p>
       </motion.div>
     </div>
   );
 }
+

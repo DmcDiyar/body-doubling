@@ -200,8 +200,8 @@ function SessionPreparePage() {
                 <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
                     <div className="text-center">
                         <div className="w-16 h-16 border-4 border-[#ffcb77]/30 border-t-[#ffcb77] rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-white font-medium mb-2">Hazırsın!</p>
-                        <p className="text-gray-400 text-sm">Eşini bekliyoruz...</p>
+                        <p className="text-white font-medium mb-2">Hazirsin!</p>
+                        <p className="text-gray-400 text-sm">Esini bekliyoruz...</p>
                     </div>
                 </div>
             )}
@@ -211,7 +211,7 @@ function SessionPreparePage() {
                 <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
                     <div className="text-center">
                         <div className="w-16 h-16 border-4 border-[#ffcb77]/30 border-t-[#ffcb77] rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-gray-400">Seans başlıyor...</p>
+                        <p className="text-gray-400">Seans basliyor...</p>
                     </div>
                 </div>
             )}
@@ -226,3 +226,4 @@ function SessionPreparePage() {
         </>
     );
 }
+

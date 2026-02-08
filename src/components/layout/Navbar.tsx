@@ -17,8 +17,8 @@ const Navbar = () => {
     }, []);
 
     const navLinks = [
-        { href: '#how-it-works', label: 'Nasıl Çalışır' },
-        { href: '#about', label: 'Hakkında' },
+        { href: '#how-it-works', label: 'Nasil �alisir' },
+        { href: '#about', label: 'Hakkinda' },
     ];
 
     return (
@@ -64,7 +64,7 @@ const Navbar = () => {
                             href="/auth"
                             className="text-[15px] font-medium text-[#1A1A18] px-5 py-2.5 rounded-full border border-[#E8E8E4] hover:border-[#C4B8A8] hover:bg-[#F5F4F0] transition-all"
                         >
-                            Giriş
+                            Giris
                         </Link>
                     </motion.div>
                 </div>
@@ -109,7 +109,7 @@ const Navbar = () => {
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-lg font-medium text-[#1A1A18] py-2 mt-2 text-center border border-[#E8E8E4] rounded-full"
                         >
-                            Giriş
+                            Giris
                         </Link>
                     </div>
                 </motion.div>
@@ -119,3 +119,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

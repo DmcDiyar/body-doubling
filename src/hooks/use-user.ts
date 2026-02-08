@@ -29,13 +29,13 @@ export function useUser() {
       if (data) {
         setUser(data as User);
       } else {
-        // Trigger çalışmadıysa fallback oluştur
+        // Trigger �alismadiysa fallback olustur
         const { data: newUser } = await supabase
           .from('users')
           .upsert({
             id: authUser.id,
             email: authUser.email ?? '',
-            name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
+            name: authUser.email?.split('@')[0] ?? 'Kullanici',
             avatar_id: 1,
           })
           .select('*')
@@ -46,7 +46,7 @@ export function useUser() {
 
     fetchUser();
 
-    // Auth state değişimlerini dinle
+    // Auth state degisimlerini dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
         if (event === 'SIGNED_IN') {
@@ -62,3 +62,4 @@ export function useUser() {
 
   return { user, isLoading };
 }
+

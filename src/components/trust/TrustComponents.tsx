@@ -91,14 +91,14 @@ export function RehabBanner({ userId }: RehabBannerProps) {
                     <h3 className="font-semibold text-white mb-2">
                         {status.remainingSessions > 0
                             ? 'Rehabilitasyon Modu'
-                            : 'Rehabilitasyon Tamamlandı! 🎉'}
+                            : 'Rehabilitasyon Tamamlandi! 🎉'}
                     </h3>
 
                     {status.remainingSessions > 0 ? (
                         <>
                             <p className="text-sm text-blue-200 mb-4">
-                                Topluluk güvenliği için solo modda çalışıyorsun.
-                                {status.remainingSessions} seans daha tamamla, tekrar eşleş!
+                                Topluluk g�venligi i�in solo modda �alisiyorsun.
+                                {status.remainingSessions} seans daha tamamla, tekrar esles!
                             </p>
 
                             {/* Progress */}
@@ -135,19 +135,19 @@ export function RehabBanner({ userId }: RehabBannerProps) {
                                 href="/session/quick-match?mode=solo"
                                 className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
                             >
-                                Solo Seans Başlat
+                                Solo Seans Baslat
                             </a>
                         </>
                     ) : (
                         <>
                             <p className="text-sm text-green-200 mb-4">
-                                Harika! Artık tekrar eşleşebilirsin. İyi çalışmalar! 🎉
+                                Harika! Artik tekrar eslesebilirsin. Iyi �alismalar! 🎉
                             </p>
                             <a
                                 href="/session/quick-match"
                                 className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
                             >
-                                Solo Çalışmaya Başla
+                                Solo �alismaya Basla
                             </a>
                         </>
                     )}
@@ -233,9 +233,10 @@ export function TrustScoreDisplay({ score, compact = false }: TrustScoreDisplayP
             {/* Level info */}
             <p className="text-xs text-gray-500 mt-2">
                 {level.canMatch
-                    ? '✅ Eşleşme aktif'
-                    : '❌ Solo modda çalışman gerekiyor'}
+                    ? '✅ Eslesme aktif'
+                    : '❌ Solo modda �alisman gerekiyor'}
             </p>
         </div>
     );
 }
+

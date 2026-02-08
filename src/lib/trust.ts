@@ -26,7 +26,7 @@ export const TRUST_EVENT_TYPES = {
 export type TrustEventType = typeof TRUST_EVENT_TYPES[keyof typeof TRUST_EVENT_TYPES];
 
 /**
- * Trust score değişimleri
+ * Trust score degisimleri
  */
 export const TRUST_SCORE_CHANGES: Record<TrustEventType, number> = {
     session_completed: 2,
@@ -134,7 +134,7 @@ export async function getRehabilitationStatus(userId: string): Promise<{
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('event_type', 'solo_session_completed')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Son 7 gün
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Son 7 g�n
 
     const completedSessions = soloSessions || 0;
     const requiredSessions = 3;
@@ -159,7 +159,7 @@ export function calculateEarlyExitPenalty(
     const percentComplete = elapsedMinutes / totalDuration;
 
     if (percentComplete < 0.2) {
-        // İlk %20: Mild
+        // Ilk %20: Mild
         return {
             eventType: TRUST_EVENT_TYPES.EARLY_EXIT_MILD,
             penalty: TRUST_SCORE_CHANGES.early_exit_mild,
@@ -217,3 +217,4 @@ export async function handlePartnerRating(params: {
         metadata: { rating },
     });
 }
+

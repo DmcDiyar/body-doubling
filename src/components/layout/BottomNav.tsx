@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
     { path: '/dashboard', label: 'Ana Sayfa', icon: '🏠' },
-    { path: '/focus-library', label: 'Kütüphane', icon: '📚' },
+    { path: '/dashboard', label: 'Focus', icon: '🎯' },
+    { path: '/profile', label: 'Profil', icon: '👤' },
+    { path: '/help', label: 'Yardım', icon: '❓' },
 ] as const;
 
 export function BottomNav() {
@@ -20,7 +22,7 @@ export function BottomNav() {
                         const isActive = pathname === item.path;
                         return (
                             <motion.button
-                                key={item.path}
+                                key={item.path + item.label}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => router.push(item.path)}
                                 className={`flex flex-col items-center gap-1 px-6 py-2 rounded-xl transition-colors ${
@@ -43,3 +45,5 @@ export function BottomNav() {
         </nav>
     );
 }
+
+

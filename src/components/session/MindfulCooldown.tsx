@@ -19,17 +19,17 @@ interface MindfulCooldownProps {
 
 const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
     { value: 'tired', emoji: '😔', label: 'Yorgun' },
-    { value: 'neutral', emoji: '😐', label: 'Nötr' },
-    { value: 'good', emoji: '🙂', label: 'İyi' },
+    { value: 'neutral', emoji: '😐', label: 'N�tr' },
+    { value: 'good', emoji: '🙂', label: 'Iyi' },
     { value: 'energetic', emoji: '😊', label: 'Enerjik' },
     { value: 'peaceful', emoji: '😌', label: 'Huzurlu' },
 ];
 
 const REFLECTION_OPTIONS: { value: Reflection; label: string }[] = [
-    { value: 'focused', label: 'Odaklandım' },
-    { value: 'struggled', label: 'Zorlandım ama kaldım' },
-    { value: 'distracted', label: 'Dağıldım ama döndüm' },
-    { value: 'present', label: 'Sadece orada kaldım' },
+    { value: 'focused', label: 'Odaklandim' },
+    { value: 'struggled', label: 'Zorlandim ama kaldim' },
+    { value: 'distracted', label: 'Dagildim ama d�nd�m' },
+    { value: 'present', label: 'Sadece orada kaldim' },
 ];
 
 type Step = 1 | 2 | 3 | 4;
@@ -153,7 +153,7 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                             className="text-center pt-12"
                         >
                             <h2 className="text-xl font-semibold text-white mb-6">
-                                Şu an nasıl hissediyorsun?
+                                Su an nasil hissediyorsun?
                             </h2>
 
                             <div className="flex justify-center gap-3 mb-8">
@@ -189,7 +189,7 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                             className="text-center pt-12"
                         >
                             <h2 className="text-xl font-semibold text-white mb-6">
-                                Bu seansı nasıl tanımlarsın?
+                                Bu seansi nasil tanimlarsin?
                             </h2>
 
                             <div className="space-y-3">
@@ -231,11 +231,11 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                                 transition={{ delay: 0.2 }}
                                 className="text-2xl font-semibold text-[#ffcb77] mb-2"
                             >
-                                Güzel iş.
+                                G�zel is.
                             </motion.h2>
                             <p className="text-gray-400 mb-8">
-                                Kendine zaman ayırdın.<br />
-                                Bu önemli.
+                                Kendine zaman ayirdin.<br />
+                                Bu �nemli.
                             </p>
 
                             <motion.button
@@ -257,3 +257,4 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
 }
 
 export type { CooldownResult, Mood, Reflection };
+
