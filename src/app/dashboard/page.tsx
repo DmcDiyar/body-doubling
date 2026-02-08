@@ -7,6 +7,9 @@ import { useAuthStore } from '@/stores/auth-store';
 import { COPY, AVATARS, FREE_DAILY_LIMIT, getTrustLevel } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import { RehabBanner } from '@/components/trust/TrustComponents';
+import { DailyQuestCard, WeeklyQuestPanel, HIDDEN_QUEST_INFO } from '@/components/quests/QuestComponents';
+import type { DailyQuest, WeeklyQuest } from '@/components/quests/QuestComponents';
+import { BottomNav } from '@/components/layout/BottomNav';
 import type { User, UserLimit } from '@/types/database';
 
 interface ActiveMatchInfo {
@@ -21,6 +24,9 @@ export default function DashboardPage() {
   const [dailyUsed, setDailyUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
+  const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
+  const [weeklyQuest, setWeeklyQuest] = useState<WeeklyQuest | null>(null);
+  const [hiddenCount, setHiddenCount] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
@@ -111,6 +117,28 @@ export default function DashboardPage() {
         });
       }
 
+      // Load quest data from user metadata
+      const userProfile = profile as User | null;
+      if (userProfile?.metadata) {
+        const meta = userProfile.metadata as { quests?: { daily?: DailyQuest; weekly?: WeeklyQuest; hidden_completed?: string[] } };
+        if (!meta.quests) {
+          // Initialize quests for first-time users
+          await supabase.rpc('init_user_quests', { p_user_id: authUser.id });
+          // Refetch metadata
+          const { data: updated } = await supabase.from('users').select('metadata').eq('id', authUser.id).single();
+          if (updated?.metadata) {
+            const m = updated.metadata as { quests?: { daily?: DailyQuest; weekly?: WeeklyQuest; hidden_completed?: string[] } };
+            if (m.quests?.daily) setDailyQuest(m.quests.daily);
+            if (m.quests?.weekly) setWeeklyQuest(m.quests.weekly);
+            setHiddenCount((m.quests?.hidden_completed ?? []).length);
+          }
+        } else {
+          if (meta.quests.daily) setDailyQuest(meta.quests.daily);
+          if (meta.quests.weekly) setWeeklyQuest(meta.quests.weekly);
+          setHiddenCount((meta.quests.hidden_completed ?? []).length);
+        }
+      }
+
       setIsLoading(false);
     }
 
@@ -179,7 +207,7 @@ export default function DashboardPage() {
   const isRestricted = user && user.trust_score < 50;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-4 py-8 pb-24">
       <div className="max-w-sm mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -254,6 +282,25 @@ export default function DashboardPage() {
             <p className="text-[#ffcb77] text-sm mt-1">
               {user.current_streak} günlük seri! Devam et.
             </p>
+          </motion.div>
+        )}
+
+        {/* Quest section */}
+        {(dailyQuest || weeklyQuest) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-6 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-gray-500 text-xs uppercase tracking-wide">Görevler</p>
+              <p className="text-gray-600 text-xs">
+                {hiddenCount}/{Object.keys(HIDDEN_QUEST_INFO).length} gizli görev
+              </p>
+            </div>
+            <DailyQuestCard quest={dailyQuest} />
+            <WeeklyQuestPanel quest={weeklyQuest} />
           </motion.div>
         )}
 
@@ -343,6 +390,8 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

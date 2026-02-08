@@ -4,14 +4,14 @@
 // ============================================================
 
 export type TrustLevel = 'restricted' | 'newbie' | 'trusted' | 'verified' | 'elite' | 'legend';
-export type SessionStatus = 'waiting' | 'preparing' | 'active' | 'completed' | 'abandoned';
+export type SessionStatus = 'waiting' | 'preparing' | 'active' | 'completed' | 'abandoned' | 'expired';
 export type SessionMode = 'duo' | 'solo';
 export type ParticipantStatus = 'waiting' | 'joined' | 'active' | 'completed' | 'left_early' | 'no_show';
 export type PresenceStatus = 'active' | 'idle' | 'away';
 export type QueueStatus = 'waiting' | 'matched' | 'expired' | 'cancelled';
 export type MusicPreference = 'lofi' | 'classical' | 'silence';
 export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
-export type MatchState = 'preparing' | 'active' | 'broken' | 'completed';
+export type MatchState = 'preparing' | 'active' | 'broken' | 'completed' | 'expired';
 
 export type TrustEventType =
   | 'session_completed'

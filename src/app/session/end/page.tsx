@@ -1,13 +1,15 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useSessionStore } from '@/stores/session-store';
 import { AVATARS, COPY } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrustChangeSummary } from '@/components/trust/AnimatedTrustCounter';
-import type { Session, SessionParticipant, User, CompleteSessionResult } from '@/types/database';
+import { DailyQuestCard, WeeklyQuestPanel, HiddenQuestModal } from '@/components/quests/QuestComponents';
+import type { DailyQuest, WeeklyQuest } from '@/components/quests/QuestComponents';
+import type { Session, SessionParticipant, User, CompleteSessionResult, QuestProcessResult } from '@/types/database';
 
 export default function SessionEndWrapper() {
   return (
@@ -34,6 +36,12 @@ function SessionEndPage() {
   const [rating, setRating] = useState<number>(0);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [results, setResults] = useState<CompleteSessionResult | null>(null);
+
+  const [questResults, setQuestResults] = useState<QuestProcessResult | null>(null);
+  const [showHiddenQuest, setShowHiddenQuest] = useState<string | null>(null);
+  const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
+  const [weeklyQuest, setWeeklyQuest] = useState<WeeklyQuest | null>(null);
+  const questProcessedRef = useRef(false);
 
   // Early exit params
   const isEarlyExit = searchParams.get('earlyExit') === 'true';
@@ -89,6 +97,38 @@ function SessionEndPage() {
         new_streak: (userData as User | null)?.current_streak ?? 0,
         goal_completed: myPart?.goal_completed ?? false,
       });
+
+      // Process quests (only on normal completion, not early exit)
+      if (!isEarlyExit && !questProcessedRef.current) {
+        questProcessedRef.current = true;
+        const { data: questData } = await supabase.rpc('process_session_quests', {
+          p_user_id: authUser.id,
+          p_session_id: sessionId,
+        });
+
+        if (questData) {
+          const qr = questData as QuestProcessResult;
+          setQuestResults(qr);
+
+          // Show hidden quest modal if any unlocked
+          if (qr.hidden_unlocked && qr.hidden_unlocked.length > 0) {
+            setTimeout(() => setShowHiddenQuest(qr.hidden_unlocked[0]), 1500);
+          }
+        }
+
+        // Fetch updated quest state for display
+        const { data: updatedUser } = await supabase
+          .from('users')
+          .select('metadata')
+          .eq('id', authUser.id)
+          .single();
+
+        if (updatedUser?.metadata?.quests) {
+          const quests = updatedUser.metadata.quests as { daily?: DailyQuest; weekly?: WeeklyQuest };
+          if (quests.daily) setDailyQuest(quests.daily);
+          if (quests.weekly) setWeeklyQuest(quests.weekly);
+        }
+      }
 
       setLoading(false);
     };
@@ -279,6 +319,39 @@ function SessionEndPage() {
                 </div>
               </motion.div>
             )}
+
+            {/* Quest Results */}
+            {(dailyQuest || weeklyQuest) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65 }}
+                className="mb-8 space-y-3"
+              >
+                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Görevler</p>
+                <DailyQuestCard quest={dailyQuest} />
+                <WeeklyQuestPanel quest={weeklyQuest} />
+              </motion.div>
+            )}
+
+            {/* Hidden Quest Modal */}
+            <AnimatePresence>
+              {showHiddenQuest && (
+                <HiddenQuestModal
+                  questId={showHiddenQuest}
+                  onClose={() => {
+                    // Show next hidden quest if there are more
+                    if (questResults && questResults.hidden_unlocked.length > 1) {
+                      const currentIdx = questResults.hidden_unlocked.indexOf(showHiddenQuest);
+                      const next = questResults.hidden_unlocked[currentIdx + 1];
+                      setShowHiddenQuest(next || null);
+                    } else {
+                      setShowHiddenQuest(null);
+                    }
+                  }}
+                />
+              )}
+            </AnimatePresence>
 
             {/* Rating (duo modunda) */}
             {sessionData?.mode === 'duo' && (

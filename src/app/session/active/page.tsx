@@ -7,6 +7,8 @@ import { useSessionStore } from '@/stores/session-store';
 import { AVATARS, COPY, HEARTBEAT_INTERVAL_MS, THEMES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMatchHeartbeat, breakMatch } from '@/hooks/useMatchHeartbeat';
+import { QuestTracker } from '@/components/quests/QuestTracker';
+import type { DailyQuest, WeeklyQuest } from '@/components/quests/QuestComponents';
 import type { Session, SessionParticipant, RealtimePresence, PresenceStatus } from '@/types/database';
 
 export default function SessionActiveWrapper() {
@@ -48,6 +50,8 @@ function SessionActivePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [matchId, setMatchId] = useState<string | null>(null);
+  const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
+  const [weeklyQuest, setWeeklyQuest] = useState<WeeklyQuest | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -111,6 +115,19 @@ function SessionActivePage() {
       // Store auth token for beforeunload handler
       const { data: { session: authSession } } = await supabase.auth.getSession();
       authTokenRef.current = authSession?.access_token ?? null;
+
+      // Load quest data for tracker overlay
+      const { data: questUser } = await supabase
+        .from('users')
+        .select('metadata')
+        .eq('id', user.id)
+        .single();
+
+      if (questUser?.metadata) {
+        const meta = questUser.metadata as { quests?: { daily?: DailyQuest; weekly?: WeeklyQuest } };
+        if (meta.quests?.daily) setDailyQuest(meta.quests.daily);
+        if (meta.quests?.weekly) setWeeklyQuest(meta.quests.weekly);
+      }
 
       setLoading(false);
     };
@@ -756,6 +773,9 @@ function SessionActivePage() {
           </AnimatePresence>
         )}
       </div>
+
+      {/* Quest Tracker overlay */}
+      <QuestTracker dailyQuest={dailyQuest} weeklyQuest={weeklyQuest} />
 
       {/* Ambient animation dots */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
