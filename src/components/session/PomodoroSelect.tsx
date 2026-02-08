@@ -27,14 +27,16 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
     const [timeLeft, setTimeLeft] = useState(10);
 
     const handleSelect = useCallback((option: PomodoroOption, auto: boolean) => {
-        if (selected) return;
+        if (selected) return; // Prevent duplicate
         setSelected(option.code);
 
+        // 0.2s delay then advance
         setTimeout(() => {
             onSelect(option, auto);
         }, 200);
     }, [selected, onSelect]);
 
+    // Timeout: auto-select p25 after 10s
     useEffect(() => {
         if (selected) return;
 
@@ -56,20 +58,22 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center px-4">
             <div className="w-full max-w-sm">
+                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-8"
                 >
                     <h1 className="text-2xl font-bold text-white mb-2">
-                        Bu seans ne kadar surecek?
+                        Bu seans ne kadar sürecek?
                     </h1>
                     <p className="text-gray-400 text-sm">
-                        Sureyi sec.<br />
+                        Süreyi seç.<br />
                         Bitene kadar orada kal.
                     </p>
                 </motion.div>
 
+                {/* Duration Cards */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     {POMODORO_OPTIONS.map((option, index) => (
                         <motion.button
@@ -80,15 +84,16 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
                             onClick={() => handleSelect(option, false)}
                             disabled={!!selected}
                             className={`
-                                relative p-6 rounded-2xl border-2 transition-all duration-200
-                                ${selected === option.code
+                relative p-6 rounded-2xl border-2 transition-all duration-200
+                ${selected === option.code
                                     ? 'border-[#ffcb77] bg-[#ffcb77]/10 scale-[1.02]'
                                     : selected
                                         ? 'border-white/10 bg-white/5 opacity-50'
                                         : 'border-white/10 bg-white/5 hover:border-white/30'
                                 }
-                            `}
+              `}
                         >
+                            {/* Glow effect for selected */}
                             {selected === option.code && (
                                 <div className="absolute inset-0 rounded-2xl bg-[#ffcb77]/20 blur-xl" />
                             )}
@@ -104,6 +109,7 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
                     ))}
                 </div>
 
+                {/* Timeout indicator (subtle) */}
                 {!selected && (
                     <motion.p
                         initial={{ opacity: 0 }}
@@ -120,3 +126,4 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
 
 export { POMODORO_OPTIONS };
 export type { PomodoroOption };
+

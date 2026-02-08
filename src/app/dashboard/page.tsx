@@ -215,8 +215,7 @@ export default function DashboardPage() {
             <span className="text-3xl">{avatar.emoji}</span>
             <div>
               <h1 className="text-white font-semibold">{user.name}</h1>
-              <p className="text-gray-500 text-sm">Lv.{user.level} - {user.xp} XP</p>
-              <p className="text-gray-400 text-xs mt-1">Hazirsan basliyoruz.</p>
+              <p className="text-gray-500 text-sm">Lv.{user.level} · {user.xp} XP</p>`n              <p className="text-gray-400 text-xs mt-1">Hazirsan basliyoruz.</p>
             </div>
           </div>
           <button
@@ -356,7 +355,7 @@ export default function DashboardPage() {
           <RehabBanner userId={user.id} />
         )}
 
-        {/* Ana CTA Grid */}
+        {        {/* Ana CTA Grid */}
         <div className="mb-8 grid grid-cols-1 gap-3">
           <motion.button
             whileHover={{ scale: (canStartSession && !isRestricted) ? 1.02 : 1 }}
@@ -409,7 +408,7 @@ export default function DashboardPage() {
           </p>
         )}
 
-        {/* Toplam odak */}
+        {/* Toplam odak */}}
         <div className="mt-10 text-center">
           <p className="text-gray-600 text-sm">
             Toplam {Math.floor(user.total_minutes / 60)} saat {user.total_minutes % 60} dk odaklandin
