@@ -18,8 +18,8 @@ export default function FocusLibraryPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <h1 className="text-white text-xl font-bold mb-1">Odak K�t�phanesi</h1>
-                    <p className="text-gray-500 text-sm">Verimlilik, odaklanma ve aliskanliklar hakkinda.</p>
+                    <h1 className="text-white text-xl font-bold mb-1">Odak Kütüphanesi</h1>
+                    <p className="text-gray-500 text-sm">Verimlilik, odaklanma ve alışkanlıklar hakkında.</p>
                 </motion.div>
 
                 {/* Article list */}
@@ -144,4 +144,3 @@ export default function FocusLibraryPage() {
         </div>
     );
 }
-

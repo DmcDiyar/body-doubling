@@ -31,13 +31,13 @@ const CTASection = () => {
                     transition={{ duration: 0.6 }}
                 >
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1A1A18] tracking-tight mb-6">
-                        Hazir misin?
+                        Hazır mısın?
                     </h2>
 
                     <p className="text-lg text-[#6B6B65] mb-10 max-w-md mx-auto">
-                        Birlikte odaklanmaya basla.
+                        Birlikte odaklanmaya başla.
                         <br />
-                        �cretsiz. Kayit gerektirmez.
+                        Ücretsiz. Kayıt gerektirmez.
                     </p>
 
                     {/* Primary CTA */}
@@ -50,7 +50,7 @@ const CTASection = () => {
                             href="/auth"
                             className="inline-flex items-center justify-center px-10 py-5 bg-[#E8A84C] hover:bg-[#D49840] text-white font-semibold text-xl rounded-full shadow-xl shadow-[#E8A84C]/25 transition-all"
                         >
-                            Simdi Odaklan
+                            Şimdi Odaklan
                         </Link>
                     </motion.div>
 
@@ -62,7 +62,7 @@ const CTASection = () => {
                         transition={{ duration: 0.6, delay: 0.3 }}
                         className="mt-8 text-sm text-[#9A9A94]"
                     >
-                        Hi�bir baglayicilik yok. Istedigin zaman �ik.
+                        Hiçbir bağlayıcılık yok. İstediğin zaman çık.
                     </motion.p>
                 </motion.div>
             </div>
@@ -71,4 +71,3 @@ const CTASection = () => {
 };
 
 export default CTASection;
-

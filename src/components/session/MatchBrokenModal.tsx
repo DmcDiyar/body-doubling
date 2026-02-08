@@ -41,11 +41,11 @@ export function MatchBrokenModal({
     const getMessage = () => {
         switch (reason) {
             case 'partner_timeout':
-                return 'Esin baglantiyi kaybetti.';
+                return 'Eşin bağlantıyı kaybetti.';
             case 'user_exit':
-                return 'Esin seansi terk etti.';
+                return 'Eşin seansı terk etti.';
             default:
-                return 'Eslesme iptal edildi.';
+                return 'Eşleşme iptal edildi.';
         }
     };
 
@@ -79,7 +79,7 @@ export function MatchBrokenModal({
                             {getMessage()}
                         </h2>
                         <p className="text-gray-400 mb-6">
-                            Seni yeniden eslestiriyoruz.
+                            Seni yeniden eşleştiriyoruz.
                         </p>
 
                         {/* Countdown */}
@@ -97,7 +97,7 @@ export function MatchBrokenModal({
                             onClick={onRequeue}
                             className="mt-4 text-[#ffcb77] text-sm hover:underline"
                         >
-                            Hemen eslestir
+                            Hemen eşleştir
                         </button>
                     </motion.div>
                 </motion.div>
@@ -105,4 +105,3 @@ export function MatchBrokenModal({
         </AnimatePresence>
     );
 }
-

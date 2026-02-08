@@ -12,7 +12,7 @@ interface PomodoroOption {
 }
 
 const POMODORO_OPTIONS: PomodoroOption[] = [
-    { code: 'p15', minutes: 15, label: 'Kisa Odak', xp: 10, trust: 1 },
+    { code: 'p15', minutes: 15, label: 'KÄ±sa Odak', xp: 10, trust: 1 },
     { code: 'p25', minutes: 25, label: 'Standart', xp: 25, trust: 2 },
     { code: 'p50', minutes: 50, label: 'Derin', xp: 55, trust: 4 },
     { code: 'p90', minutes: 90, label: 'Uzun', xp: 110, trust: 7 },
@@ -65,10 +65,10 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
                     className="text-center mb-8"
                 >
                     <h1 className="text-2xl font-bold text-white mb-2">
-                        Bu seans ne kadar sürecek?
+                        Bu seans ne kadar sÃ¼recek?
                     </h1>
                     <p className="text-gray-400 text-sm">
-                        Süreyi seç.<br />
+                        SÃ¼reyi seÃ§.<br />
                         Bitene kadar orada kal.
                     </p>
                 </motion.div>
@@ -126,4 +126,3 @@ export function PomodoroSelect({ onSelect }: PomodoroSelectProps) {
 
 export { POMODORO_OPTIONS };
 export type { PomodoroOption };
-

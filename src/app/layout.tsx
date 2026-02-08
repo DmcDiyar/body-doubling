@@ -14,10 +14,10 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Sessiz Ortak — Sen �alis, biz yanindayiz.",
+  title: "Sessiz Ortak — Sen çalış, biz yanındayız.",
   description:
-    "Body doubling platformu. Kamera yok, mikrofon yok, sadece sessiz eslik. Odaklanmak i�in birlikte ol.",
-  keywords: ["body doubling", "odaklanma", "�alisma ortagi", "pomodoro", "sessiz �alisma"],
+    "Body doubling platformu. Kamera yok, mikrofon yok, sadece sessiz eşlik. Odaklanmak için birlikte ol.",
+  keywords: ["body doubling", "odaklanma", "çalışma ortağı", "pomodoro", "sessiz çalışma"],
 };
 
 export default function RootLayout({
@@ -35,4 +35,3 @@ export default function RootLayout({
     </html>
   );
 }
-

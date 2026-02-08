@@ -3,29 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
-import { AVATARS } from '@/lib/constants';
+import { AVATARS, COPY } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const DURATIONS = [
-  { value: 25, label: '25 dk', description: 'Klasik Pomodoro' },
-  { value: 50, label: '50 dk', description: 'Derin odak' },
-] as const;
-
-type Background = 'silence' | 'lofi' | 'classical';
-
-const BACKGROUNDS: { value: Background; label: string; description: string }[] = [
-  { value: 'silence', label: 'Sessiz', description: 'Tam sessizlik' },
-  { value: 'lofi', label: 'Lofi', description: 'Yumusak ritim' },
-  { value: 'classical', label: 'Klasik', description: 'Düsük tempolu' },
-];
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1: Tanisma, 2: Tercihler
+  const [step, setStep] = useState(1); // 1: Avatar, 2: Hedef
   const [selectedAvatar, setSelectedAvatar] = useState(1);
   const [name, setName] = useState('');
-  const [duration, setDuration] = useState(25);
-  const [background, setBackground] = useState<Background>('lofi');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleComplete = async () => {
@@ -36,21 +21,6 @@ export default function OnboardingPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      const { data: existing } = await supabase
-        .from('users')
-        .select('metadata')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const metadata = (existing?.metadata ?? {}) as Record<string, unknown>;
-      const updatedMetadata = {
-        ...metadata,
-        focus_preset: {
-          duration,
-          background,
-        },
-      };
-
       await supabase
         .from('users')
         .upsert({
@@ -58,8 +28,6 @@ export default function OnboardingPage() {
           email: user.email ?? '',
           name: name.trim(),
           avatar_id: selectedAvatar,
-          music_preference: background,
-          metadata: updatedMetadata,
         });
     }
 
@@ -84,20 +52,12 @@ export default function OnboardingPage() {
               exit={{ opacity: 0, x: -20 }}
               className="text-center"
             >
-              <h2 className="text-2xl font-bold text-white mb-2">Seni taniyalim</h2>
-              <p className="text-gray-400 mb-6">Bu ekran senin için.</p>
-
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ismin veya takma adin"
-                maxLength={20}
-                className="w-full bg-white/10 text-white placeholder-gray-500
-                           border border-white/20 rounded-xl py-3 px-4
-                           focus:outline-none focus:border-[#ffcb77]/50
-                           text-center text-lg mb-6"
-              />
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {COPY.ONBOARDING_WELCOME}
+              </h2>
+              <p className="text-gray-400 mb-8">
+                {COPY.ONBOARDING_AVATAR}
+              </p>
 
               {/* Avatar grid */}
               <div className="grid grid-cols-2 gap-4 mb-8">
@@ -125,11 +85,9 @@ export default function OnboardingPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setStep(2)}
-                disabled={!name.trim()}
-                className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl
-                           disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl"
               >
-                Devam et
+                Devam Et
               </motion.button>
             </motion.div>
           )}
@@ -142,50 +100,28 @@ export default function OnboardingPage() {
               exit={{ opacity: 0, x: -20 }}
               className="text-center"
             >
-              <h2 className="text-2xl font-bold text-white mb-2">Nasil odaklanmak istersin?</h2>
-              <p className="text-gray-400 mb-6">Istedigin zaman Profil’den degistirebilirsin.</p>
-
-              {/* Duration */}
-              <div className="text-left mb-6">
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Odak süresi</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {DURATIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setDuration(option.value)}
-                      className={`p-4 rounded-xl border text-left transition-all ${
-                        duration === option.value
-                          ? 'border-[#ffcb77] bg-[#ffcb77]/10'
-                          : 'border-white/10 bg-white/5 hover:border-white/30'
-                      }`}
-                    >
-                      <div className="text-white font-semibold">{option.label}</div>
-                      <div className="text-gray-500 text-xs">{option.description}</div>
-                    </button>
-                  ))}
-                </div>
+              <div className="text-5xl mb-4">
+                {AVATARS.find(a => a.id === selectedAvatar)?.emoji}
               </div>
 
-              {/* Background */}
-              <div className="text-left mb-8">
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Arka plan</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {BACKGROUNDS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setBackground(option.value)}
-                      className={`p-3 rounded-xl border text-center transition-all ${
-                        background === option.value
-                          ? 'border-[#ffcb77] bg-[#ffcb77]/10'
-                          : 'border-white/10 bg-white/5 hover:border-white/30'
-                      }`}
-                    >
-                      <div className="text-white text-sm font-medium">{option.label}</div>
-                      <div className="text-gray-500 text-[10px] mt-1">{option.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Sana ne diyelim?
+              </h2>
+              <p className="text-gray-400 mb-8">
+                OrtaÄŸÄ±n seni bu isimle gÃ¶recek.
+              </p>
+
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ä°smin veya takma adÄ±n"
+                maxLength={20}
+                className="w-full bg-white/10 text-white placeholder-gray-500
+                           border border-white/20 rounded-xl py-3 px-4
+                           focus:outline-none focus:border-[#ffcb77]/50
+                           text-center text-lg mb-8"
+              />
 
               <div className="flex gap-3">
                 <button
@@ -202,7 +138,7 @@ export default function OnboardingPage() {
                   className="flex-1 bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl
                              disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? '...' : 'Hazirim'}
+                  {isSubmitting ? '...' : COPY.ONBOARDING_START}
                 </motion.button>
               </div>
             </motion.div>

@@ -35,14 +35,14 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ['/', '/auth'];
   const isPublic = publicRoutes.some((r) => pathname === r || pathname.startsWith('/auth/'));
 
-  // Giris yapmamis kullanici korumali sayfaya erismeye �alisirsa
+  // Giriş yapmamış kullanıcı korumalı sayfaya erişmeye çalışırsa
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     return NextResponse.redirect(url);
   }
 
-  // Giris yapmis kullanici auth sayfasina gelirse dashboard'a y�nlendir
+  // Giriş yapmış kullanıcı auth sayfasına gelirse dashboard'a yönlendir
   if (user && pathname === '/auth') {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
@@ -57,4 +57,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-

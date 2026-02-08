@@ -1,11 +1,8 @@
 import { createClient } from '@/lib/supabase-client';
-import { useAuthStore } from '@/stores/auth-store';
-import { getAllAssignments } from '@/lib/experiments';
 
 /**
  * Log an analytics event to the analytics_events table.
  * Fire-and-forget: errors are logged but never thrown.
- * Auto-injects A/B experiment assignments into properties.
  */
 export async function logEvent(
   eventName: string,
@@ -14,19 +11,9 @@ export async function logEvent(
 ): Promise<void> {
   try {
     const supabase = createClient();
-
-    // Auto-inject experiment variant assignments
-    const user = useAuthStore.getState().user;
-    const experiments = getAllAssignments(user?.metadata);
-
-    const enrichedProperties = {
-      ...properties,
-      ...(Object.keys(experiments).length > 0 ? { experiments } : {}),
-    };
-
     await supabase.rpc('log_analytics_event', {
       p_event_name: eventName,
-      p_properties: enrichedProperties,
+      p_properties: properties,
       p_session_id: sessionId ?? null,
     });
   } catch (err) {

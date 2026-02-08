@@ -46,27 +46,27 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Profil y�klenemedi:', profileError.message);
-        // Tablo yoksa veya trigger �alismadiysa → kullaniciyi manuel olustur
+        console.error('Profil yüklenemedi:', profileError.message);
+        // Tablo yoksa veya trigger çalışmadıysa → kullanıcıyı manuel oluştur
         if (profileError.code === '42P01' || !profile) {
           const { data: newProfile } = await supabase
             .from('users')
             .upsert({
               id: authUser.id,
               email: authUser.email ?? '',
-              name: authUser.email?.split('@')[0] ?? 'Kullanici',
+              name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
               avatar_id: 1,
             })
             .select('*')
             .single();
           if (newProfile) {
-            // Yeni profil olustu → onboarding'e y�nlendir
+            // Yeni profil oluştu → onboarding'e yönlendir
             router.push('/onboarding');
             return;
           }
         }
       } else if (profile) {
-        // ONBOARDING GATE: Profil varsa onboarding tamamlanmis mi kontrol et
+        // ONBOARDING GATE: Profil varsa onboarding tamamlanmış mı kontrol et
         // avatar_id === 1 (default) VE name auto-generated ise → onboarding gerekli
         const emailPrefix = authUser.email?.split('@')[0] || '';
         const googleName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || '';
@@ -81,13 +81,13 @@ export default function DashboardPage() {
 
         setUser(profile as User);
       } else {
-        // Profil yok — trigger �alismamis, manuel olustur
+        // Profil yok — trigger çalışmamış, manuel oluştur
         const { data: newProfile } = await supabase
           .from('users')
           .upsert({
             id: authUser.id,
             email: authUser.email ?? '',
-            name: authUser.email?.split('@')[0] ?? 'Kullanici',
+            name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
             avatar_id: 1,
           })
           .select('*')
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         if (newProfile) setUser(newProfile as User);
       }
 
-      // G�nl�k limit (maybeSingle — satir yoksa null d�ner, 406 hata vermez)
+      // Günlük limit (maybeSingle — satır yoksa null döner, 406 hata vermez)
       const today = new Date().toISOString().split('T')[0];
       const { data: limit } = await supabase
         .from('user_limits')
@@ -197,7 +197,7 @@ export default function DashboardPage() {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
-        <div className="text-white/50 text-lg">Y�kleniyor...</div>
+        <div className="text-white/50 text-lg">Yükleniyor...</div>
       </div>
     );
   }
@@ -215,18 +215,18 @@ export default function DashboardPage() {
             <span className="text-3xl">{avatar.emoji}</span>
             <div>
               <h1 className="text-white font-semibold">{user.name}</h1>
-              <p className="text-gray-500 text-sm">Lv.{user.level} � {user.xp} XP</p>`n              <p className="text-gray-400 text-xs mt-1">Hazirsan basliyoruz.</p>
+              <p className="text-gray-500 text-sm">Lv.{user.level} · {user.xp} XP</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
             className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
           >
-            �ikis
+            Çıkış
           </button>
         </div>
 
-        {/* Stat kartlari */}
+        {/* Stat kartları */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -271,7 +271,7 @@ export default function DashboardPage() {
           </motion.div>
         </div>
 
-        {/* Streak g�stergesi */}
+        {/* Streak göstergesi */}
         {user.current_streak > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -280,7 +280,7 @@ export default function DashboardPage() {
           >
             <span className="text-2xl">🔥</span>
             <p className="text-[#ffcb77] text-sm mt-1">
-              {user.current_streak} g�nl�k seri! Devam et.
+              {user.current_streak} günlük seri! Devam et.
             </p>
           </motion.div>
         )}
@@ -294,9 +294,9 @@ export default function DashboardPage() {
             className="mb-6 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <p className="text-gray-500 text-xs uppercase tracking-wide">G�revler</p>
+              <p className="text-gray-500 text-xs uppercase tracking-wide">Görevler</p>
               <p className="text-gray-600 text-xs">
-                {hiddenCount}/{Object.keys(HIDDEN_QUEST_INFO).length} gizli g�rev
+                {hiddenCount}/{Object.keys(HIDDEN_QUEST_INFO).length} gizli görev
               </p>
             </div>
             <DailyQuestCard quest={dailyQuest} />
@@ -316,13 +316,13 @@ export default function DashboardPage() {
               <div className="flex-1">
                 <p className="text-white text-sm font-medium">
                   {activeMatch.state === 'active'
-                    ? 'Devam eden seansin var!'
-                    : 'Eslesmeye geri d�nebilirsin!'}
+                    ? 'Devam eden seansın var!'
+                    : 'Eşleşmeye geri dönebilirsin!'}
                 </p>
                 <p className="text-gray-400 text-xs">
                   {activeMatch.state === 'active'
                     ? 'Aktif bir seans devam ediyor.'
-                    : 'Esin hala bekliyor olabilir.'}
+                    : 'Eşin hala bekliyor olabilir.'}
                 </p>
               </div>
               <div className="flex flex-col gap-1">
@@ -330,7 +330,7 @@ export default function DashboardPage() {
                   onClick={handleRejoin}
                   className="bg-[#ffcb77] text-[#1a1a2e] px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap"
                 >
-                  Geri D�n
+                  Geri Dön
                 </button>
                 <button
                   onClick={handleDismissMatch}
@@ -343,10 +343,10 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* G�nl�k kullanim */}
+        {/* Günlük kullanım */}
         {!user.is_premium && (
           <div className="text-center text-gray-500 text-sm mb-4">
-            Bug�n: {dailyUsed}/{FREE_DAILY_LIMIT} seans
+            Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans
           </div>
         )}
 
@@ -355,63 +355,38 @@ export default function DashboardPage() {
           <RehabBanner userId={user.id} />
         )}
 
-        {        {/* Ana CTA Grid */}
-        <div className="mb-8 grid grid-cols-1 gap-3">
-          <motion.button
-            whileHover={{ scale: (canStartSession && !isRestricted) ? 1.02 : 1 }}
-            whileTap={{ scale: (canStartSession && !isRestricted) ? 0.98 : 1 }}
-            onClick={() => {
-              if (!canStartSession || isRestricted) return;
-              router.push('/session/quick-match');
-            }}
-            disabled={!canStartSession || isRestricted}
-            className={`
-              w-full py-4 rounded-2xl font-semibold text-lg transition-all text-left px-5
-              ${(canStartSession && !isRestricted)
-                ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/20'
-                : 'bg-white/10 text-gray-500 cursor-not-allowed'
-              }
-            `}
-          >
-            <div className="text-lg">
-              {isRestricted
-                ? 'Solo Modda Devam Et'
-                : (canStartSession ? '?? Hemen Basla' : 'G�nl�k limit doldu')}
-            </div>
-            <div className="text-xs mt-1">
-              {isRestricted
-                ? 'Topluluk g�venligi i�in kisa bir ara.'
-                : 'Sessizce eslik edecegim.'}
-            </div>
-          </motion.button>
-
-          <button
-            onClick={() => router.push('/profile')}
-            className="w-full py-4 rounded-2xl font-semibold text-lg transition-all text-left px-5 bg-white/5 text-white hover:bg-white/10"
-          >
-            <div className="text-lg">?? Profilim</div>
-            <div className="text-xs mt-1 text-gray-400">Sana �zel ayarlar</div>
-          </button>
-
-          <button
-            onClick={() => router.push('/help')}
-            className="w-full py-4 rounded-2xl font-semibold text-lg transition-all text-left px-5 bg-white/5 text-white hover:bg-white/10"
-          >
-            <div className="text-lg">? Yardim</div>
-            <div className="text-xs mt-1 text-gray-400">Nasil �alistigini �gren</div>
-          </button>
-        </div>
+        {/* Ana CTA */}
+        <motion.button
+          whileHover={{ scale: (canStartSession && !isRestricted) ? 1.02 : 1 }}
+          whileTap={{ scale: (canStartSession && !isRestricted) ? 0.98 : 1 }}
+          onClick={() => {
+            if (!canStartSession || isRestricted) return;
+            router.push('/session/quick-match');
+          }}
+          disabled={!canStartSession || isRestricted}
+          className={`
+            w-full py-4 rounded-2xl font-semibold text-lg transition-all
+            ${(canStartSession && !isRestricted)
+              ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/20'
+              : 'bg-white/10 text-gray-500 cursor-not-allowed'
+            }
+          `}
+        >
+          {isRestricted
+            ? 'Solo Modda Devam Et'
+            : (canStartSession ? COPY.DASHBOARD_CTA : 'Günlük limit doldu')}
+        </motion.button>
 
         {!canStartSession && (
           <p className="text-gray-600 text-xs text-center mt-3">
-            Yarin tekrar gel veya sinirsiz erisim i�in premium&apos;a ge�.
+            Yarın tekrar gel veya sınırsız erişim için premium&apos;a geç.
           </p>
         )}
 
-        {/* Toplam odak */}}
+        {/* Toplam odak */}
         <div className="mt-10 text-center">
           <p className="text-gray-600 text-sm">
-            Toplam {Math.floor(user.total_minutes / 60)} saat {user.total_minutes % 60} dk odaklandin
+            Toplam {Math.floor(user.total_minutes / 60)} saat {user.total_minutes % 60} dk odaklandın
           </p>
         </div>
       </div>
@@ -420,9 +395,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-
-
-
-

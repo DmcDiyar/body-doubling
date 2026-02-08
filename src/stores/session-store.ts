@@ -10,7 +10,7 @@ interface SessionState {
   // Realtime presence
   partnerPresence: RealtimePresence | null;
 
-  // Timer (session.started_at'tan hesaplanir)
+  // Timer (session.started_at'tan hesaplanır)
   timeRemaining: number; // seconds
   isTimerRunning: boolean;
 
@@ -48,4 +48,3 @@ export const useSessionStore = create<SessionState>((set) => ({
       isTimerRunning: false,
     }),
 }));
-

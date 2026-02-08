@@ -10,11 +10,11 @@ import Footer from '@/components/landing/Footer';
 
 export const metadata: Metadata = {
   title: 'Sessiz Ortak | Birlikte Odaklan, Sessizce',
-  description: 'Sessiz Ortak ile baska biriyle esles ve birlikte odaklan. Konusma yok, sadece varlik. �cretsiz body doubling deneyimi.',
+  description: 'Sessiz Ortak ile başka biriyle eşleş ve birlikte odaklan. Konuşma yok, sadece varlık. Ücretsiz body doubling deneyimi.',
   keywords: ['sessiz ortak', 'birlikte odaklan', 'body doubling', 'odak oturumu', 'focus timer'],
   openGraph: {
     title: 'Sessiz Ortak | Birlikte Odaklan, Sessizce',
-    description: 'Sessiz Ortak ile baska biriyle esles ve birlikte odaklan. Konusma yok, sadece varlik.',
+    description: 'Sessiz Ortak ile başka biriyle eşleş ve birlikte odaklan. Konuşma yok, sadece varlık.',
     type: 'website',
   },
 };
@@ -47,4 +47,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

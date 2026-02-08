@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const rituals = [
     {
-        title: 'Baslamadan �nce',
+        title: 'Başlamadan Önce',
         description: '3 derin nefes al. Zihni temizle.',
         icon: (
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,8 +14,8 @@ const rituals = [
         color: '#A8B5A0',
     },
     {
-        title: 'Birlikte Basla',
-        description: 'Ayni anda basliyorsunuz. Sesin yok, ama varligin var.',
+        title: 'Birlikte Başla',
+        description: 'Aynı anda başlıyorsunuz. Sesin yok, ama varlığın var.',
         icon: (
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -26,7 +26,7 @@ const rituals = [
     },
     {
         title: 'Sessizce Bitir',
-        description: 'Birlikte bitirdiniz. Tebrikler. G�n�n kalanina devam.',
+        description: 'Birlikte bitirdiniz. Tebrikler. Günün kalanına devam.',
         icon: (
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -71,10 +71,10 @@ const Rituals = () => {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1A1A18] tracking-tight mb-4">
-                        Rit�eller
+                        Ritüeller
                     </h2>
                     <p className="text-lg text-[#6B6B65] max-w-md mx-auto">
-                        Her oturum k���k bir rit�elle baslar ve biter.
+                        Her oturum küçük bir ritüelle başlar ve biter.
                     </p>
                 </motion.div>
 
@@ -113,4 +113,3 @@ const Rituals = () => {
 };
 
 export default Rituals;
-

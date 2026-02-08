@@ -24,9 +24,9 @@ const HeroSection = () => {
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
                     className="text-lg sm:text-xl text-[#6B6B65] font-normal max-w-xl mx-auto mb-10 leading-relaxed"
                 >
-                    Sessiz Ortak, seni baska biriyle eslestirir.
+                    Sessiz Ortak, seni başka biriyle eşleştirir.
                     <br className="hidden sm:block" />
-                    Konusma yok. Sadece birlikte odaklanma.
+                    Konuşma yok. Sadece birlikte odaklanma.
                 </motion.p>
 
                 {/* CTAs */}
@@ -45,7 +45,7 @@ const HeroSection = () => {
                             href="/auth"
                             className="inline-flex items-center justify-center px-8 py-4 bg-[#E8A84C] hover:bg-[#D49840] text-white font-semibold text-lg rounded-full shadow-lg shadow-[#E8A84C]/20 transition-all"
                         >
-                            Oturum Baslat
+                            Oturum Başlat
                         </Link>
                     </motion.div>
 
@@ -58,7 +58,7 @@ const HeroSection = () => {
                             href="#how-it-works"
                             className="inline-flex items-center justify-center px-8 py-4 text-[#6B6B65] hover:text-[#1A1A18] font-medium text-lg transition-colors"
                         >
-                            Nasil �alisir?
+                            Nasıl Çalışır?
                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -73,7 +73,7 @@ const HeroSection = () => {
                     transition={{ duration: 0.6, delay: 0.8 }}
                     className="mt-12 text-sm text-[#9A9A94]"
                 >
-                    �cretsiz. Kayit gerektirmez.
+                    Ücretsiz. Kayıt gerektirmez.
                 </motion.p>
             </div>
         </section>
@@ -81,4 +81,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-

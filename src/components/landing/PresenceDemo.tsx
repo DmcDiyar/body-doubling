@@ -18,10 +18,10 @@ const PresenceDemo = () => {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1A1A18] tracking-tight mb-4">
-                        Farki hisset
+                        Farkı hisset
                     </h2>
                     <p className="text-lg text-[#6B6B65] max-w-md mx-auto">
-                        Yalniz �alismak ile birlikte �alismak arasindaki fark.
+                        Yalnız çalışmak ile birlikte çalışmak arasındaki fark.
                     </p>
                 </motion.div>
 
@@ -50,10 +50,10 @@ const PresenceDemo = () => {
                                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-semibold text-[#1A1A18] mb-2">Yalniz</h3>
+                            <h3 className="text-xl font-semibold text-[#1A1A18] mb-2">Yalnız</h3>
                             <p className="text-[#6B6B65] text-sm">
-                                Dikkat dagiliyor.<br />
-                                Motivasyon d�s�k.
+                                Dikkat dağılıyor.<br />
+                                Motivasyon düşük.
                             </p>
                         </motion.div>
 
@@ -76,7 +76,7 @@ const PresenceDemo = () => {
                             </div>
                             <h3 className="text-xl font-semibold text-[#1A1A18] mb-2">Birlikte</h3>
                             <p className="text-[#6B6B65] text-sm">
-                                Sessiz varlik hissi.<br />
+                                Sessiz varlık hissi.<br />
                                 Odak korunuyor.
                             </p>
                         </motion.div>
@@ -84,7 +84,7 @@ const PresenceDemo = () => {
 
                     {/* Hint */}
                     <p className="text-center mt-8 text-sm text-[#9A9A94]">
-                        �zerine gel ve farki g�r
+                        Üzerine gel ve farkı gör
                     </p>
                 </motion.div>
             </div>
@@ -93,4 +93,3 @@ const PresenceDemo = () => {
 };
 
 export default PresenceDemo;
-
