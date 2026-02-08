@@ -62,7 +62,7 @@ export default function HelpPage() {
           onClick={() => router.push('/dashboard')}
           className="w-full py-3 rounded-xl bg-white/10 text-gray-200 hover:bg-white/15 transition-colors"
         >
-          Dashboard'a dön
+          Dashboard&apos;a don
         </button>
       </div>
     </div>

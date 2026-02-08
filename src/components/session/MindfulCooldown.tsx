@@ -18,27 +18,27 @@ interface MindfulCooldownProps {
 }
 
 const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
-    { value: 'tired', emoji: 'ğŸ˜”', label: 'Yorgun' },
-    { value: 'neutral', emoji: 'ğŸ˜', label: 'Nötr' },
-    { value: 'good', emoji: 'ğŸ™‚', label: 'Iyi' },
-    { value: 'energetic', emoji: 'ğŸ˜Š', label: 'Enerjik' },
-    { value: 'peaceful', emoji: 'ğŸ˜Œ', label: 'Huzurlu' },
+    { value: 'tired', emoji: '😔', label: 'Yorgun' },
+    { value: 'neutral', emoji: '😐', label: 'Notr' },
+    { value: 'good', emoji: '🙂', label: 'Iyi' },
+    { value: 'energetic', emoji: '😊', label: 'Enerjik' },
+    { value: 'peaceful', emoji: '😌', label: 'Huzurlu' },
 ];
 
 const REFLECTION_OPTIONS: { value: Reflection; label: string }[] = [
     { value: 'focused', label: 'Odaklandim' },
     { value: 'struggled', label: 'Zorlandim ama kaldim' },
-    { value: 'distracted', label: 'Dagildim ama döndüm' },
+    { value: 'distracted', label: 'Dagildim ama dondum' },
     { value: 'present', label: 'Sadece orada kaldim' },
 ];
 
 type Step = 1 | 2 | 3 | 4;
 
 const STEP_DURATIONS: Record<Step, number> = {
-    1: 10, // Pause
-    2: 30, // Mood Check
-    3: 30, // Reflection
-    4: 20, // Closing
+    1: 10,
+    2: 30,
+    3: 30,
+    4: 20,
 };
 
 export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
@@ -48,7 +48,6 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
     const [reflection, setReflection] = useState<Reflection | null>(null);
     const [isPaused, setIsPaused] = useState(false);
 
-    // Handle visibility change
     useEffect(() => {
         const handleVisibility = () => {
             setIsPaused(document.hidden);
@@ -70,10 +69,9 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
         completeCooldown(true);
     };
 
-    // Timer logic (only for step 1 and 4)
     useEffect(() => {
         if (isPaused) return;
-        if (step === 2 || step === 3) return; // No auto-advance for mood/reflection
+        if (step === 2 || step === 3) return;
 
         const timer = setInterval(() => {
             setTimeLeft(prev => {
@@ -114,16 +112,14 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#16213e] via-[#1a1a2e] to-[#0f3460] flex items-center justify-center px-4">
             <div className="w-full max-w-sm relative">
-                {/* Skip button (always visible) */}
                 <button
                     onClick={handleSkip}
                     className="absolute top-4 right-0 text-gray-500 hover:text-gray-400 text-sm transition-colors"
                 >
-                    Atla â†’
+                    Atla →
                 </button>
 
                 <AnimatePresence mode="wait">
-                    {/* Step 1: Pause */}
                     {step === 1 && (
                         <motion.div
                             key="step1"
@@ -142,7 +138,6 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 2: Mood Check */}
                     {step === 2 && (
                         <motion.div
                             key="step2"
@@ -163,12 +158,12 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => handleMoodSelect(option.value)}
                                         className={`
-                      flex flex-col items-center p-3 rounded-xl transition-all
-                      ${mood === option.value
+                                            flex flex-col items-center p-3 rounded-xl transition-all
+                                            ${mood === option.value
                                                 ? 'bg-[#ffcb77]/20 ring-2 ring-[#ffcb77] scale-105'
                                                 : 'bg-white/5 hover:bg-white/10'
                                             }
-                    `}
+                                        `}
                                     >
                                         <span className="text-2xl mb-1">{option.emoji}</span>
                                         <span className="text-xs text-gray-400">{option.label}</span>
@@ -178,7 +173,6 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 3: Reflection */}
                     {step === 3 && (
                         <motion.div
                             key="step3"
@@ -201,12 +195,12 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                                         transition={{ delay: index * 0.1 }}
                                         onClick={() => handleReflectionSelect(option.value)}
                                         className={`
-                      w-full p-4 rounded-xl border-2 text-left transition-all
-                      ${reflection === option.value
+                                            w-full p-4 rounded-xl border-2 text-left transition-all
+                                            ${reflection === option.value
                                                 ? 'border-[#ffcb77] bg-[#ffcb77]/10'
                                                 : 'border-white/10 bg-white/5 hover:border-white/30'
                                             }
-                    `}
+                                        `}
                                     >
                                         <span className="text-white">{option.label}</span>
                                     </motion.button>
@@ -215,7 +209,6 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 4: Closing */}
                     {step === 4 && (
                         <motion.div
                             key="step4"
@@ -231,11 +224,11 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                                 transition={{ delay: 0.2 }}
                                 className="text-2xl font-semibold text-[#ffcb77] mb-2"
                             >
-                                Güzel is.
+                                Guzel is.
                             </motion.h2>
                             <p className="text-gray-400 mb-8">
                                 Kendine zaman ayirdin.<br />
-                                Bu önemli.
+                                Bu onemli.
                             </p>
 
                             <motion.button
@@ -257,4 +250,3 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
 }
 
 export type { CooldownResult, Mood, Reflection };
-

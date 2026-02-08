@@ -18,7 +18,7 @@ interface FocusRitualProps {
 
 const INTENT_OPTIONS: { value: Intent; label: string }[] = [
     { value: 'finish', label: 'Bir seyi bitirmek' },
-    { value: 'start', label: 'Düsünmeden baslamak' },
+    { value: 'start', label: 'Dusunmeden baslamak' },
     { value: 'calm', label: 'Sakin kalmak' },
     { value: 'presence', label: 'Sadece orada olmak' },
 ];
@@ -26,10 +26,10 @@ const INTENT_OPTIONS: { value: Intent; label: string }[] = [
 type Step = 1 | 2 | 3 | 4;
 
 const STEP_DURATIONS: Record<Step, number> = {
-    1: 20, // Breath Anchor
-    2: 30, // Intent Setting
-    3: 15, // Body Check
-    4: 15, // Ready Confirmation
+    1: 20,
+    2: 30,
+    3: 15,
+    4: 15,
 };
 
 export function FocusRitual({ onComplete }: FocusRitualProps) {
@@ -39,7 +39,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
     const [isPaused, setIsPaused] = useState(false);
     const [startedAt] = useState(new Date().toISOString());
 
-    // Handle visibility change (background/foreground)
     useEffect(() => {
         const handleVisibility = () => {
             setIsPaused(document.hidden);
@@ -57,7 +56,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
         });
     }, [intent, startedAt, onComplete]);
 
-    // Timer logic
     useEffect(() => {
         if (isPaused) return;
 
@@ -66,19 +64,16 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                 if (prev <= 1) {
                     clearInterval(timer);
 
-                    // Auto-advance logic
                     if (step === 1) {
                         setStep(2);
                         setTimeLeft(STEP_DURATIONS[2]);
                     } else if (step === 2) {
-                        // Auto-advance with default intent
                         setStep(3);
                         setTimeLeft(STEP_DURATIONS[3]);
                     } else if (step === 3) {
                         setStep(4);
                         setTimeLeft(STEP_DURATIONS[4]);
                     } else if (step === 4) {
-                        // Auto-complete
                         completeRitual(true);
                     }
                     return 0;
@@ -92,7 +87,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
 
     const handleIntentSelect = (value: Intent) => {
         setIntent(value);
-        // Advance to step 3 immediately
         setStep(3);
         setTimeLeft(STEP_DURATIONS[3]);
     };
@@ -105,7 +99,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
         <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center px-4">
             <div className="w-full max-w-sm">
                 <AnimatePresence mode="wait">
-                    {/* Step 1: Breath Anchor */}
                     {step === 1 && (
                         <motion.div
                             key="step1"
@@ -133,7 +126,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 2: Intent Setting */}
                     {step === 2 && (
                         <motion.div
                             key="step2"
@@ -144,7 +136,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Bu seans için niyetin ne?
+                                Bu seans icin niyetin ne?
                             </h2>
 
                             <div className="space-y-3 mb-6">
@@ -156,12 +148,12 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                                         transition={{ delay: index * 0.1 }}
                                         onClick={() => handleIntentSelect(option.value)}
                                         className={`
-                      w-full p-4 rounded-xl border-2 text-left transition-all
-                      ${intent === option.value && step !== 2
+                                            w-full p-4 rounded-xl border-2 text-left transition-all
+                                            ${intent === option.value && step !== 2
                                                 ? 'border-[#ffcb77] bg-[#ffcb77]/10'
                                                 : 'border-white/10 bg-white/5 hover:border-white/30'
                                             }
-                    `}
+                                        `}
                                     >
                                         <span className="text-white">{option.label}</span>
                                     </motion.button>
@@ -169,13 +161,12 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             </div>
 
                             <p className="text-gray-500 text-sm">
-                                Seç ve devam et.
+                                Sec ve devam et.
                             </p>
                             <p className="text-gray-600 text-xs mt-2">{timeLeft}s</p>
                         </motion.div>
                     )}
 
-                    {/* Step 3: Body Check */}
                     {step === 3 && (
                         <motion.div
                             key="step3"
@@ -189,7 +180,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                                 Omuzlarini gevset.
                             </h2>
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Çeneni birak.
+                                Ceneni birak.
                             </h2>
                             <p className="text-gray-400 text-lg">
                                 Hazirsin.
@@ -197,7 +188,6 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 4: Ready Confirmation */}
                     {step === 4 && (
                         <motion.div
                             key="step4"
@@ -208,7 +198,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-8">
-                                Seans baslamak üzere.
+                                Seans baslamak uzere.
                             </h2>
 
                             <motion.button
@@ -230,4 +220,3 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
 }
 
 export type { RitualResult, Intent };
-
