@@ -18,7 +18,7 @@ export default function FocusLibraryPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <h1 className="text-white text-xl font-bold mb-1">Odak Kütüphanesi</h1>
+                    <h1 className="text-white text-xl font-bold mb-1">Odak K�t�phanesi</h1>
                     <p className="text-gray-500 text-sm">Verimlilik, odaklanma ve aliskanliklar hakkinda.</p>
                 </motion.div>
 
@@ -77,7 +77,7 @@ export default function FocusLibraryPage() {
                                     onClick={() => setSelectedArticle(null)}
                                     className="text-gray-500 hover:text-gray-300 text-sm mb-4 transition-colors"
                                 >
-                                    â† Geri
+                                    ← Geri
                                 </button>
 
                                 {/* Article header */}
@@ -116,7 +116,7 @@ export default function FocusLibraryPage() {
                                                             return <p key={j} className="text-gray-300 text-sm pl-2">{line}</p>;
                                                         }
                                                         if (line.startsWith('- ')) {
-                                                            return <p key={j} className="text-gray-300 text-sm pl-2">â€¢ {line.slice(2)}</p>;
+                                                            return <p key={j} className="text-gray-300 text-sm pl-2">• {line.slice(2)}</p>;
                                                         }
                                                         return line ? <p key={j} className="text-gray-300 text-sm">{line}</p> : null;
                                                     })}

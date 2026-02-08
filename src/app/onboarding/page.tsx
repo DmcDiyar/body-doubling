@@ -16,7 +16,7 @@ type Background = 'silence' | 'lofi' | 'classical';
 const BACKGROUNDS: { value: Background; label: string; description: string }[] = [
   { value: 'silence', label: 'Sessiz', description: 'Tam sessizlik' },
   { value: 'lofi', label: 'Lofi', description: 'Yumusak ritim' },
-  { value: 'classical', label: 'Klasik', description: 'DÃ¼sÃ¼k tempolu' },
+  { value: 'classical', label: 'Klasik', description: 'Düsük tempolu' },
 ];
 
 export default function OnboardingPage() {
@@ -85,7 +85,7 @@ export default function OnboardingPage() {
               className="text-center"
             >
               <h2 className="text-2xl font-bold text-white mb-2">Seni taniyalim</h2>
-              <p className="text-gray-400 mb-6">Bu ekran senin iÃ§in.</p>
+              <p className="text-gray-400 mb-6">Bu ekran senin için.</p>
 
               <input
                 type="text"
@@ -143,11 +143,11 @@ export default function OnboardingPage() {
               className="text-center"
             >
               <h2 className="text-2xl font-bold text-white mb-2">Nasil odaklanmak istersin?</h2>
-              <p className="text-gray-400 mb-6">Istedigin zaman Profilâ€™den degistirebilirsin.</p>
+              <p className="text-gray-400 mb-6">Istedigin zaman Profil’den degistirebilirsin.</p>
 
               {/* Duration */}
               <div className="text-left mb-6">
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Odak sÃ¼resi</p>
+                <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Odak süresi</p>
                 <div className="grid grid-cols-2 gap-3">
                   {DURATIONS.map((option) => (
                     <button

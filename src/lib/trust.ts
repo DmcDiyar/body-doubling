@@ -134,7 +134,7 @@ export async function getRehabilitationStatus(userId: string): Promise<{
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('event_type', 'solo_session_completed')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Son 7 gÃ¼n
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Son 7 gün
 
     const completedSessions = soloSessions || 0;
     const requiredSessions = 3;

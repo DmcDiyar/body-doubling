@@ -21,7 +21,7 @@ const PresenceDemo = () => {
                         Farki hisset
                     </h2>
                     <p className="text-lg text-[#6B6B65] max-w-md mx-auto">
-                        Yalniz Ã§alismak ile birlikte Ã§alismak arasindaki fark.
+                        Yalniz çalismak ile birlikte çalismak arasindaki fark.
                     </p>
                 </motion.div>
 
@@ -53,7 +53,7 @@ const PresenceDemo = () => {
                             <h3 className="text-xl font-semibold text-[#1A1A18] mb-2">Yalniz</h3>
                             <p className="text-[#6B6B65] text-sm">
                                 Dikkat dagiliyor.<br />
-                                Motivasyon dÃ¼sÃ¼k.
+                                Motivasyon düsük.
                             </p>
                         </motion.div>
 
@@ -84,7 +84,7 @@ const PresenceDemo = () => {
 
                     {/* Hint */}
                     <p className="text-center mt-8 text-sm text-[#9A9A94]">
-                        Ãœzerine gel ve farki gÃ¶r
+                        Üzerine gel ve farki gör
                     </p>
                 </motion.div>
             </div>

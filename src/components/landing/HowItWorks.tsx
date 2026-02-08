@@ -80,10 +80,10 @@ const HowItWorks = () => {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1A1A18] tracking-tight mb-4">
-                        Nasil Ã‡alisir
+                        Nasil Çalisir
                     </h2>
                     <p className="text-lg text-[#6B6B65] max-w-md mx-auto">
-                        DÃ¶rt basit adimda odaklanmaya basla.
+                        Dört basit adimda odaklanmaya basla.
                     </p>
                 </motion.div>
 

@@ -21,7 +21,7 @@ export default function QuickMatchPage() {
   const [motivationalMsg, setMotivationalMsg] = useState(getRandomMessage());
   const [funFact, setFunFact] = useState(getRandomFunFact());
   const [queueCount, setQueueCount] = useState(0);
-  const [userAvatar, setUserAvatar] = useState<string>('ğŸ±');
+  const [userAvatar, setUserAvatar] = useState<string>('🐱');
 
   // Rotate messages every 5 seconds during matching phase
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function QuickMatchPage() {
       .single();
 
     if (!profile || (profile as User).trust_score < TRUST.SOLO_ONLY_THRESHOLD) {
-      // Trust çok düsük, sadece solo
+      // Trust �ok d�s�k, sadece solo
       handleStartSolo(authUser.id);
       return;
     }
@@ -103,7 +103,7 @@ export default function QuickMatchPage() {
     setPhase('matching');
 
     // Kuyruga ekle - CHECK FIRST pattern (409 Conflict fix)
-    // Önce kullanicinin kuyrukta bekleyen kaydi var mi kontrol et
+    // �nce kullanicinin kuyrukta bekleyen kaydi var mi kontrol et
     const priority = (profile as User).trust_score >= TRUST.HIGH_PRIORITY_THRESHOLD ? 2 :
       (profile as User).trust_score >= TRUST.LOW_PRIORITY_THRESHOLD ? 1 : 0;
 
@@ -117,7 +117,7 @@ export default function QuickMatchPage() {
     // Eger zaten bekleyen kayit varsa, yeni insert yapma
     // Sadece kayit yoksa veya baska status'teyse insert yap
     if (!existingQueue) {
-      // Önce eski kayitlari temizle (expired, cancelled, matched olabilir)
+      // �nce eski kayitlari temizle (expired, cancelled, matched olabilir)
       await supabase
         .from('matching_queue')
         .delete()
@@ -201,7 +201,7 @@ export default function QuickMatchPage() {
         if (prev <= 1) {
           clearInterval(interval);
           channel.unsubscribe();
-          // Kuyruktan çik
+          // Kuyruktan �ik
           supabase.from('matching_queue')
             .update({ status: 'expired' })
             .eq('user_id', authUser.id)
@@ -283,13 +283,13 @@ export default function QuickMatchPage() {
                 onClick={() => router.push('/dashboard')}
                 className="text-gray-500 hover:text-white mb-6 text-sm"
               >
-                â† Dashboard
+                ← Dashboard
               </button>
 
               <h2 className="text-xl font-bold text-white mb-6">Hizli Eslesme</h2>
 
-              {/* Süre seçimi */}
-              <p className="text-gray-400 text-sm mb-3">Kaç dakika çalisacaksin?</p>
+              {/* S�re se�imi */}
+              <p className="text-gray-400 text-sm mb-3">Ka� dakika �alisacaksin?</p>
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {DURATIONS.map((d) => (
                   <button
@@ -309,7 +309,7 @@ export default function QuickMatchPage() {
                 ))}
               </div>
 
-              {/* Tema seçimi */}
+              {/* Tema se�imi */}
               <p className="text-gray-400 text-sm mb-3">Tema</p>
               <div className="flex flex-col gap-2 mb-8">
                 {THEMES.map((t) => (
@@ -374,7 +374,7 @@ export default function QuickMatchPage() {
 
               {/* Timer */}
               <p className="text-[#ffcb77] text-4xl font-bold mb-2">
-                â±ï¸ {matchTimer} saniye
+                ⏱️ {matchTimer} saniye
               </p>
 
               {/* Progress bar */}
@@ -398,7 +398,7 @@ export default function QuickMatchPage() {
                 className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 text-left"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-xl">ğŸ’¡</span>
+                  <span className="text-xl">💡</span>
                   <div>
                     <p className="text-[#ffcb77] text-xs font-semibold mb-1">Bilgin var miydi?</p>
                     <p className="text-white/80 text-sm">{funFact}</p>
@@ -457,7 +457,7 @@ export default function QuickMatchPage() {
                 transition={{ delay: 0.2, type: 'spring' }}
                 className="text-6xl mb-4"
               >
-                ğŸ‰
+                🎉
               </motion.div>
               <h2 className="text-2xl font-bold text-white mb-2">
                 {COPY.MATCHING_FOUND}
@@ -500,7 +500,7 @@ export default function QuickMatchPage() {
                   onClick={() => router.push('/dashboard')}
                   className="text-gray-600 hover:text-gray-400 text-sm"
                 >
-                  Vazgeç
+                  Vazge�
                 </button>
               </div>
             </motion.div>

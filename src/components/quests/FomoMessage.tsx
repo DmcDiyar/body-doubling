@@ -28,7 +28,7 @@ export function FomoMessage({ message, missedCount }: FomoMessageProps) {
                 </p>
                 {missedCount && missedCount > 1 && (
                     <p className="text-gray-600 text-xs text-center mt-2">
-                        {missedCount} kaÃ§irilmis an
+                        {missedCount} kaçirilmis an
                     </p>
                 )}
             </div>

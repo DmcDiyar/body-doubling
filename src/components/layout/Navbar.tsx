@@ -17,7 +17,7 @@ const Navbar = () => {
     }, []);
 
     const navLinks = [
-        { href: '#how-it-works', label: 'Nasil Ã‡alisir' },
+        { href: '#how-it-works', label: 'Nasil Çalisir' },
         { href: '#about', label: 'Hakkinda' },
     ];
 

@@ -15,225 +15,225 @@ export interface FocusArticle {
 export const FOCUS_ARTICLES: FocusArticle[] = [
     {
         id: 'pomodoro-teknigi',
-        emoji: 'ÄŸÅ¸Ââ€¦',
+        emoji: 'ğŸ…',
         title: 'Pomodoro Teknigi Nedir?',
-        summary: '25 dakikalik odak bloklariyla verimliligi artirmanin kanitlanmis yÃ¶ntemi.',
+        summary: '25 dakikalik odak bloklariyla verimliligi artirmanin kanitlanmis yöntemi.',
         readTime: 3,
         tags: ['temel', 'teknik'],
-        body: `Pomodoro Teknigi, 1980'lerde Francesco Cirillo tarafindan gelistirilen bir zaman yÃ¶netimi yÃ¶ntemidir. Adini mutfak zamanlayicisinin domates (pomodoro) seklinden alir.
+        body: `Pomodoro Teknigi, 1980'lerde Francesco Cirillo tarafindan gelistirilen bir zaman yönetimi yöntemidir. Adini mutfak zamanlayicisinin domates (pomodoro) seklinden alir.
 
-**Nasil Ã‡alisir?**
+**Nasil Çalisir?**
 
 1. Yapacagin isi belirle
 2. Zamanlayiciyi 25 dakikaya kur
-3. SÃ¼re dolana kadar sadece o ise odaklan
+3. Süre dolana kadar sadece o ise odaklan
 4. 5 dakika mola ver
 5. Her 4 pomodoro'dan sonra 15-30 dakika uzun mola ver
 
 **Neden Ise Yarar?**
 
-Beyin sÃ¼rekli Ã§alismak iÃ§in tasarlanmamistir. 25 dakikalik bloklar, odaklanma kasini zorlamadan gÃ¼Ã§lendirir. Molalar beynin bilgiyi islemesine ve enerji toplamasina yardimci olur.
+Beyin sürekli çalismak için tasarlanmamistir. 25 dakikalik bloklar, odaklanma kasini zorlamadan güçlendirir. Molalar beynin bilgiyi islemesine ve enerji toplamasina yardimci olur.
 
 **Sessiz Ortak'ta Pomodoro**
 
-Sessiz Ortak'ta 15, 25, 50 ve 90 dakikalik sÃ¼re seÃ§enekleri var. Yeni baslayanlar iÃ§in 25 dakika ideal. Derin odak isteyenler 50 dakikayi, maraton Ã§alisanlar 90 dakikayi tercih edebilir.`,
+Sessiz Ortak'ta 15, 25, 50 ve 90 dakikalik süre seçenekleri var. Yeni baslayanlar için 25 dakika ideal. Derin odak isteyenler 50 dakikayi, maraton çalisanlar 90 dakikayi tercih edebilir.`,
     },
     {
         id: 'body-doubling',
-        emoji: 'ÄŸÅ¸â€˜Â¥',
+        emoji: 'ğŸ‘¥',
         title: 'Body Doubling: Sessiz Eslik',
-        summary: 'Yaninda biri varken neden daha iyi Ã§alisirsin? Bilimin aÃ§iklamasi.',
+        summary: 'Yaninda biri varken neden daha iyi çalisirsin? Bilimin açiklamasi.',
         readTime: 4,
         tags: ['temel', 'bilim'],
-        body: `Body doubling, baska birinin fiziksel (veya sanal) varliginin motivasyonu ve odaklanmayi artirdigi bir tekniktir. Ã–zellikle ADHD'li bireyler iÃ§in etkili oldugu kanitlanmistir, ama herkes iÃ§in ise yarar.
+        body: `Body doubling, baska birinin fiziksel (veya sanal) varliginin motivasyonu ve odaklanmayi artirdigi bir tekniktir. Özellikle ADHD'li bireyler için etkili oldugu kanitlanmistir, ama herkes için ise yarar.
 
 **Neden Ise Yarar?**
 
-- **Sosyal sorumluluk**: Biri seni "gÃ¶rÃ¼yor" oldugunda, ise baslamak ve devam etmek daha kolay.
-- **Ayna nÃ¶ronlari**: Ã‡alisan birini gÃ¶rmek, beyninde benzer aktivite yaratir.
-- **Azaltilmis izolasyon**: Yalniz Ã§alismak yorucu olabilir. Sessiz bir eslik bile fark yaratir.
+- **Sosyal sorumluluk**: Biri seni "görüyor" oldugunda, ise baslamak ve devam etmek daha kolay.
+- **Ayna nöronlari**: Çalisan birini görmek, beyninde benzer aktivite yaratir.
+- **Azaltilmis izolasyon**: Yalniz çalismak yorucu olabilir. Sessiz bir eslik bile fark yaratir.
 
 **Kamera Yok, Mikrofon Yok**
 
-Sessiz Ortak'ta kimse seni gÃ¶rmez veya duymaz. Sadece birinin seninle ayni anda Ã§alistigini bilirsin. Bu minimal baglanti bile odaklanmayi %30'a kadar artirabilir.
+Sessiz Ortak'ta kimse seni görmez veya duymaz. Sadece birinin seninle ayni anda çalistigini bilirsin. Bu minimal baglanti bile odaklanmayi %30'a kadar artirabilir.
 
 **Arastirma Ne Diyor?**
 
-2019 yilinda yapilan bir Ã§alisma, sanal body doubling'in yÃ¼z yÃ¼ze kadar etkili oldugunu gÃ¶sterdi. Ã–nemli olan fiziksel yakinlik degil, "birlikte yapiyoruz" hissidir.`,
+2019 yilinda yapilan bir çalisma, sanal body doubling'in yüz yüze kadar etkili oldugunu gösterdi. Önemli olan fiziksel yakinlik degil, "birlikte yapiyoruz" hissidir.`,
     },
     {
         id: 'odaklanma-ortami',
-        emoji: 'ÄŸÅ¸ÂÂ ',
+        emoji: 'ğŸ ',
         title: 'Odaklanma Ortami Nasil Yaratilir?',
-        summary: 'Fiziksel ve dijital ortamini odak iÃ§in optimize etmenin pratik yollari.',
+        summary: 'Fiziksel ve dijital ortamini odak için optimize etmenin pratik yollari.',
         readTime: 3,
         tags: ['pratik', 'ortam'],
-        body: `Odaklanma sadece zihinsel bir sÃ¼reÃ§ degildir. Ã‡evren, ne kadar iyi odaklanabildigini dogrudan etkiler.
+        body: `Odaklanma sadece zihinsel bir süreç degildir. Çevren, ne kadar iyi odaklanabildigini dogrudan etkiler.
 
 **Fiziksel Ortam**
 
-- **Masa**: Sadece Ã§alisacagin seyleri masada birak. Daginiklik = dikkat daginikligi.
+- **Masa**: Sadece çalisacagin seyleri masada birak. Daginiklik = dikkat daginikligi.
 - **Isik**: Dogal isik en iyisi. Yoksa, sicak-beyaz masa lambasi kullan.
-- **Sicaklik**: 20-22Â°C ideal. Ã‡ok sicak = uyusukluk, Ã§ok soguk = rahatsizlik.
-- **Ses**: Tamamen sessiz ortam herkes iÃ§in iyi degildir. Lo-fi mÃ¼zik veya beyaz gÃ¼rÃ¼ltÃ¼ dene.
+- **Sicaklik**: 20-22°C ideal. Çok sicak = uyusukluk, çok soguk = rahatsizlik.
+- **Ses**: Tamamen sessiz ortam herkes için iyi degildir. Lo-fi müzik veya beyaz gürültü dene.
 
 **Dijital Ortam**
 
-- **Bildirimler**: Ã‡alisma sÃ¼resince tÃ¼m bildirimleri kapat.
-- **Tek sekme**: Tarayicida sadece Ã§alistigin seyle ilgili sekmeler aÃ§ik olsun.
-- **Telefon**: Baska odaya koy veya uÃ§ak moduna al.
+- **Bildirimler**: Çalisma süresince tüm bildirimleri kapat.
+- **Tek sekme**: Tarayicida sadece çalistigin seyle ilgili sekmeler açik olsun.
+- **Telefon**: Baska odaya koy veya uçak moduna al.
 - **Uygulama engelleyiciler**: Forest, Freedom gibi uygulamalar dikkat dagitici siteleri engelleyebilir.
 
-**RitÃ¼el GÃ¼cÃ¼**
+**Ritüel Gücü**
 
-Her Ã§alisma seansindan Ã¶nce ayni ritÃ¼eli yapmak (su iÃ§, derin nefes al, hedef belirle) beynine "simdi odaklanma zamani" sinyali gÃ¶nderir. Sessiz Ortak'taki ritÃ¼el adimi tam da bunu yapar.`,
+Her çalisma seansindan önce ayni ritüeli yapmak (su iç, derin nefes al, hedef belirle) beynine "simdi odaklanma zamani" sinyali gönderir. Sessiz Ortak'taki ritüel adimi tam da bunu yapar.`,
     },
     {
         id: 'derin-odak',
-        emoji: 'ÄŸÅ¸Â§Â ',
-        title: 'Derin Odak vs. YÃ¼zeysel Ã‡alisma',
-        summary: 'Cal Newport\'un derin is kavrami ve gÃ¼nlÃ¼k hayata uygulamasi.',
+        emoji: 'ğŸ§ ',
+        title: 'Derin Odak vs. Yüzeysel Çalisma',
+        summary: 'Cal Newport\'un derin is kavrami ve günlük hayata uygulamasi.',
         readTime: 4,
         tags: ['bilim', 'teori'],
         body: `Cal Newport'un "Deep Work" (Derin Is) kavrami, dikkat dagiticilardan uzak, yogun odaklanma gerektiren bilissel aktiviteleri tanimlar.
 
-**Derin Is vs. YÃ¼zeysel Is**
+**Derin Is vs. Yüzeysel Is**
 
-- **Derin Is**: Yeni bir sey Ã¶grenmek, karmasik problem Ã§Ã¶zmek, yaratici Ã¼retim yapmak.
-- **YÃ¼zeysel Is**: E-posta yanitlamak, toplantilara katilmak, sosyal medya kontrol etmek.
+- **Derin Is**: Yeni bir sey ögrenmek, karmasik problem çözmek, yaratici üretim yapmak.
+- **Yüzeysel Is**: E-posta yanitlamak, toplantilara katilmak, sosyal medya kontrol etmek.
 
-**Neden Ã–nemli?**
+**Neden Önemli?**
 
-Derin is, en degerli Ã§iktilari Ã¼retir. Ama modern dÃ¼nya yÃ¼zeysel ise sÃ¼rÃ¼kler. Ortalama bir bilgi isÃ§isi gÃ¼nde sadece 1-2 saat derin odaklanir.
+Derin is, en degerli çiktilari üretir. Ama modern dünya yüzeysel ise sürükler. Ortalama bir bilgi isçisi günde sadece 1-2 saat derin odaklanir.
 
 **Derin Odak Nasil Gelistirilir?**
 
-1. **Zamanlama**: Her gÃ¼n ayni saatte derin Ã§alisma blogu ayir.
-2. **RitÃ¼el**: Baslamadan Ã¶nce ritÃ¼el olustur (Sessiz Ortak bunu otomatik yapar).
-3. **SÃ¼re**: 25 dakikayla basla, zamanla 50-90 dakikaya Ã§ik.
-4. **Tekrar**: Derin odak bir kas gibidir Ã¢â‚¬â€ dÃ¼zenli antrenmanla gÃ¼Ã§lenir.
+1. **Zamanlama**: Her gün ayni saatte derin çalisma blogu ayir.
+2. **Ritüel**: Baslamadan önce ritüel olustur (Sessiz Ortak bunu otomatik yapar).
+3. **Süre**: 25 dakikayla basla, zamanla 50-90 dakikaya çik.
+4. **Tekrar**: Derin odak bir kas gibidir â€” düzenli antrenmanla güçlenir.
 5. **Sikicilik toleransi**: Sikildiginda hemen telefona uzanma. Sikiciliga dayanmak derin odak kasini gelistirir.
 
 **Sessiz Ortak + Derin Odak**
 
-Sessiz Ortak, derin odak iÃ§in ideal kosullari saglar: zamanlayici, ritÃ¼el, sessiz eslik ve dikkat dagiticilardan uzaklik.`,
+Sessiz Ortak, derin odak için ideal kosullari saglar: zamanlayici, ritüel, sessiz eslik ve dikkat dagiticilardan uzaklik.`,
     },
     {
         id: 'stres-odaklanma',
-        emoji: 'ÄŸÅ¸ËœÂ®Ã¢â‚¬ÂÄŸÅ¸â€™Â¨',
+        emoji: 'ğŸ˜®â€ğŸ’¨',
         title: 'Stresin Odaklanmaya Etkisi',
-        summary: 'Stres neden odaklanmayi zorlastirir ve bununla nasil basa Ã§ikilir.',
+        summary: 'Stres neden odaklanmayi zorlastirir ve bununla nasil basa çikilir.',
         readTime: 3,
         tags: ['bilim', 'saglik'],
-        body: `Stres, odaklanmanin en bÃ¼yÃ¼k dÃ¼smanidir. Ama neden?
+        body: `Stres, odaklanmanin en büyük düsmanidir. Ama neden?
 
 **Beyin ve Stres**
 
-Stres altinda amigdala (tehlike merkezi) aktiflesir ve prefrontal korteks (planlama, odaklanma merkezi) baskilanir. Bu "savas ya da kaÃ§" tepkisi, hayatta kalmak iÃ§in tasarlanmistir ama modern dÃ¼nyada genellikle zararlidir.
+Stres altinda amigdala (tehlike merkezi) aktiflesir ve prefrontal korteks (planlama, odaklanma merkezi) baskilanir. Bu "savas ya da kaç" tepkisi, hayatta kalmak için tasarlanmistir ama modern dünyada genellikle zararlidir.
 
-**Stres DÃ¶ngÃ¼sÃ¼**
+**Stres Döngüsü**
 
-Stres Ã¢â€ â€™ Odaklanamama Ã¢â€ â€™ Is birikir Ã¢â€ â€™ Daha fazla stres Ã¢â€ â€™ Daha az odaklanma...
+Stres â†’ Odaklanamama â†’ Is birikir â†’ Daha fazla stres â†’ Daha az odaklanma...
 
-**DÃ¶ngÃ¼yÃ¼ Kirmak**
+**Döngüyü Kirmak**
 
 1. **Nefes**: 4-7-8 teknigi (4 saniye nefes al, 7 saniye tut, 8 saniye ver). Parasempatik sinir sistemini aktiflestirir.
-2. **KÃ¼Ã§Ã¼k basla**: BÃ¼yÃ¼k gÃ¶revleri 15 dakikalik parÃ§alara bÃ¶l.
-3. **Hareket**: 5 dakikalik yÃ¼rÃ¼yÃ¼s kortizol seviyesini dÃ¼sÃ¼rÃ¼r.
-4. **Yazma**: Endiselerini kagida dÃ¶k. Beyin "saklama" modundan Ã§ikar.
-5. **Birlikte Ã§alis**: Body doubling stresi azaltir Ã§Ã¼nkÃ¼ yalniz degilsin.
+2. **Küçük basla**: Büyük görevleri 15 dakikalik parçalara böl.
+3. **Hareket**: 5 dakikalik yürüyüs kortizol seviyesini düsürür.
+4. **Yazma**: Endiselerini kagida dök. Beyin "saklama" modundan çikar.
+5. **Birlikte çalis**: Body doubling stresi azaltir çünkü yalniz degilsin.
 
-**Sessiz Ortak'ta Stres YÃ¶netimi**
+**Sessiz Ortak'ta Stres Yönetimi**
 
-RitÃ¼el adiminda nefes egzersizi, cooldown'da duygu farkindaligi Ã¢â‚¬â€ bunlar stres yÃ¶netimi araÃ§laridir. Atlamadan yap.`,
+Ritüel adiminda nefes egzersizi, cooldown'da duygu farkindaligi â€” bunlar stres yönetimi araçlaridir. Atlamadan yap.`,
     },
     {
         id: 'ritueller-aliskanliklar',
-        emoji: 'ÄŸÅ¸Â§Ëœ',
-        title: 'RitÃ¼eller ve Aliskanliklar',
-        summary: 'KÃ¼Ã§Ã¼k ritÃ¼eller nasil gÃ¼Ã§lÃ¼ aliskanliklara dÃ¶nÃ¼sÃ¼r.',
+        emoji: 'ğŸ§˜',
+        title: 'Ritüeller ve Aliskanliklar',
+        summary: 'Küçük ritüeller nasil güçlü aliskanliklara dönüsür.',
         readTime: 3,
         tags: ['pratik', 'aliskanlik'],
-        body: `James Clear'in "Atomic Habits" (Atomik Aliskanliklar) kitabi, kÃ¼Ã§Ã¼k degisimlerin bÃ¼yÃ¼k sonuÃ§lar yarattigini gÃ¶sterir. RitÃ¼eller bunun anahtaridir.
+        body: `James Clear'in "Atomic Habits" (Atomik Aliskanliklar) kitabi, küçük degisimlerin büyük sonuçlar yarattigini gösterir. Ritüeller bunun anahtaridir.
 
-**RitÃ¼el vs. Aliskanlik**
+**Ritüel vs. Aliskanlik**
 
-- **RitÃ¼el**: BilinÃ§li olarak yapilan, anlam yÃ¼klÃ¼ tekrarlanan eylem.
+- **Ritüel**: Bilinçli olarak yapilan, anlam yüklü tekrarlanan eylem.
 - **Aliskanlik**: Otomatiklesmis davranis kalibi.
 
-RitÃ¼eller zamanla aliskanliklara dÃ¶nÃ¼sÃ¼r. Sessiz Ortak'taki seans ritÃ¼eli (nefes al, hedef belirle, basla) tam da bunu hedefler.
+Ritüeller zamanla aliskanliklara dönüsür. Sessiz Ortak'taki seans ritüeli (nefes al, hedef belirle, basla) tam da bunu hedefler.
 
-**Aliskanlik DÃ¶ngÃ¼sÃ¼**
+**Aliskanlik Döngüsü**
 
-1. **Isaret**: Sessiz Ortak'i aÃ§ (tetikleyici).
+1. **Isaret**: Sessiz Ortak'i aç (tetikleyici).
 2. **Istek**: Odaklanmak istiyorsun (motivasyon).
-3. **Tepki**: RitÃ¼eli yap, seansi baslat (eylem).
-4. **Ã–dÃ¼l**: XP kazan, streak artir, gÃ¶rev tamamla (tatmin).
+3. **Tepki**: Ritüeli yap, seansi baslat (eylem).
+4. **Ödül**: XP kazan, streak artir, görev tamamla (tatmin).
 
-**Pratik IpuÃ§lari**
+**Pratik Ipuçlari**
 
-- Her gÃ¼n ayni saatte seans yap.
-- RitÃ¼eli asla atlama Ã¢â‚¬â€ 30 saniye bile olsa yap.
-- Cooldown'u da atla: kapanis ritÃ¼eli, aliskanligi pekistirir.
-- Streak'ini koru: ardisik gÃ¼nler aliskanligi gÃ¼Ã§lendirir.`,
+- Her gün ayni saatte seans yap.
+- Ritüeli asla atlama â€” 30 saniye bile olsa yap.
+- Cooldown'u da atla: kapanis ritüeli, aliskanligi pekistirir.
+- Streak'ini koru: ardisik günler aliskanligi güçlendirir.`,
     },
     {
         id: 'dijital-detoks',
-        emoji: 'ÄŸÅ¸â€œÂµ',
-        title: 'Dijital Detoks IpuÃ§lari',
-        summary: 'Ekran bagimliligini azaltmak iÃ§in uygulanabilir stratejiler.',
+        emoji: 'ğŸ“µ',
+        title: 'Dijital Detoks Ipuçlari',
+        summary: 'Ekran bagimliligini azaltmak için uygulanabilir stratejiler.',
         readTime: 3,
         tags: ['pratik', 'saglik'],
-        body: `Ortalama bir insan gÃ¼nde 7+ saat ekrana bakar. Bu, odaklanma kapasitesini ciddi sekilde azaltir.
+        body: `Ortalama bir insan günde 7+ saat ekrana bakar. Bu, odaklanma kapasitesini ciddi sekilde azaltir.
 
 **Dijital Detoks Neden Gerekli?**
 
-- SÃ¼rekli bildirimler dikkat sÃ¼resini kisaltir.
-- Sosyal medya dopamin dÃ¶ngÃ¼sÃ¼ yaratir.
+- Sürekli bildirimler dikkat süresini kisaltir.
+- Sosyal medya dopamin döngüsü yaratir.
 - Mavi isik uyku kalitesini bozar.
-- Multitasking (Ã§oklu gÃ¶rev) aslinda imkansizdir Ã¢â‚¬â€ beyin sadece hizla geÃ§is yapar.
+- Multitasking (çoklu görev) aslinda imkansizdir â€” beyin sadece hizla geçis yapar.
 
 **Pratik Adimlar**
 
 1. **Sabah rutini**: Uyaninca ilk 30 dakika telefona bakma.
-2. **Bildirim temizligi**: Sadece gerÃ§ekten Ã¶nemli uygulamalarin bildirimlerini aÃ§.
-3. **Ekran sÃ¼resi siniri**: iOS/Android ekran sÃ¼resi Ã¶zelligini kullan.
-4. **Gri tonlar**: Telefonunu gri tonlara Ã§evir Ã¢â‚¬â€ renkli ekran daha bagimlilik yaratir.
+2. **Bildirim temizligi**: Sadece gerçekten önemli uygulamalarin bildirimlerini aç.
+3. **Ekran süresi siniri**: iOS/Android ekran süresi özelligini kullan.
+4. **Gri tonlar**: Telefonunu gri tonlara çevir â€” renkli ekran daha bagimlilik yaratir.
 5. **Sarj yeri**: Telefonu yatak odasinda degil, baska odada sarj et.
-6. **Tek cihaz**: Ã‡alisirken sadece bir cihaz kullan.
+6. **Tek cihaz**: Çalisirken sadece bir cihaz kullan.
 
 **Sessiz Ortak = Mini Detoks**
 
-Her Sessiz Ortak seansi aslinda bir mini dijital detoks. 25 dakika telefondan uzak, odaklanmis zaman geÃ§irmek bile fark yaratir. Bunu gÃ¼nde 2-3 kez yap.`,
+Her Sessiz Ortak seansi aslinda bir mini dijital detoks. 25 dakika telefondan uzak, odaklanmis zaman geçirmek bile fark yaratir. Bunu günde 2-3 kez yap.`,
     },
     {
         id: 'kucuk-adimlar',
-        emoji: 'ÄŸÅ¸â€˜Â£',
-        title: 'KÃ¼Ã§Ã¼k Adimlarin GÃ¼cÃ¼',
-        summary: 'BÃ¼yÃ¼k hedeflere ulasmanin en etkili yolu: mikro adimlar.',
+        emoji: 'ğŸ‘£',
+        title: 'Küçük Adimlarin Gücü',
+        summary: 'Büyük hedeflere ulasmanin en etkili yolu: mikro adimlar.',
         readTime: 2,
         tags: ['motivasyon', 'temel'],
-        body: `"Bin millik yolculuk tek bir adimla baslar." Ã¢â‚¬â€ Lao Tzu
+        body: `"Bin millik yolculuk tek bir adimla baslar." â€” Lao Tzu
 
-**Neden KÃ¼Ã§Ã¼k Baslamalisin?**
+**Neden Küçük Baslamalisin?**
 
-Beyin bÃ¼yÃ¼k gÃ¶revlerden korkar. "Tez yazacagim" dediginde beyin direnir. Ama "5 dakika not alacagim" dediginde direnÃ§ minimal.
+Beyin büyük görevlerden korkar. "Tez yazacagim" dediginde beyin direnir. Ama "5 dakika not alacagim" dediginde direnç minimal.
 
 **2 Dakika Kurali**
 
-David Allen'in GTD sisteminden: Bir is 2 dakikadan kisa sÃ¼rÃ¼yorsa hemen yap. BÃ¼yÃ¼k isleri 2 dakikalik parÃ§alara bÃ¶l ve sadece ilk parÃ§ayla basla.
+David Allen'in GTD sisteminden: Bir is 2 dakikadan kisa sürüyorsa hemen yap. Büyük isleri 2 dakikalik parçalara böl ve sadece ilk parçayla basla.
 
 **Momentum Etkisi**
 
-Bir kez basladiginda devam etmek kolaydir. Fizikteki atalet yasasi insanlar iÃ§in de geÃ§erli: hareketsiz cisim hareketsiz kalir, hareketli cisim hareketli kalir.
+Bir kez basladiginda devam etmek kolaydir. Fizikteki atalet yasasi insanlar için de geçerli: hareketsiz cisim hareketsiz kalir, hareketli cisim hareketli kalir.
 
-**Sessiz Ortak ve KÃ¼Ã§Ã¼k Adimlar**
+**Sessiz Ortak ve Küçük Adimlar**
 
-- 15 dakikalik seans: en kÃ¼Ã§Ã¼k adim.
-- RitÃ¼el: 30 saniyelik baslangiÃ§.
-- Streak: her gÃ¼n tek seans bile yeter.
+- 15 dakikalik seans: en küçük adim.
+- Ritüel: 30 saniyelik baslangiç.
+- Streak: her gün tek seans bile yeter.
 
-MÃ¼kemmellik degil, tutarlilik Ã¶nemli. Her gÃ¼n kÃ¼Ã§Ã¼k bir adim, bir yilda devasa bir yol demektir.`,
+Mükemmellik degil, tutarlilik önemli. Her gün küçük bir adim, bir yilda devasa bir yol demektir.`,
     },
 ];
 

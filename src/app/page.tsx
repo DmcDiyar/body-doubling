@@ -10,7 +10,7 @@ import Footer from '@/components/landing/Footer';
 
 export const metadata: Metadata = {
   title: 'Sessiz Ortak | Birlikte Odaklan, Sessizce',
-  description: 'Sessiz Ortak ile baska biriyle esles ve birlikte odaklan. Konusma yok, sadece varlik. Ãœcretsiz body doubling deneyimi.',
+  description: 'Sessiz Ortak ile baska biriyle esles ve birlikte odaklan. Konusma yok, sadece varlik. Ücretsiz body doubling deneyimi.',
   keywords: ['sessiz ortak', 'birlikte odaklan', 'body doubling', 'odak oturumu', 'focus timer'],
   openGraph: {
     title: 'Sessiz Ortak | Birlikte Odaklan, Sessizce',
