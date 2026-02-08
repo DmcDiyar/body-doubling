@@ -2,24 +2,24 @@
 // Sessiz Ortak - Sabitler
 // ============================================================
 
-// Avatarlar (MVP: 4 �cretsiz)
+// Avatarlar (MVP: 4 ücretsiz)
 export const AVATARS = [
-  { id: 1, name: 'Kedi', emoji: '🐱' },
-  { id: 2, name: 'Ayi', emoji: '🐻' },
-  { id: 3, name: 'Tavsan', emoji: '🐰' },
-  { id: 4, name: 'Tilki', emoji: '🦊' },
+  { id: 1, name: 'Kedi', emoji: 'ğŸ±' },
+  { id: 2, name: 'Ayi', emoji: 'ğŸ»' },
+  { id: 3, name: 'Tavsan', emoji: 'ğŸ°' },
+  { id: 4, name: 'Tilki', emoji: 'ğŸ¦Š' },
 ] as const;
 
 // Temalar
 export const THEMES = [
-  { id: 'rainy_cafe', name: 'Yagmurlu Kafe', emoji: '🌧️', free: true },
-  { id: 'library', name: 'K�t�phane', emoji: '📚', free: true },
-  { id: 'forest_cabin', name: 'Orman Kul�besi', emoji: '🌲', free: true },
+  { id: 'rainy_cafe', name: 'Yagmurlu Kafe', emoji: 'ğŸŒ§ï¸', free: true },
+  { id: 'library', name: 'Kütüphane', emoji: 'ğŸ“š', free: true },
+  { id: 'forest_cabin', name: 'Orman Kulübesi', emoji: 'ğŸŒ²', free: true },
 ] as const;
 
-// Pomodoro s�releri (dakika)
+// Pomodoro süreleri (dakika)
 export const DURATIONS = [
-  { value: 15, label: '15 dk', description: 'Hizli g�rev' },
+  { value: 15, label: '15 dk', description: 'Hizli görev' },
   { value: 25, label: '25 dk', description: 'Klasik Pomodoro', recommended: true },
   { value: 50, label: '50 dk', description: 'Derin odak' },
   { value: 90, label: '90 dk', description: 'Uzun maraton' },
@@ -39,37 +39,37 @@ export const TRUST_LEVELS = {
   RESTRICTED: {
     min: 0, max: 49,
     label: 'Restricted', labelTR: 'Kisitli',
-    priority: -1, color: '#ef4444', emoji: '🔴',
+    priority: -1, color: '#ef4444', emoji: 'ğŸ”´',
     canMatch: false
   },
   NEWBIE: {
     min: 50, max: 69,
     label: 'Newbie', labelTR: 'Yeni',
-    priority: 0, color: '#f97316', emoji: '🟠',
+    priority: 0, color: '#f97316', emoji: 'ğŸŸ ',
     canMatch: true
   },
   TRUSTED: {
     min: 70, max: 89,
-    label: 'Trusted', labelTR: 'G�venilir',
-    priority: 1, color: '#eab308', emoji: '🟡',
+    label: 'Trusted', labelTR: 'Güvenilir',
+    priority: 1, color: '#eab308', emoji: 'ğŸŸ¡',
     canMatch: true
   },
   VERIFIED: {
     min: 90, max: 119,
     label: 'Verified', labelTR: 'Dogrulanmis',
-    priority: 2, color: '#22c55e', emoji: '🟢',
+    priority: 2, color: '#22c55e', emoji: 'ğŸŸ¢',
     canMatch: true
   },
   ELITE: {
     min: 120, max: 149,
-    label: 'Elite', labelTR: 'Se�kin',
-    priority: 3, color: '#3b82f6', emoji: '🔵',
+    label: 'Elite', labelTR: 'Seçkin',
+    priority: 3, color: '#3b82f6', emoji: 'ğŸ”µ',
     canMatch: true
   },
   LEGEND: {
     min: 150, max: 200,
     label: 'Legend', labelTR: 'Efsane',
-    priority: 4, color: '#a855f7', emoji: '⭐',
+    priority: 4, color: '#a855f7', emoji: 'â­',
     canMatch: true
   },
 } as const;
@@ -92,45 +92,45 @@ export const REHABILITATION = {
   THRESHOLD: 50,
 } as const;
 
-// G�nl�k seans limiti (free tier)
+// Günlük seans limiti (free tier)
 export const FREE_DAILY_LIMIT = 3;
 
 // Matching timeout (ms)
 export const MATCHING_TIMEOUT_MS = 30_000;
 
-// Session warm-up s�resi (ms)
+// Session warm-up süresi (ms)
 export const WARMUP_DURATION_MS = 30_000;
 
 // Presence heartbeat interval (ms)
 export const HEARTBEAT_INTERVAL_MS = 15_000;
 
 // ============================================================
-// MOTIVATIONAL MESSAGES - Matching wait screen'de g�sterilir
+// MOTIVATIONAL MESSAGES - Matching wait screen'de gösterilir
 // ============================================================
 export const MOTIVATIONAL_MESSAGES = [
   // Sessizlik & Topluluk
-  "Bug�n sessizce ilerlemek yeterli.",
-  "Odaklanmak i�in yalniz degilsin.",
+  "Bugün sessizce ilerlemek yeterli.",
+  "Odaklanmak için yalniz degilsin.",
   "Sessiz bir ortak seni bekliyor.",
-  "Birisi seninle birlikte �alisacak.",
-  // K���k Adimlar
-  "K���k adimlar, b�y�k degisimler.",
+  "Birisi seninle birlikte çalisacak.",
+  // Küçük Adimlar
+  "Küçük adimlar, büyük degisimler.",
   "Sadece baslamak yeterli.",
   "Her seans bir adimdir.",
   "Ilerliyorsun, devam et.",
   // Kendine Zaman
-  "Bug�n kendine zaman ayiriyorsun.",
-  "Sen bug�n burada olmayi se�tin.",
+  "Bugün kendine zaman ayiriyorsun.",
+  "Sen bugün burada olmayi seçtin.",
   "Kendine yatirim yapiyorsun.",
-  "Bu an senin i�in.",
+  "Bu an senin için.",
   // Hazirlik
   "Bir nefes al, hazirsin.",
   "Odaklanmaya hazirlan.",
   "Simdi senin zamanin.",
-  "Baslamak i�in hazirsin.",
+  "Baslamak için hazirsin.",
 ] as const;
 
-// Random mesaj se�
+// Random mesaj seç
 export function getRandomMessage(): string {
   return MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)];
 }
@@ -140,37 +140,37 @@ export function getRandomMessage(): string {
 // ============================================================
 export const FUN_FACTS = [
   "Pomodoro teknigi Italyan 'domates' kelimesinden gelir.",
-  "Ortalama insan odaklanma s�resi 25 dakikadir.",
-  "�alisma arkadasi bulma 'body doubling' teknigi olarak biliniyor.",
+  "Ortalama insan odaklanma süresi 25 dakikadir.",
+  "Çalisma arkadasi bulma 'body doubling' teknigi olarak biliniyor.",
   "Insanlar yalnizken degil, birlikte varken zirveye ulasir.",
-  "Sessizlik i�inde kolektif enerji g��l�d�r.",
+  "Sessizlik içinde kolektif enerji güçlüdür.",
   "Odaklanma bir yetenek degil, bir ortamdir.",
-  "K���k adimlar, b�y�k degisimler yaratir.",
-  "Birlikte olmak, tek basina olmaktan g��l�d�r.",
+  "Küçük adimlar, büyük degisimler yaratir.",
+  "Birlikte olmak, tek basina olmaktan güçlüdür.",
 ] as const;
 
-// Random fun fact se�
+// Random fun fact seç
 export function getRandomFunFact(): string {
   return FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
 }
 
-// Microcopy — Yargisiz, baskisiz, sessiz, minimal
+// Microcopy â€” Yargisiz, baskisiz, sessiz, minimal
 export const COPY = {
   // Auth
   AUTH_TITLE: 'Sessiz Ortak',
-  AUTH_SUBTITLE: 'Sen �alis, biz yanindayiz.',
+  AUTH_SUBTITLE: 'Sen çalis, biz yanindayiz.',
   AUTH_CTA: 'Google ile Devam Et',
 
   // Onboarding
   ONBOARDING_WELCOME: 'Hos geldin!',
-  ONBOARDING_AVATAR: 'Avatarini se�',
-  ONBOARDING_GOAL: 'Bug�n ne �zerinde �alisacaksin?',
+  ONBOARDING_AVATAR: 'Avatarini seç',
+  ONBOARDING_GOAL: 'Bugün ne üzerinde çalisacaksin?',
   ONBOARDING_START: 'Hazirim',
 
   // Dashboard
   DASHBOARD_CTA: 'Hemen Basla',
-  DASHBOARD_STREAK: 'G�nl�k Seri',
-  DASHBOARD_TRUST: 'G�ven',
+  DASHBOARD_STREAK: 'Günlük Seri',
+  DASHBOARD_TRUST: 'Güven',
   DASHBOARD_SESSIONS: 'Toplam Seans',
 
   // Matching
@@ -181,8 +181,8 @@ export const COPY = {
   MATCHING_RETRY: 'Tekrar dene',
 
   // Session
-  SESSION_PARTNER_ACTIVE: '�alisiyor',
-  SESSION_PARTNER_IDLE: 'd�s�n�yor',
+  SESSION_PARTNER_ACTIVE: 'çalisiyor',
+  SESSION_PARTNER_IDLE: 'düsünüyor',
   SESSION_PARTNER_AWAY: 'uzakta',
   SESSION_EXIT: 'Sessizce Bitir',
 
@@ -190,15 +190,15 @@ export const COPY = {
   SESSION_COMPLETE: 'Harika is!',
   SESSION_RATE: 'Seansi degerlendir',
   SESSION_AGAIN: 'Tekrar Esles',
-  SESSION_DONE: 'Bug�nl�k Yeter',
+  SESSION_DONE: 'Bugünlük Yeter',
 
   // Trust warning (ceza dili yok)
   TRUST_WARNING: 'Erken ayrilirsan eslesmelerin yavaslayabilir.',
 
   // Rehabilitation
-  REHAB_TITLE: 'Trust Score D�s�k',
-  REHAB_MESSAGE: 'Topluluk g�venligi i�in kisa bir ara. Solo modda 3 seans tamamla, tekrar esles.',
-  REHAB_COMPLETE: 'Hos geldin! 🎉 Artik tekrar eslesebilirsin.',
+  REHAB_TITLE: 'Trust Score Düsük',
+  REHAB_MESSAGE: 'Topluluk güvenligi için kisa bir ara. Solo modda 3 seans tamamla, tekrar esles.',
+  REHAB_COMPLETE: 'Hos geldin! ğŸ‰ Artik tekrar eslesebilirsin.',
 } as const;
 
 

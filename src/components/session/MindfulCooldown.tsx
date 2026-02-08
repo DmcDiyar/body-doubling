@@ -18,17 +18,17 @@ interface MindfulCooldownProps {
 }
 
 const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
-    { value: 'tired', emoji: '😔', label: 'Yorgun' },
-    { value: 'neutral', emoji: '😐', label: 'N�tr' },
-    { value: 'good', emoji: '🙂', label: 'Iyi' },
-    { value: 'energetic', emoji: '😊', label: 'Enerjik' },
-    { value: 'peaceful', emoji: '😌', label: 'Huzurlu' },
+    { value: 'tired', emoji: 'ğŸ˜”', label: 'Yorgun' },
+    { value: 'neutral', emoji: 'ğŸ˜', label: 'Nötr' },
+    { value: 'good', emoji: 'ğŸ™‚', label: 'Iyi' },
+    { value: 'energetic', emoji: 'ğŸ˜Š', label: 'Enerjik' },
+    { value: 'peaceful', emoji: 'ğŸ˜Œ', label: 'Huzurlu' },
 ];
 
 const REFLECTION_OPTIONS: { value: Reflection; label: string }[] = [
     { value: 'focused', label: 'Odaklandim' },
     { value: 'struggled', label: 'Zorlandim ama kaldim' },
-    { value: 'distracted', label: 'Dagildim ama d�nd�m' },
+    { value: 'distracted', label: 'Dagildim ama döndüm' },
     { value: 'present', label: 'Sadece orada kaldim' },
 ];
 
@@ -119,7 +119,7 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                     onClick={handleSkip}
                     className="absolute top-4 right-0 text-gray-500 hover:text-gray-400 text-sm transition-colors"
                 >
-                    Atla →
+                    Atla â†’
                 </button>
 
                 <AnimatePresence mode="wait">
@@ -231,11 +231,11 @@ export function MindfulCooldown({ onComplete }: MindfulCooldownProps) {
                                 transition={{ delay: 0.2 }}
                                 className="text-2xl font-semibold text-[#ffcb77] mb-2"
                             >
-                                G�zel is.
+                                Güzel is.
                             </motion.h2>
                             <p className="text-gray-400 mb-8">
                                 Kendine zaman ayirdin.<br />
-                                Bu �nemli.
+                                Bu önemli.
                             </p>
 
                             <motion.button

@@ -18,7 +18,7 @@ interface FocusRitualProps {
 
 const INTENT_OPTIONS: { value: Intent; label: string }[] = [
     { value: 'finish', label: 'Bir seyi bitirmek' },
-    { value: 'start', label: 'Düsünmeden baslamak' },
+    { value: 'start', label: 'DÃ¼sÃ¼nmeden baslamak' },
     { value: 'calm', label: 'Sakin kalmak' },
     { value: 'presence', label: 'Sadece orada olmak' },
 ];
@@ -144,7 +144,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Bu seans için niyetin ne?
+                                Bu seans iÃ§in niyetin ne?
                             </h2>
 
                             <div className="space-y-3 mb-6">
@@ -169,7 +169,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             </div>
 
                             <p className="text-gray-500 text-sm">
-                                Seç ve devam et.
+                                SeÃ§ ve devam et.
                             </p>
                             <p className="text-gray-600 text-xs mt-2">{timeLeft}s</p>
                         </motion.div>
@@ -189,7 +189,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                                 Omuzlarini gevset.
                             </h2>
                             <h2 className="text-2xl font-semibold text-white mb-6">
-                                Çeneni birak.
+                                Ã‡eneni birak.
                             </h2>
                             <p className="text-gray-400 text-lg">
                                 Hazirsin.
@@ -208,7 +208,7 @@ export function FocusRitual({ onComplete }: FocusRitualProps) {
                             className="text-center"
                         >
                             <h2 className="text-2xl font-semibold text-white mb-8">
-                                Seans baslamak üzere.
+                                Seans baslamak Ã¼zere.
                             </h2>
 
                             <motion.button
