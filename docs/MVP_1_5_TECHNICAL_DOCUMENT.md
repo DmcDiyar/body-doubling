@@ -17,6 +17,7 @@
 7. [System Health & Migration Fix](#7-system-health--migration-fix)
 8. [Testing](#8-testing)
 9. [Final User Flow](#9-final-user-flow)
+   s
 
 ---
 
@@ -24,19 +25,19 @@
 
 ### 1.1 Migration Inventory
 
-| File | Status | Issues |
-|------|--------|--------|
-| 001_initial_schema.sql | Applied | `sessions.duration` CHECK missing 90. `sessions.status` CHECK missing 'preparing'. |
-| 002_fix_rls_recursion.sql | Applied | OK |
-| 002_queue_cleanup_triggers.sql | Applied | DUPLICATE 002 number |
-| 003_fix_session_participants_rls.sql | Applied | OK |
-| 004_trust_system_enhancements.sql | Applied | `users.metadata` column never created. `complete_solo_session` references it implicitly. |
-| 005_session_completion_triggers.sql | Applied | `trigger_session_completion` causes double trust (dropped in 006) |
-| 006_consolidate_functions.sql | Applied | OK — drops trigger, fixes complete_session |
-| 006_mvp15_abuse_prevention.sql | CONFLICT | Duplicate 006 number. Drops+recreates `update_trust_score` (conflicts with 006_consolidate). |
-| 007_quest_system.sql | NOT APPLIED | References `users.metadata` (column doesn't exist). References `users.streak` (should be `current_streak`). |
-| 008_match_lifecycle.sql | NOT APPLIED | Creates `matches` table + match RPCs. Uses `match_state` enum. OK structurally. |
-| 009_integrate_matches.sql | NOT APPLIED | `sessions.status = 'preparing'` violates CHECK. `session_participants.status = 'joined'` violates CHECK. |
+| File                                 | Status      | Issues                                                                                                      |
+| ------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 001_initial_schema.sql               | Applied     | `sessions.duration` CHECK missing 90. `sessions.status` CHECK missing 'preparing'.                          |
+| 002_fix_rls_recursion.sql            | Applied     | OK                                                                                                          |
+| 002_queue_cleanup_triggers.sql       | Applied     | DUPLICATE 002 number                                                                                        |
+| 003_fix_session_participants_rls.sql | Applied     | OK                                                                                                          |
+| 004_trust_system_enhancements.sql    | Applied     | `users.metadata` column never created. `complete_solo_session` references it implicitly.                    |
+| 005_session_completion_triggers.sql  | Applied     | `trigger_session_completion` causes double trust (dropped in 006)                                           |
+| 006_consolidate_functions.sql        | Applied     | OK — drops trigger, fixes complete_session                                                                  |
+| 006_mvp15_abuse_prevention.sql       | CONFLICT    | Duplicate 006 number. Drops+recreates `update_trust_score` (conflicts with 006_consolidate).                |
+| 007_quest_system.sql                 | NOT APPLIED | References `users.metadata` (column doesn't exist). References `users.streak` (should be `current_streak`). |
+| 008_match_lifecycle.sql              | NOT APPLIED | Creates `matches` table + match RPCs. Uses `match_state` enum. OK structurally.                             |
+| 009_integrate_matches.sql            | NOT APPLIED | `sessions.status = 'preparing'` violates CHECK. `session_participants.status = 'joined'` violates CHECK.    |
 
 ### 1.2 Critical Schema Gaps
 
@@ -49,13 +50,13 @@
 
 ### 1.3 Frontend-Backend Mismatches
 
-| Frontend | Expected Backend | Actual |
-|----------|-----------------|--------|
-| prepare/page.tsx | `matches` table + RPCs | Table exists in 008 (not applied) |
-| prepare/page.tsx | `session_participants.metadata` | Column doesn't exist |
-| cooldown/page.tsx | `session_participants.metadata` | Column doesn't exist |
-| QuestComponents.tsx | Quest RPCs | Functions exist in 007 (not applied) |
-| active/page.tsx → redirect to `/session/cooldown` | Session flow: active → cooldown → end | Working (if 006 applied) |
+| Frontend                                          | Expected Backend                      | Actual                               |
+| ------------------------------------------------- | ------------------------------------- | ------------------------------------ |
+| prepare/page.tsx                                  | `matches` table + RPCs                | Table exists in 008 (not applied)    |
+| prepare/page.tsx                                  | `session_participants.metadata`       | Column doesn't exist                 |
+| cooldown/page.tsx                                 | `session_participants.metadata`       | Column doesn't exist                 |
+| QuestComponents.tsx                               | Quest RPCs                            | Functions exist in 007 (not applied) |
+| active/page.tsx → redirect to `/session/cooldown` | Session flow: active → cooldown → end | Working (if 006 applied)             |
 
 ---
 
@@ -72,12 +73,12 @@ preparing ──┬── active ────── completed
 
 ### 2.2 States
 
-| State | Description | Entry Condition |
-|-------|-------------|-----------------|
-| `preparing` | Both users complete ritual | `find_match` creates match |
-| `active` | Session timer running | Both users mark ready (`mark_match_ready`) |
-| `broken` | One user disconnected | Heartbeat detects 15s silence |
-| `completed` | Session finished | Timer reaches 0 + `complete_session` RPC |
+| State       | Description                | Entry Condition                            |
+| ----------- | -------------------------- | ------------------------------------------ |
+| `preparing` | Both users complete ritual | `find_match` creates match                 |
+| `active`    | Session timer running      | Both users mark ready (`mark_match_ready`) |
+| `broken`    | One user disconnected      | Heartbeat detects 15s silence              |
+| `completed` | Session finished           | Timer reaches 0 + `complete_session` RPC   |
 
 ### 2.3 Heartbeat Rules
 
@@ -90,13 +91,13 @@ Every 5 seconds: client → match_heartbeat(match_id)
 
 ### 2.4 Disconnection Timeline
 
-| Elapsed | System Action | UI Action |
-|---------|---------------|-----------|
-| 0-15s | Nothing | Nothing (Supabase Presence shows away) |
-| 15s | `match.state = 'broken'` | Nothing visible yet |
-| 30s | — | Soft UI notice: "Esin baglanti kaybetti. Bekle / Solo devam et" |
-| 2min | — | Decision required: "Solo devam et / Yeniden esles" |
-| 3min | Auto-requeue via `requeue_after_break` | Redirect to quick-match with `requeue=true` |
+| Elapsed | System Action                          | UI Action                                                       |
+| ------- | -------------------------------------- | --------------------------------------------------------------- |
+| 0-15s   | Nothing                                | Nothing (Supabase Presence shows away)                          |
+| 15s     | `match.state = 'broken'`               | Nothing visible yet                                             |
+| 30s     | —                                      | Soft UI notice: "Esin baglanti kaybetti. Bekle / Solo devam et" |
+| 2min    | —                                      | Decision required: "Solo devam et / Yeniden esles"              |
+| 3min    | Auto-requeue via `requeue_after_break` | Redirect to quick-match with `requeue=true`                     |
 
 ### 2.5 Rejoin Logic
 
@@ -147,14 +148,14 @@ CREATE TABLE public.matches (
 
 ### 2.8 SQL Functions
 
-| Function | Purpose | Idempotent |
-|----------|---------|------------|
-| `match_heartbeat(match_id)` | Update heartbeat, check partner, auto-break | Yes (timestamp overwrite) |
-| `mark_match_ready(match_id)` | Mark user ready after ritual, transition to active | Yes (bool set) |
-| `break_match(match_id, reason)` | Explicit break (user exit during ritual) | Yes (state check) |
-| `complete_match(match_id)` | Mark match completed when session ends | Yes (state check) |
-| `requeue_after_break(duration, theme)` | High-priority re-queue after match break | Yes (DELETE+INSERT) |
-| `rejoin_match(match_id)` | Partner returns within 3min window | Yes (state check) |
+| Function                               | Purpose                                            | Idempotent                |
+| -------------------------------------- | -------------------------------------------------- | ------------------------- |
+| `match_heartbeat(match_id)`            | Update heartbeat, check partner, auto-break        | Yes (timestamp overwrite) |
+| `mark_match_ready(match_id)`           | Mark user ready after ritual, transition to active | Yes (bool set)            |
+| `break_match(match_id, reason)`        | Explicit break (user exit during ritual)           | Yes (state check)         |
+| `complete_match(match_id)`             | Mark match completed when session ends             | Yes (state check)         |
+| `requeue_after_break(duration, theme)` | High-priority re-queue after match break           | Yes (DELETE+INSERT)       |
+| `rejoin_match(match_id)`               | Partner returns within 3min window                 | Yes (state check)         |
 
 ### 2.9 Realtime Channels
 
@@ -173,13 +174,13 @@ Channel: session-updates:{sessionId}
 
 ### 2.10 Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| Tab close during ritual | Heartbeat stops → partner sees broken after 15s → MatchBrokenModal |
-| Page refresh during active session | Rejoin via URL params (session_id in URL). Load session data, resume timer from started_at. |
-| Network loss (temporary) | Heartbeat fails silently. If < 15s, partner doesn't notice. If > 15s, match breaks. On reconnect, heartbeat resumes. |
-| Both users disconnect | Both heartbeats expire. Match becomes broken. Neither gets penalty (no one "left"). |
-| User has match_broken modal and partner returns | Not implemented yet. For MVP 1.5: once broken, stays broken. |
+| Scenario                                        | Handling                                                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Tab close during ritual                         | Heartbeat stops → partner sees broken after 15s → MatchBrokenModal                                                   |
+| Page refresh during active session              | Rejoin via URL params (session_id in URL). Load session data, resume timer from started_at.                          |
+| Network loss (temporary)                        | Heartbeat fails silently. If < 15s, partner doesn't notice. If > 15s, match breaks. On reconnect, heartbeat resumes. |
+| Both users disconnect                           | Both heartbeats expire. Match becomes broken. Neither gets penalty (no one "left").                                  |
+| User has match_broken modal and partner returns | Not implemented yet. For MVP 1.5: once broken, stays broken.                                                         |
 
 ---
 
@@ -255,21 +256,23 @@ Both users MUST complete ritual before session starts.
 
 ### 4.1 Focus Ritual
 
-| Step | Name | Duration | Interaction |
-|------|------|----------|-------------|
-| 1 | Breath Anchor | 20s | Auto-advance |
-| 2 | Intent Setting | 30s | Select intent (4 options) or auto-advance with default |
-| 3 | Body Check | 15s | Auto-advance |
-| 4 | Ready Confirmation | 15s | Click "Basla" or auto-advance |
+| Step | Name               | Duration | Interaction                                            |
+| ---- | ------------------ | -------- | ------------------------------------------------------ |
+| 1    | Breath Anchor      | 20s      | Auto-advance                                           |
+| 2    | Intent Setting     | 30s      | Select intent (4 options) or auto-advance with default |
+| 3    | Body Check         | 15s      | Auto-advance                                           |
+| 4    | Ready Confirmation | 15s      | Click "Basla" or auto-advance                          |
 
 **Total: 80s, non-skippable.**
 
 **Constraints:**
+
 - App backgrounding (`document.hidden`) pauses timers
 - Force-close: ritual marked incomplete in metadata
 - Duplicate writes: `mark_match_ready` is idempotent (bool set, no counter)
 
 **Data stored in `session_participants.metadata.ritual`:**
+
 ```json
 {
   "completed": true,
@@ -281,21 +284,23 @@ Both users MUST complete ritual before session starts.
 
 ### 4.2 Mindful Cooldown
 
-| Step | Name | Duration | Interaction |
-|------|------|----------|-------------|
-| 1 | Pause | 10s | Auto-advance |
-| 2 | Mood Check | — | Select mood (5 options) |
-| 3 | Reflection | — | Select reflection (4 options) |
-| 4 | Closing | 20s | Click "Tamam" or auto-advance |
+| Step | Name       | Duration | Interaction                   |
+| ---- | ---------- | -------- | ----------------------------- |
+| 1    | Pause      | 10s      | Auto-advance                  |
+| 2    | Mood Check | —        | Select mood (5 options)       |
+| 3    | Reflection | —        | Select reflection (4 options) |
+| 4    | Closing    | 20s      | Click "Tamam" or auto-advance |
 
 **Total: ~90s, skippable with trust penalty.**
 
 **Skip penalty:**
+
 - Trust: -1 (via `update_trust_score`)
 - XP: -5 (applied in session end logic)
 - Event type: `cooldown_skipped`
 
 **Data stored in `session_participants.metadata.cooldown`:**
+
 ```json
 {
   "completed": true,
@@ -307,25 +312,25 @@ Both users MUST complete ritual before session starts.
 
 ### 4.3 Trust & XP Impact Table
 
-| Action | Trust | XP |
-|--------|-------|----|
-| Session completed (duo) | +2 | +50 base |
+| Action                   | Trust               | XP       |
+| ------------------------ | ------------------- | -------- |
+| Session completed (duo)  | +2                  | +50 base |
 | Session completed (solo) | +2 (or +5 if rehab) | +40 base |
-| Goal completed | 0 | +10 |
-| 5-star rating received | +5 | 0 |
-| 4-star rating received | +2 | 0 |
-| 3-star rating | 0 | 0 |
-| 2-star rating received | -2 | 0 |
-| 1-star rating received | -5 | 0 |
-| Cooldown skipped | -1 | -5 |
-| Early exit (<20%) | -4 | 0 |
-| Early exit (20-60%) | -8 | 0 |
-| Early exit (>60%) | -15 | 0 |
-| No show | -10 | 0 |
-| Ghosting (5min idle) | -20 | 0 |
-| Daily quest completed | 0 | +5 |
-| Weekly quest completed | +1 | +15 |
-| Hidden quest unlocked | +1 | +10 |
+| Goal completed           | 0                   | +10      |
+| 5-star rating received   | +5                  | 0        |
+| 4-star rating received   | +2                  | 0        |
+| 3-star rating            | 0                   | 0        |
+| 2-star rating received   | -2                  | 0        |
+| 1-star rating received   | -5                  | 0        |
+| Cooldown skipped         | -1                  | -5       |
+| Early exit (<20%)        | -4                  | 0        |
+| Early exit (20-60%)      | -8                  | 0        |
+| Early exit (>60%)        | -15                 | 0        |
+| No show                  | -10                 | 0        |
+| Ghosting (5min idle)     | -20                 | 0        |
+| Daily quest completed    | 0                   | +5       |
+| Weekly quest completed   | +1                  | +15      |
+| Hidden quest unlocked    | +1                  | +10      |
 
 ---
 
@@ -333,39 +338,39 @@ Both users MUST complete ritual before session starts.
 
 ### 5.1 Daily Quests (3, rotating)
 
-| ID | Title | Description | Target | Condition |
-|----|-------|-------------|--------|-----------|
-| `daily_ritual_1` | Ritulle Basla | Complete 1 session with ritual | 1 | `metadata.ritual.completed = true` |
-| `daily_pomodoro_25` | Derin Odak | Complete 2 sessions of 25+ min | 2 | `session.duration >= 25` |
-| `daily_cooldown` | Bilincli Kapanis | Don't skip cooldown | 1 | `metadata.cooldown.skipped = false` |
+| ID                  | Title            | Description                    | Target | Condition                           |
+| ------------------- | ---------------- | ------------------------------ | ------ | ----------------------------------- |
+| `daily_ritual_1`    | Ritulle Basla    | Complete 1 session with ritual | 1      | `metadata.ritual.completed = true`  |
+| `daily_pomodoro_25` | Derin Odak       | Complete 2 sessions of 25+ min | 2      | `session.duration >= 25`            |
+| `daily_cooldown`    | Bilincli Kapanis | Don't skip cooldown            | 1      | `metadata.cooldown.skipped = false` |
 
 Rotation: Cycle through `[0, 1, 2]` each day. Day index stored in `users.metadata.quests.daily.day_index`.
 
 ### 5.2 Weekly Quests (3, rotating)
 
-| ID | Title | Description | Target | Condition |
-|----|-------|-------------|--------|-----------|
-| `weekly_streak_3` | 3 Gunluk Seri | 3-day streak | 3 | `users.current_streak >= 3` |
-| `weekly_sessions_5` | Haftalik Hedef | 5 sessions this week | 5 | Session count in current week |
-| `weekly_duration_mix` | Sure Cesitliligi | Try 2 different durations | 2 | Distinct durations in week |
+| ID                    | Title            | Description               | Target | Condition                     |
+| --------------------- | ---------------- | ------------------------- | ------ | ----------------------------- |
+| `weekly_streak_3`     | 3 Gunluk Seri    | 3-day streak              | 3      | `users.current_streak >= 3`   |
+| `weekly_sessions_5`   | Haftalik Hedef   | 5 sessions this week      | 5      | Session count in current week |
+| `weekly_duration_mix` | Sure Cesitliligi | Try 2 different durations | 2      | Distinct durations in week    |
 
 Rotation: If completed → next quest next week. If not completed → same quest carries over.
 
 ### 5.3 Hidden Quests (Full Catalog)
 
-| ID | Title | Condition | One-time |
-|----|-------|-----------|----------|
-| `hidden_first_ritual` | Ilk Rituel | First ritual completion | Yes |
-| `hidden_first_50` | Derin Dalis | First 50-min session | Yes |
-| `hidden_first_90` | Maraton | First 90-min session | Yes |
-| `hidden_no_skip_day` | Tam Gun | Complete ritual + cooldown in same day | Yes |
-| `hidden_late_night` | Gece Kusu | Session after 23:00 | Yes |
-| `hidden_comeback` | Geri Dondun | Session after 48h inactivity | Yes |
-| `hidden_ritual_streak_3` | Rituel Ustasi | 3 consecutive days with ritual | Yes |
-| `hidden_duration_mix` | Cesitlilik | 3 different durations in 7 days | Yes |
-| `hidden_streak_save` | Son Dakika | Session at 23:00+ saving a streak | Yes |
-| `hidden_3_sessions_day` | Uclu Guc | 3 sessions in one day | Yes |
-| `hidden_5_sessions_week` | Hafta Yildizi | 5 sessions in one week | Yes |
+| ID                       | Title         | Condition                              | One-time |
+| ------------------------ | ------------- | -------------------------------------- | -------- |
+| `hidden_first_ritual`    | Ilk Rituel    | First ritual completion                | Yes      |
+| `hidden_first_50`        | Derin Dalis   | First 50-min session                   | Yes      |
+| `hidden_first_90`        | Maraton       | First 90-min session                   | Yes      |
+| `hidden_no_skip_day`     | Tam Gun       | Complete ritual + cooldown in same day | Yes      |
+| `hidden_late_night`      | Gece Kusu     | Session after 23:00                    | Yes      |
+| `hidden_comeback`        | Geri Dondun   | Session after 48h inactivity           | Yes      |
+| `hidden_ritual_streak_3` | Rituel Ustasi | 3 consecutive days with ritual         | Yes      |
+| `hidden_duration_mix`    | Cesitlilik    | 3 different durations in 7 days        | Yes      |
+| `hidden_streak_save`     | Son Dakika    | Session at 23:00+ saving a streak      | Yes      |
+| `hidden_3_sessions_day`  | Uclu Guc      | 3 sessions in one day                  | Yes      |
+| `hidden_5_sessions_week` | Hafta Yildizi | 5 sessions in one week                 | Yes      |
 
 ### 5.4 Quest Trigger Logic
 
@@ -435,22 +440,22 @@ CREATE INDEX idx_analytics_user ON analytics_events(user_id, created_at);
 
 ### 6.3 Event Catalog
 
-| Event Name | Properties | Trigger |
-|------------|------------|---------|
-| `match_found` | `{ duration, theme, wait_time_s }` | find_match returns session_id |
-| `match_broken_partner_timeout` | `{ match_id, elapsed_s }` | match_heartbeat detects timeout |
-| `match_broken_user_exit` | `{ match_id, elapsed_s }` | break_match called |
-| `rejoin_success` | `{ match_id, gap_s }` | rejoin_match succeeds |
-| `rejoin_denied` | `{ match_id, reason }` | rejoin_match fails |
-| `solo_mode_entered` | `{ session_id, reason }` | User clicks "Solo devam et" |
-| `ritual_completed` | `{ intent, duration_s }` | FocusRitual onComplete |
-| `ritual_incomplete` | `{ step, reason }` | Force-close during ritual |
-| `cooldown_completed` | `{ mood, reflection }` | MindfulCooldown onComplete |
-| `cooldown_skipped` | `{ step }` | User clicks "Atla" |
-| `session_completed` | `{ mode, duration, xp, trust_change }` | complete_session / complete_solo_session |
-| `quest_daily_completed` | `{ quest_id, reward_xp }` | update_daily_quest returns completed=true |
-| `quest_weekly_completed` | `{ quest_id, reward_xp, reward_trust }` | update_weekly_quest returns completed=true |
-| `quest_hidden_unlocked` | `{ quest_id }` | check_hidden_quests returns non-empty |
+| Event Name                     | Properties                              | Trigger                                    |
+| ------------------------------ | --------------------------------------- | ------------------------------------------ |
+| `match_found`                  | `{ duration, theme, wait_time_s }`      | find_match returns session_id              |
+| `match_broken_partner_timeout` | `{ match_id, elapsed_s }`               | match_heartbeat detects timeout            |
+| `match_broken_user_exit`       | `{ match_id, elapsed_s }`               | break_match called                         |
+| `rejoin_success`               | `{ match_id, gap_s }`                   | rejoin_match succeeds                      |
+| `rejoin_denied`                | `{ match_id, reason }`                  | rejoin_match fails                         |
+| `solo_mode_entered`            | `{ session_id, reason }`                | User clicks "Solo devam et"                |
+| `ritual_completed`             | `{ intent, duration_s }`                | FocusRitual onComplete                     |
+| `ritual_incomplete`            | `{ step, reason }`                      | Force-close during ritual                  |
+| `cooldown_completed`           | `{ mood, reflection }`                  | MindfulCooldown onComplete                 |
+| `cooldown_skipped`             | `{ step }`                              | User clicks "Atla"                         |
+| `session_completed`            | `{ mode, duration, xp, trust_change }`  | complete_session / complete_solo_session   |
+| `quest_daily_completed`        | `{ quest_id, reward_xp }`               | update_daily_quest returns completed=true  |
+| `quest_weekly_completed`       | `{ quest_id, reward_xp, reward_trust }` | update_weekly_quest returns completed=true |
+| `quest_hidden_unlocked`        | `{ quest_id }`                          | check_hidden_quests returns non-empty      |
 
 ### 6.4 Analytics Insert Function
 
