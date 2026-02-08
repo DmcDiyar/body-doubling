@@ -36,7 +36,7 @@ export function QuestRevealModal({ questType, teaser, onReveal, onSkip }: QuestR
                 </motion.div>
 
                 <h3 className="text-white font-bold text-center text-lg mb-2">
-                    {questType === 'daily' ? 'Bugünün Görevi' : 'Haftanin Görevi'}
+                    {questType === 'daily' ? 'BugÃ¼nÃ¼n GÃ¶revi' : 'Haftanin GÃ¶revi'}
                 </h3>
 
                 <p className="text-gray-400 text-sm text-center mb-4 italic">
@@ -46,7 +46,7 @@ export function QuestRevealModal({ questType, teaser, onReveal, onSkip }: QuestR
                 {/* Warning */}
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-6">
                     <p className="text-red-400/80 text-xs text-center">
-                        Geri dönüs yok. Görevi açtiginda taahhüt ediyorsun.
+                        Geri dÃ¶nÃ¼s yok. GÃ¶revi aÃ§tiginda taahhÃ¼t ediyorsun.
                     </p>
                 </div>
 
@@ -57,7 +57,7 @@ export function QuestRevealModal({ questType, teaser, onReveal, onSkip }: QuestR
                         onClick={onReveal}
                         className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl"
                     >
-                        Görevi Aç
+                        GÃ¶revi AÃ§
                     </motion.button>
                     <button
                         onClick={onSkip}

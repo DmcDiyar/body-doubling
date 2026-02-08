@@ -86,18 +86,18 @@ export function RehabBanner({ userId }: RehabBannerProps) {
             className="bg-gradient-to-r from-blue-900/50 to-indigo-900/50 border border-blue-500/30 rounded-2xl p-6 mb-6"
         >
             <div className="flex items-start gap-4">
-                <span className="text-3xl">🤝</span>
+                <span className="text-3xl">ğŸ¤</span>
                 <div className="flex-1">
                     <h3 className="font-semibold text-white mb-2">
                         {status.remainingSessions > 0
                             ? 'Rehabilitasyon Modu'
-                            : 'Rehabilitasyon Tamamlandi! 🎉'}
+                            : 'Rehabilitasyon Tamamlandi! ğŸ‰'}
                     </h3>
 
                     {status.remainingSessions > 0 ? (
                         <>
                             <p className="text-sm text-blue-200 mb-4">
-                                Topluluk g�venligi i�in solo modda �alisiyorsun.
+                                Topluluk güvenligi için solo modda çalisiyorsun.
                                 {status.remainingSessions} seans daha tamamla, tekrar esles!
                             </p>
 
@@ -141,13 +141,13 @@ export function RehabBanner({ userId }: RehabBannerProps) {
                     ) : (
                         <>
                             <p className="text-sm text-green-200 mb-4">
-                                Harika! Artik tekrar eslesebilirsin. Iyi �alismalar! 🎉
+                                Harika! Artik tekrar eslesebilirsin. Iyi çalismalar! ğŸ‰
                             </p>
                             <a
                                 href="/session/quick-match"
                                 className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
                             >
-                                Solo �alismaya Basla
+                                Solo Çalismaya Basla
                             </a>
                         </>
                     )}
@@ -233,8 +233,8 @@ export function TrustScoreDisplay({ score, compact = false }: TrustScoreDisplayP
             {/* Level info */}
             <p className="text-xs text-gray-500 mt-2">
                 {level.canMatch
-                    ? '✅ Eslesme aktif'
-                    : '❌ Solo modda �alisman gerekiyor'}
+                    ? 'âœ… Eslesme aktif'
+                    : 'âŒ Solo modda çalisman gerekiyor'}
             </p>
         </div>
     );

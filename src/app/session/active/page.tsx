@@ -71,7 +71,7 @@ function SessionActivePage() {
       if (!user) { router.push('/auth'); return; }
       setUserId(user.id);
 
-      // Session verisini �ek
+      // Session verisini çek
       const { data: sessionData } = await supabase
         .from('sessions')
         .select('*')
@@ -81,7 +81,7 @@ function SessionActivePage() {
       if (!sessionData) { router.push('/dashboard'); return; }
       setSession(sessionData as Session);
 
-      // Kendi participation'imizi �ek
+      // Kendi participation'imizi çek
       const { data: myPart } = await supabase
         .from('session_participants')
         .select('*')
@@ -135,13 +135,13 @@ function SessionActivePage() {
     loadData();
   }, [sessionId, router, setSession, setMyParticipation, setPartnerParticipation]);
 
-  // ---------- Start session (waiting → active) ----------
+  // ---------- Start session (waiting â†’ active) ----------
   const startSession = useCallback(async () => {
     if (!sessionId || !userId) return;
     const supabase = createClient();
     const now = new Date().toISOString();
 
-    // Session'i active yap (maybeSingle: zaten active ise 0 satir d�ner, hata vermez)
+    // Session'i active yap (maybeSingle: zaten active ise 0 satir döner, hata vermez)
     const { data: updatedSession } = await supabase
       .from('sessions')
       .update({ status: 'active', started_at: now })
@@ -153,7 +153,7 @@ function SessionActivePage() {
     if (updatedSession) {
       setSession(updatedSession as Session);
     } else {
-      // Zaten active olmus olabilir — g�ncel halini �ek
+      // Zaten active olmus olabilir â€” güncel halini çek
       const { data: currentSession } = await supabase
         .from('sessions')
         .select('*')
@@ -175,7 +175,7 @@ function SessionActivePage() {
     if (updatedPart) {
       setMyParticipation(updatedPart as SessionParticipant);
     } else {
-      // Zaten active — g�ncel halini �ek
+      // Zaten active â€” güncel halini çek
       const { data: currentPart } = await supabase
         .from('session_participants')
         .select('*')
@@ -191,7 +191,7 @@ function SessionActivePage() {
     if (!session || !myParticipation || loading) return;
 
     if (session.status === 'waiting') {
-      // Solo mode → hemen basla, Duo → partner da ready ise basla
+      // Solo mode â†’ hemen basla, Duo â†’ partner da ready ise basla
       if (session.mode === 'solo') {
         startSession();
       } else if (partnerParticipation) {
@@ -200,7 +200,7 @@ function SessionActivePage() {
     }
   }, [session, myParticipation, partnerParticipation, loading, startSession]);
 
-  // ---------- Match heartbeat (duo) — detects partner disconnect via DB ----------
+  // ---------- Match heartbeat (duo) â€” detects partner disconnect via DB ----------
   const handleMatchBroken = useCallback(() => {
     if (!continuingAlone) {
       setPartnerLeft(true);
@@ -227,7 +227,7 @@ function SessionActivePage() {
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
-        // S�re doldu → interval temizle, complete �agir (bir kez)
+        // Süre doldu â†’ interval temizle, complete çagir (bir kez)
         if (timerRef.current) clearInterval(timerRef.current);
         setTimerRunning(false);
         handleSessionComplete();
@@ -271,7 +271,7 @@ function SessionActivePage() {
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          // Kendi presence'imizi g�nder
+          // Kendi presence'imizi gönder
           const { data: myUser } = await supabase
             .from('users')
             .select('avatar_id, name')
@@ -291,7 +291,7 @@ function SessionActivePage() {
 
     presenceChannelRef.current = channel;
 
-    // Heartbeat interval — presence durumunu g�ncelle
+    // Heartbeat interval â€” presence durumunu güncelle
     heartbeatRef.current = setInterval(() => {
       if (presenceChannelRef.current) {
         presenceChannelRef.current.track({
@@ -361,7 +361,7 @@ function SessionActivePage() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       idleTimerRef.current = setTimeout(() => {
         setMyPresenceStatus('idle');
-      }, 60_000); // 1 dakika hareketsiz → idle
+      }, 60_000); // 1 dakika hareketsiz â†’ idle
     };
 
     const events = ['mousemove', 'keydown', 'touchstart', 'scroll'];
@@ -374,7 +374,7 @@ function SessionActivePage() {
     };
   }, [session?.status]);
 
-  // ---------- Page visibility → away ----------
+  // ---------- Page visibility â†’ away ----------
   useEffect(() => {
     const handleVisibility = () => {
       if (document.hidden) {
@@ -387,7 +387,7 @@ function SessionActivePage() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
-  // ---------- Session tamamlandiginda y�nlendir ----------
+  // ---------- Session tamamlandiginda yönlendir ----------
   useEffect(() => {
     if (session?.status === 'completed') {
       router.push(`/session/cooldown?id=${sessionId}`);
@@ -418,7 +418,7 @@ function SessionActivePage() {
           keepalive: true,
         });
       } catch {
-        // Best effort — heartbeat timeout (15s) is the fallback
+        // Best effort â€” heartbeat timeout (15s) is the fallback
       }
     };
 
@@ -441,8 +441,8 @@ function SessionActivePage() {
 
     const supabase = createClient();
 
-    // Solo → complete_solo_session (rehabilitation bonus +5 trust)
-    // Duo  → complete_session (normal +2 trust, session.status update)
+    // Solo â†’ complete_solo_session (rehabilitation bonus +5 trust)
+    // Duo  â†’ complete_session (normal +2 trust, session.status update)
     if (session.mode === 'solo') {
       await supabase.rpc('complete_solo_session', {
         p_session_id: sessionId,
@@ -487,7 +487,7 @@ function SessionActivePage() {
     // Queue cleanup
     await supabase.from('matching_queue').delete().eq('user_id', userId);
 
-    // RPC ile erken �ikisi isle (trust penalty)
+    // RPC ile erken çikisi isle (trust penalty)
     await supabase.rpc('handle_early_exit', {
       p_session_id: sessionId,
       p_user_id: userId,
@@ -508,7 +508,7 @@ function SessionActivePage() {
   };
 
   // ---------- Solo/safe exit (no trust penalty, but no reward either) ----------
-  // Solo mode erken �ikisi: trust cezasi yok, ama �d�l de yok
+  // Solo mode erken çikisi: trust cezasi yok, ama ödül de yok
   const handleSoloExit = async () => {
     if (!sessionId || !userId) return;
     const supabase = createClient();
@@ -548,11 +548,11 @@ function SessionActivePage() {
   };
 
   const getThemeEmoji = (themeId: string) => {
-    return THEMES.find((t) => t.id === themeId)?.emoji ?? '🌧️';
+    return THEMES.find((t) => t.id === themeId)?.emoji ?? 'ğŸŒ§ï¸';
   };
 
   const getAvatar = (avatarId: number) => {
-    return AVATARS.find((a) => a.id === avatarId)?.emoji ?? '🐱';
+    return AVATARS.find((a) => a.id === avatarId)?.emoji ?? 'ğŸ±';
   };
 
   const getPartnerStatusText = (status: PresenceStatus) => {
@@ -636,7 +636,7 @@ function SessionActivePage() {
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <div className="text-5xl mb-2 opacity-30">👤</div>
+                <div className="text-5xl mb-2 opacity-30">ğŸ‘¤</div>
                 <p className="text-gray-500 text-sm">Ortak bekleniyor...</p>
               </div>
             )}
@@ -690,7 +690,7 @@ function SessionActivePage() {
           <span className={`w-2 h-2 rounded-full ${getPartnerStatusColor(myPresenceStatus)}`} />
           <span className="text-gray-400 text-xs">
             {myPresenceStatus === 'active' ? 'Odaklaniyorsun' :
-              myPresenceStatus === 'idle' ? 'D�s�n�yorsun' : 'Uzaktasin'}
+              myPresenceStatus === 'idle' ? 'Düsünüyorsun' : 'Uzaktasin'}
           </span>
         </div>
 

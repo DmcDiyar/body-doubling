@@ -29,7 +29,7 @@ export function useUser() {
       if (data) {
         setUser(data as User);
       } else {
-        // Trigger çalismadiysa fallback olustur
+        // Trigger Ã§alismadiysa fallback olustur
         const { data: newUser } = await supabase
           .from('users')
           .upsert({

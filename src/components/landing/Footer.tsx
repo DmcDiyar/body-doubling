@@ -20,7 +20,7 @@ const Footer = () => {
                     {/* Links */}
                     <div className="flex items-center gap-6 text-sm">
                         <Link href="#how-it-works" className="text-[#6B6B65] hover:text-[#1A1A18] transition-colors">
-                            Nasil Çalisir
+                            Nasil Ã‡alisir
                         </Link>
                         <Link href="#about" className="text-[#6B6B65] hover:text-[#1A1A18] transition-colors">
                             Hakkinda
@@ -34,7 +34,7 @@ const Footer = () => {
                 {/* Copyright */}
                 <div className="mt-8 pt-8 border-t border-[#E8E8E4] text-center">
                     <p className="text-sm text-[#9A9A94]">
-                        © 2026 Sessiz Ortak. Presence {'>'} Pressure.
+                        Â© 2026 Sessiz Ortak. Presence {'>'} Pressure.
                     </p>
                 </div>
             </div>

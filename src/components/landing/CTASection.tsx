@@ -37,7 +37,7 @@ const CTASection = () => {
                     <p className="text-lg text-[#6B6B65] mb-10 max-w-md mx-auto">
                         Birlikte odaklanmaya basla.
                         <br />
-                        Ücretsiz. Kayit gerektirmez.
+                        Ãœcretsiz. Kayit gerektirmez.
                     </p>
 
                     {/* Primary CTA */}
@@ -62,7 +62,7 @@ const CTASection = () => {
                         transition={{ duration: 0.6, delay: 0.3 }}
                         className="mt-8 text-sm text-[#9A9A94]"
                     >
-                        Hiçbir baglayicilik yok. Istedigin zaman çik.
+                        HiÃ§bir baglayicilik yok. Istedigin zaman Ã§ik.
                     </motion.p>
                 </motion.div>
             </div>

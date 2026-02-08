@@ -31,91 +31,91 @@ export interface HiddenQuest {
 
 // Quest Catalog
 export const DAILY_QUEST_INFO: Record<string, { title: string; description: string }> = {
-    daily_ritual_1: { title: 'Rit�elle Basla', description: 'Bug�n rit�el ile bir seans tamamla' },
+    daily_ritual_1: { title: 'Ritüelle Basla', description: 'Bugün ritüel ile bir seans tamamla' },
     daily_pomodoro_25: { title: 'Derin Odak', description: '25+ dakikalik 2 seans tamamla' },
-    daily_cooldown: { title: 'Bilin�li Kapanis', description: 'Cooldown\'u atlama' },
+    daily_cooldown: { title: 'Bilinçli Kapanis', description: 'Cooldown\'u atlama' },
 };
 
 export const WEEKLY_QUEST_INFO: Record<string, { title: string; description: string }> = {
-    weekly_streak_3: { title: '3 G�nl�k Seri', description: '3 g�n �st �ste seans yap' },
+    weekly_streak_3: { title: '3 Günlük Seri', description: '3 gün üst üste seans yap' },
     weekly_sessions_5: { title: 'Haftalik Hedef', description: 'Bu hafta 5 seans tamamla' },
-    weekly_duration_mix: { title: 'S�re �esitliligi', description: '2 farkli s�re dene' },
+    weekly_duration_mix: { title: 'Süre Çesitliligi', description: '2 farkli süre dene' },
 };
 
 export const HIDDEN_QUEST_INFO: Record<string, HiddenQuest> = {
     hidden_first_ritual: {
         id: 'hidden_first_ritual',
-        title: 'Ilk Rit�el 🌅',
-        description: 'Bilin�li baslangicin ilk adimi.',
+        title: 'Ilk Ritüel ğŸŒ…',
+        description: 'Bilinçli baslangicin ilk adimi.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_first_50: {
         id: 'hidden_first_50',
-        title: 'Derin Dalis 🌊',
+        title: 'Derin Dalis ğŸŒŠ',
         description: '50 dakika odaklandin!',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_first_90: {
         id: 'hidden_first_90',
-        title: 'Maraton 🏆',
+        title: 'Maraton ğŸ†',
         description: '90 dakikalik bir odak maratonu.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_no_skip_day: {
         id: 'hidden_no_skip_day',
-        title: 'Tam G�n ✨',
-        description: 'Bug�n hi�bir sey atlamadin.',
+        title: 'Tam Gün âœ¨',
+        description: 'Bugün hiçbir sey atlamadin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_late_night: {
         id: 'hidden_late_night',
-        title: 'Gece Kusu 🦉',
-        description: 'Gece ge� saatte �alistin.',
+        title: 'Gece Kusu ğŸ¦‰',
+        description: 'Gece geç saatte çalistin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_comeback: {
         id: 'hidden_comeback',
-        title: 'Geri D�nd�n 🔄',
+        title: 'Geri Döndün ğŸ”„',
         description: 'Ara verdikten sonra geri geldin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_ritual_streak_3: {
         id: 'hidden_ritual_streak_3',
-        title: 'Rit�el Ustasi 🧘',
-        description: '3 g�n �st �ste rit�el tamamladin.',
+        title: 'Ritüel Ustasi ğŸ§˜',
+        description: '3 gün üst üste ritüel tamamladin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_duration_mix: {
         id: 'hidden_duration_mix',
-        title: '�esitlilik 🎨',
-        description: '7 g�nde 3 farkli s�re denedin.',
+        title: 'Çesitlilik ğŸ¨',
+        description: '7 günde 3 farkli süre denedin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_streak_save: {
         id: 'hidden_streak_save',
-        title: 'Son Dakika ⏰',
+        title: 'Son Dakika â°',
         description: 'Seriyi son anda kurtardin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_3_sessions_day: {
         id: 'hidden_3_sessions_day',
-        title: '��l� G�� 💪',
-        description: 'Bir g�nde 3 seans tamamladin.',
+        title: 'Üçlü Güç ğŸ’ª',
+        description: 'Bir günde 3 seans tamamladin.',
         reward_xp: 10,
         reward_trust: 1,
     },
     hidden_5_sessions_week: {
         id: 'hidden_5_sessions_week',
-        title: 'Hafta Yildizi ⭐',
+        title: 'Hafta Yildizi â­',
         description: 'Bir haftada 5 seans tamamladin.',
         reward_xp: 10,
         reward_trust: 1,
@@ -145,10 +145,10 @@ export function DailyQuestCard({ quest }: DailyQuestCardProps) {
         >
             <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-500 uppercase tracking-wide">
-                    Bug�n�n Odagi
+                    Bugünün Odagi
                 </span>
                 {quest.completed && (
-                    <span className="text-xs text-green-400">✓ Tamamlandi</span>
+                    <span className="text-xs text-green-400">âœ“ Tamamlandi</span>
                 )}
             </div>
 
@@ -198,7 +198,7 @@ export function WeeklyQuestPanel({ quest }: WeeklyQuestPanelProps) {
                     Bu Hafta
                 </span>
                 {quest.completed && (
-                    <span className="text-xs text-green-400">✓ Tamamlandi</span>
+                    <span className="text-xs text-green-400">âœ“ Tamamlandi</span>
                 )}
             </div>
 
@@ -265,7 +265,7 @@ export function HiddenQuestModal({ questId, onClose }: HiddenQuestModalProps) {
                     transition={{ type: 'spring', delay: 0.2 }}
                     className="text-center mb-4"
                 >
-                    <span className="text-5xl">🎉</span>
+                    <span className="text-5xl">ğŸ‰</span>
                 </motion.div>
 
                 <h2 className="text-xl font-bold text-white text-center mb-2">

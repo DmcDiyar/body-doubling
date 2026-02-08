@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const trustItems = [
     {
-        title: 'Gizlilik Öncelikli',
+        title: 'Gizlilik Ã–ncelikli',
         description: 'Kimligin asla paylasilmaz. Tamamen anonim.',
         icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,8 +22,8 @@ const trustItems = [
         ),
     },
     {
-        title: 'Güvenli Baglanti',
-        description: 'Tüm baglantilar sifreli. Güvende oldugunu bil.',
+        title: 'GÃ¼venli Baglanti',
+        description: 'TÃ¼m baglantilar sifreli. GÃ¼vende oldugunu bil.',
         icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -66,10 +66,10 @@ const TrustSafety = () => {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1A1A18] tracking-tight mb-4">
-                        Güven & Gizlilik
+                        GÃ¼ven & Gizlilik
                     </h2>
                     <p className="text-lg text-[#6B6B65] max-w-md mx-auto">
-                        Güvende hissetmen için tasarlandi.
+                        GÃ¼vende hissetmen iÃ§in tasarlandi.
                     </p>
                 </motion.div>
 

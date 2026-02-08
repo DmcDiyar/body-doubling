@@ -6,15 +6,15 @@
 // Mystery descriptions for unrevealed quests
 export const QUEST_MYSTERY_DESCRIPTIONS: Record<string, { teaser: string; hint: string }> = {
     daily_ritual_1: {
-        teaser: 'Bugünün görevi seni bekliyor...',
-        hint: 'Baslangiçla ilgili bir sey.',
+        teaser: 'BugÃ¼nÃ¼n gÃ¶revi seni bekliyor...',
+        hint: 'BaslangiÃ§la ilgili bir sey.',
     },
     daily_pomodoro_25: {
         teaser: 'Bir sey yapman gerekiyor, ama ne?',
         hint: 'Zamanla ilgili.',
     },
     daily_cooldown: {
-        teaser: 'Bugün atlamaman gereken bir sey var.',
+        teaser: 'BugÃ¼n atlamaman gereken bir sey var.',
         hint: 'Bitirisle ilgili.',
     },
     weekly_streak_3: {
@@ -27,21 +27,21 @@ export const QUEST_MYSTERY_DESCRIPTIONS: Record<string, { teaser: string; hint: 
     },
     weekly_duration_mix: {
         teaser: 'Farkli bir sey denemen gerekebilir.',
-        hint: 'Çesitlilikle ilgili.',
+        hint: 'Ã‡esitlilikle ilgili.',
     },
 };
 
 // FOMO messages for dashboard display
 export const FOMO_MESSAGES = [
-    'Dün bunu yapanlar bugün farkli bir sey gördü',
+    'DÃ¼n bunu yapanlar bugÃ¼n farkli bir sey gÃ¶rdÃ¼',
     'Bir pencere kapandi',
-    'Son 24 saatte çogu kisinin kaçirdigi bir an var',
-    'Kaçirdigin anlar geri gelmiyor',
-    'Dünkü firsat sessizce geçti',
+    'Son 24 saatte Ã§ogu kisinin kaÃ§irdigi bir an var',
+    'KaÃ§irdigin anlar geri gelmiyor',
+    'DÃ¼nkÃ¼ firsat sessizce geÃ§ti',
     'Bazi seyler tekrar gelmez',
-    'Bu görev artik görünmüyor',
+    'Bu gÃ¶rev artik gÃ¶rÃ¼nmÃ¼yor',
     'Bir sey degisti ama fark etmedin',
-    'Geçen sefer burada olan sey artik yok',
+    'GeÃ§en sefer burada olan sey artik yok',
     'Sessizce bir kapi kapandi',
 ] as const;
 

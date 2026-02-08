@@ -31,18 +31,18 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Public routes — auth gerekmez
+  // Public routes â€” auth gerekmez
   const publicRoutes = ['/', '/auth'];
   const isPublic = publicRoutes.some((r) => pathname === r || pathname.startsWith('/auth/'));
 
-  // Giris yapmamis kullanici korumali sayfaya erismeye �alisirsa
+  // Giris yapmamis kullanici korumali sayfaya erismeye çalisirsa
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     return NextResponse.redirect(url);
   }
 
-  // Giris yapmis kullanici auth sayfasina gelirse dashboard'a y�nlendir
+  // Giris yapmis kullanici auth sayfasina gelirse dashboard'a yönlendir
   if (user && pathname === '/auth') {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
