@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { getQuestFomoState, QUEST_MYSTERY_DESCRIPTIONS, getLockTimeRemaining } from '@/lib/quest-fomo';
+import type { QuestFomoState } from '@/lib/quest-fomo';
 
 // Quest Types
 export interface DailyQuest {
@@ -10,6 +12,8 @@ export interface DailyQuest {
     completed: boolean;
     day_index: number;
     last_reset: string;
+    revealed?: boolean;
+    locked_until?: string;
 }
 
 export interface WeeklyQuest {
@@ -19,6 +23,8 @@ export interface WeeklyQuest {
     completed: boolean;
     week_index: number;
     week_start: string;
+    revealed?: boolean;
+    locked_until?: string;
 }
 
 export interface HiddenQuest {
@@ -294,6 +300,152 @@ export function HiddenQuestModal({ questId, onClose }: HiddenQuestModalProps) {
                     Harika!
                 </button>
             </motion.div>
+        </motion.div>
+    );
+}
+
+// ============================================================
+// MYSTERY QUEST CARD (FOMO-aware)
+// ============================================================
+interface MysteryQuestCardProps {
+    quest: (DailyQuest | WeeklyQuest) | null;
+    questType: 'daily' | 'weekly';
+    fomoEnabled: boolean;
+    onRevealClick?: () => void;
+}
+
+export function MysteryQuestCard({ quest, questType, fomoEnabled, onRevealClick }: MysteryQuestCardProps) {
+    if (!quest) return null;
+
+    const state: QuestFomoState = fomoEnabled ? getQuestFomoState(quest) : 'revealed';
+    const info = questType === 'daily' ? DAILY_QUEST_INFO[quest.id] : WEEKLY_QUEST_INFO[quest.id];
+    const mystery = QUEST_MYSTERY_DESCRIPTIONS[quest.id];
+
+    // COMPLETED state
+    if (state === 'completed') {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-500/5 rounded-2xl p-4 border border-green-500/20"
+            >
+                <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">
+                        {questType === 'daily' ? 'Bugünün Odağı' : 'Bu Hafta'}
+                    </span>
+                    <span className="text-xs text-green-400">✓ Tamamlandı</span>
+                </div>
+                <h3 className="text-white font-medium">{info?.title ?? quest.id}</h3>
+            </motion.div>
+        );
+    }
+
+    // LOCKED state
+    if (state === 'locked') {
+        const remaining = getLockTimeRemaining(quest.locked_until);
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 0.5, y: 0 }}
+                className="bg-white/3 rounded-2xl p-4 border border-white/5"
+            >
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">🔒</span>
+                    <span className="text-xs text-gray-600 uppercase tracking-wide">Kilitli</span>
+                </div>
+                <p className="text-gray-600 text-sm">
+                    {remaining ? `${remaining} sonra açılacak` : 'Yakında açılacak'}
+                </p>
+            </motion.div>
+        );
+    }
+
+    // UNREVEALED state (mystery mode)
+    if (state === 'unrevealed' && mystery) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/5 rounded-2xl p-4 border border-[#ffcb77]/20 cursor-pointer"
+                onClick={onRevealClick}
+                whileTap={{ scale: 0.98 }}
+            >
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">
+                        {questType === 'daily' ? 'Bugünün Odağı' : 'Bu Hafta'}
+                    </span>
+                    <motion.span
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                        className="text-xs text-[#ffcb77]"
+                    >
+                        ❓
+                    </motion.span>
+                </div>
+
+                <p className="text-white/80 font-medium mb-1 italic">
+                    &ldquo;{mystery.teaser}&rdquo;
+                </p>
+                <p className="text-gray-600 text-xs mb-3">
+                    İpucu: {mystery.hint}
+                </p>
+
+                {/* Mystery progress — blurred */}
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden relative">
+                    <div className="absolute inset-0 bg-[#ffcb77]/20 blur-sm" />
+                </div>
+
+                <div className="flex justify-between mt-2 text-xs text-gray-600">
+                    <span>? / ?</span>
+                    <span>? Ödül</span>
+                </div>
+            </motion.div>
+        );
+    }
+
+    // REVEALED state (normal view with progress)
+    const progress = Math.min(quest.progress / quest.target, 1);
+    const isDaily = questType === 'daily';
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/5 rounded-2xl p-4 border border-white/10"
+        >
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500 uppercase tracking-wide">
+                    {isDaily ? 'Bugünün Odağı' : 'Bu Hafta'}
+                </span>
+            </div>
+
+            <h3 className="text-white font-medium mb-1">{info?.title ?? quest.id}</h3>
+            <p className="text-gray-400 text-sm mb-3">{info?.description}</p>
+
+            {isDaily ? (
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress * 100}%` }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                        className="h-full rounded-full bg-[#ffcb77]"
+                    />
+                </div>
+            ) : (
+                <div className="flex gap-1">
+                    {Array.from({ length: quest.target }).map((_, i) => (
+                        <div
+                            key={i}
+                            className={`flex-1 h-2 rounded-full ${i < quest.progress ? 'bg-[#ffcb77]' : 'bg-white/10'}`}
+                        />
+                    ))}
+                </div>
+            )}
+
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+                <span>{quest.progress} / {quest.target}</span>
+                <span>{isDaily ? '+5 XP' : '+15 XP, +1 Trust'}</span>
+            </div>
         </motion.div>
     );
 }

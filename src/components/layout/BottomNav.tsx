@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
     { path: '/dashboard', label: 'Ana Sayfa', icon: '🏠' },
+    { path: '/stats', label: 'Aynam', icon: '🪞' },
+    { path: '/city', label: 'Şehirler', icon: '🌆' },
     { path: '/focus-library', label: 'Kütüphane', icon: '📚' },
 ] as const;
 
@@ -23,7 +25,7 @@ export function BottomNav() {
                                 key={item.path}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => router.push(item.path)}
-                                className={`flex flex-col items-center gap-1 px-6 py-2 rounded-xl transition-colors ${
+                                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
                                     isActive
                                         ? 'bg-[#ffcb77]/10'
                                         : 'hover:bg-white/5'
