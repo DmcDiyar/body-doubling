@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 const NAV_ITEMS = [
     { path: '/dashboard', label: 'Ana Sayfa', icon: '🏠' },
     { path: '/stats', label: 'Aynam', icon: '🪞' },
-    { path: '/city', label: 'Şehirler', icon: '🌆' },
+    { path: '/city', label: 'Akış', icon: '🌍' },
     { path: '/focus-library', label: 'Kütüphane', icon: '📚' },
 ] as const;
 

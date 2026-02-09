@@ -149,3 +149,47 @@ export function getOverallInsight(items: TrendItem[]): string {
   if (downCount > upCount) return 'Bazı alanlar yavaşladı. Sadece bir gözlem.';
   return 'Dengeli bir dönemdesin. İstikrar da bir başarı.';
 }
+
+// ============================================================
+// Personal Insights — Enhanced stats interpretation
+// ============================================================
+
+export interface EnhancedStatsData {
+  completion_rate: number;
+  best_hour: number | null;
+  preferred_duration: number | null;
+  current_streak: number;
+  longest_streak: number;
+  total_minutes: number;
+  total_sessions: number;
+  completed_sessions: number;
+  avg_sessions_per_week: number;
+  city_contributions: number;
+}
+
+export function getPersonalInsights(stats: EnhancedStatsData): string[] {
+  const insights: string[] = [];
+
+  if (stats.completion_rate >= 80) {
+    insights.push('Tamamlama oranın çok yüksek. İstikrarlı bir çalışma ritmin var.');
+  } else if (stats.completion_rate >= 50) {
+    insights.push('Seanslarının yarısından fazlasını tamamlıyorsun.');
+  } else if (stats.completion_rate > 0) {
+    insights.push('Bazen yarıda bırakmak da bir seçim. Yargısız.');
+  }
+
+  if (stats.best_hour !== null) {
+    const hourLabel = stats.best_hour < 12 ? 'sabah' : stats.best_hour < 17 ? 'öğle sonrası' : 'akşam';
+    insights.push(`En verimli zamanın ${hourLabel} saatleri gibi görünüyor.`);
+  }
+
+  if (stats.current_streak > 0 && stats.longest_streak > 0 && stats.current_streak >= stats.longest_streak * 0.8) {
+    insights.push('Rekoruna yaklaşıyorsun. Kendi rekabetinde ileriyorsun.');
+  }
+
+  if (stats.avg_sessions_per_week >= 5) {
+    insights.push('Haftalık ortalamanın düzenli. Alışkanlık oluşmuş.');
+  }
+
+  return insights;
+}

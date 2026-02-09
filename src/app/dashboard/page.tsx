@@ -4,17 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
-import { COPY, AVATARS, FREE_DAILY_LIMIT, getTrustLevel } from '@/lib/constants';
-import { motion, AnimatePresence } from 'framer-motion';
-import { RehabBanner } from '@/components/trust/TrustComponents';
-import { MysteryQuestCard, HIDDEN_QUEST_INFO } from '@/components/quests/QuestComponents';
-import type { DailyQuest, WeeklyQuest } from '@/components/quests/QuestComponents';
-import { FomoMessage } from '@/components/quests/FomoMessage';
-import { QuestRevealModal } from '@/components/quests/QuestRevealModal';
-import { MissedQuestGhost } from '@/components/quests/MissedQuestGhost';
-import { QUEST_MYSTERY_DESCRIPTIONS } from '@/lib/quest-fomo';
-import { useExperiment, EXPERIMENTS } from '@/lib/experiments';
+import { AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
+import { motion } from 'framer-motion';
+import { DurationSelector } from '@/components/home/DurationSelector';
+import { HomeOverlay } from '@/components/home/HomeOverlay';
+import { StreakPill } from '@/components/home/StreakPill';
+import { QuestPill } from '@/components/home/QuestPill';
+import { CityPill } from '@/components/home/CityPill';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { createSoloSession } from '@/lib/session-actions';
+import { getCityInfo } from '@/lib/city-detection';
 import type { User, UserLimit } from '@/types/database';
 
 interface ActiveMatchInfo {
@@ -23,27 +22,16 @@ interface ActiveMatchInfo {
   state: string;
 }
 
-interface MissedQuestEntry {
-  id: string;
-  missed_at: string;
-  type: string;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
+  const [duration, setDuration] = useState(25);
   const [dailyUsed, setDailyUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStarting, setIsStarting] = useState(false);
   const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
-  const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
-  const [weeklyQuest, setWeeklyQuest] = useState<WeeklyQuest | null>(null);
-  const [hiddenCount, setHiddenCount] = useState(0);
-  const [fomoMessage, setFomoMessage] = useState<string | null>(null);
-  const [missedQuests, setMissedQuests] = useState<MissedQuestEntry[]>([]);
-  const [revealModal, setRevealModal] = useState<'daily' | 'weekly' | null>(null);
-
-  // A/B test: quest FOMO
-  const { isTreatment: fomoEnabled } = useExperiment(EXPERIMENTS.QUEST_FOMO.id);
+  const [questProgress, setQuestProgress] = useState({ completed: 0, total: 0 });
+  const [cityActive, setCityActive] = useState<{ emoji: string; name: string; count: number } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -118,9 +106,8 @@ export default function DashboardPage() {
 
       setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
 
-      // Check for active or broken matches
+      // Active match check
       const { data: activeMatchResult } = await supabase.rpc('get_active_match');
-
       if (activeMatchResult && activeMatchResult.has_active) {
         setActiveMatch({
           matchId: activeMatchResult.match_id,
@@ -129,40 +116,47 @@ export default function DashboardPage() {
         });
       }
 
-      // Load quest data from user metadata
+      // Quest progress (sadece sayı — detay Aynam'da)
       const userProfile = profile as User | null;
       if (userProfile?.metadata) {
         const meta = userProfile.metadata as {
-          quests?: { daily?: DailyQuest; weekly?: WeeklyQuest; hidden_completed?: string[] };
-          fomo?: { missed_quests?: MissedQuestEntry[] };
+          quests?: {
+            daily?: { completed?: boolean };
+            weekly?: { completed?: boolean };
+          };
         };
-        if (!meta.quests) {
-          await supabase.rpc('init_user_quests', { p_user_id: authUser.id });
-          const { data: updated } = await supabase.from('users').select('metadata').eq('id', authUser.id).single();
-          if (updated?.metadata) {
-            const m = updated.metadata as typeof meta;
-            if (m.quests?.daily) setDailyQuest(m.quests.daily);
-            if (m.quests?.weekly) setWeeklyQuest(m.quests.weekly);
-            setHiddenCount((m.quests?.hidden_completed ?? []).length);
-          }
-        } else {
-          if (meta.quests.daily) setDailyQuest(meta.quests.daily);
-          if (meta.quests.weekly) setWeeklyQuest(meta.quests.weekly);
-          setHiddenCount((meta.quests.hidden_completed ?? []).length);
+        let completed = 0;
+        let total = 0;
+        if (meta.quests?.daily) {
+          total++;
+          if (meta.quests.daily.completed) completed++;
         }
-
-        // Load FOMO data
-        if (meta.fomo?.missed_quests) {
-          setMissedQuests(meta.fomo.missed_quests);
+        if (meta.quests?.weekly) {
+          total++;
+          if (meta.quests.weekly.completed) completed++;
         }
+        setQuestProgress({ completed, total });
       }
 
-      // Fetch FOMO message from RPC (rate-limited)
-      const { data: fomoData } = await supabase.rpc('get_fomo_messages', {
-        p_user_id: authUser.id,
-      });
-      if (fomoData && (fomoData as { message?: string }).message) {
-        setFomoMessage((fomoData as { message: string }).message);
+      // Cross-page bağlantı: Home'da "Şehrin aktif" göstergesi
+      if (userProfile?.metadata) {
+        const cityId = (userProfile.metadata as Record<string, unknown>)?.city as string | undefined;
+        if (cityId) {
+          const info = getCityInfo(cityId);
+          if (info) {
+            const { data: atmosData } = await supabase.rpc('get_city_atmosphere', {
+              p_city_id: cityId,
+            });
+            const cityData = atmosData as { active_now?: number } | null;
+            if (cityData && (cityData.active_now ?? 0) > 0) {
+              setCityActive({
+                emoji: info.emoji,
+                name: info.name,
+                count: cityData.active_now ?? 0,
+              });
+            }
+          }
+        }
       }
 
       setIsLoading(false);
@@ -172,18 +166,26 @@ export default function DashboardPage() {
   }, [router, setUser]);
 
   const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
+  const isRestricted = user && user.trust_score < 50;
   const avatar = AVATARS.find(a => a.id === user?.avatar_id) ?? AVATARS[0];
 
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push('/auth');
+  const handleSoloStart = async () => {
+    if (!user || !canStartSession || isRestricted || isStarting) return;
+    setIsStarting(true);
+    const sessionId = await createSoloSession(user.id, duration);
+    if (sessionId) {
+      router.push(`/session/prepare?id=${sessionId}&solo=true&duration=${duration}`);
+    }
+    setIsStarting(false);
+  };
+
+  const handleMatchStart = () => {
+    if (!canStartSession || isRestricted) return;
+    router.push(`/session/quick-match?duration=${duration}`);
   };
 
   const handleRejoin = async () => {
     if (!activeMatch) return;
-
     if (activeMatch.state === 'active') {
       router.push(`/session/active?id=${activeMatch.sessionId}`);
     } else if (activeMatch.state === 'preparing') {
@@ -193,12 +195,10 @@ export default function DashboardPage() {
       const { data, error } = await supabase.rpc('rejoin_match', {
         p_match_id: activeMatch.matchId,
       });
-
       if (error || !(data as { success: boolean })?.success) {
         setActiveMatch(null);
         return;
       }
-
       router.push(`/session/active?id=${activeMatch.sessionId}`);
     }
   };
@@ -206,34 +206,13 @@ export default function DashboardPage() {
   const handleDismissMatch = async () => {
     if (!activeMatch) return;
     const supabase = createClient();
-
     await supabase.rpc('complete_match', { p_match_id: activeMatch.matchId });
-
     await supabase
       .from('sessions')
       .update({ status: 'abandoned', ended_at: new Date().toISOString() })
       .eq('id', activeMatch.sessionId)
       .in('status', ['waiting', 'preparing', 'active']);
-
     setActiveMatch(null);
-  };
-
-  const handleRevealQuest = async (questType: 'daily' | 'weekly') => {
-    if (!user) return;
-    const supabase = createClient();
-    await supabase.rpc('reveal_quest', {
-      p_user_id: user.id,
-      p_quest_type: questType,
-    });
-
-    // Refetch quest data
-    const { data: updated } = await supabase.from('users').select('metadata').eq('id', user.id).single();
-    if (updated?.metadata) {
-      const meta = updated.metadata as { quests?: { daily?: DailyQuest; weekly?: WeeklyQuest } };
-      if (meta.quests?.daily) setDailyQuest(meta.quests.daily);
-      if (meta.quests?.weekly) setWeeklyQuest(meta.quests.weekly);
-    }
-    setRevealModal(null);
   };
 
   if (isLoading || !user) {
@@ -244,234 +223,142 @@ export default function DashboardPage() {
     );
   }
 
-  const trustLevel = user ? getTrustLevel(user.trust_score) : null;
-  const isRestricted = user && user.trust_score < 50;
-
-  // Get mystery descriptions for reveal modal
-  const revealQuest = revealModal === 'daily' ? dailyQuest : weeklyQuest;
-  const revealMystery = revealQuest ? QUEST_MYSTERY_DESCRIPTIONS[revealQuest.id] : null;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-4 py-8 pb-24">
-      <div className="max-w-sm mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{avatar.emoji}</span>
-            <div>
-              <h1 className="text-white font-semibold">{user.name}</h1>
-              <p className="text-gray-500 text-sm">Lv.{user.level} · {user.xp} XP</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
-          >
-            Çıkış
-          </button>
-        </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/backgrounds/sunset-office.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
 
-        {/* Stat kartları */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white/5 rounded-xl p-4 text-center"
-          >
-            <p className="text-2xl font-bold text-[#ffcb77]">
-              {user.current_streak}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_STREAK}</p>
-          </motion.div>
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col px-4 pb-24">
+        <div className="max-w-sm mx-auto w-full flex-1 flex flex-col">
+          {/* Top Overlay */}
+          <HomeOverlay avatarEmoji={avatar.emoji} userName={user.name} />
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white/5 rounded-xl p-4 text-center"
-          >
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <span className="text-lg">{trustLevel?.emoji}</span>
-              <span
-                className="text-2xl font-bold"
-                style={{ color: trustLevel?.color }}
-              >
-                {user.trust_score}
-              </span>
-            </div>
-            <p className="text-gray-500 text-xs">{COPY.DASHBOARD_TRUST}</p>
-          </motion.div>
+          {/* Active match rejoin banner */}
+          {activeMatch && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-orange-500/15 border border-orange-500/30 rounded-xl p-3 mb-4 backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{activeMatch.state === 'active' ? '⏱️' : '🔄'}</span>
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">
+                    {activeMatch.state === 'active'
+                      ? 'Devam eden seansın var!'
+                      : 'Eşleşmeye geri dönebilirsin!'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={handleRejoin}
+                    className="bg-[#ffcb77] text-[#1a1a2e] px-3 py-1.5 rounded-lg text-xs font-semibold"
+                  >
+                    Geri Dön
+                  </button>
+                  <button
+                    onClick={handleDismissMatch}
+                    className="text-gray-400 text-[10px] hover:text-gray-200 transition-colors"
+                  >
+                    Kapat
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/5 rounded-xl p-4 text-center"
-          >
-            <p className="text-2xl font-bold text-white">
-              {user.completed_sessions}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">{COPY.DASHBOARD_SESSIONS}</p>
-          </motion.div>
-        </div>
+          {/* Spacer */}
+          <div className="flex-1" />
 
-        {/* Streak göstergesi */}
-        {user.current_streak > 0 && (
+          {/* Pills row */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-[#ffcb77]/10 border border-[#ffcb77]/20 rounded-xl p-4 mb-6 text-center"
+            transition={{ delay: 0.3 }}
+            className="flex flex-wrap items-center justify-center gap-2 mb-8"
           >
-            <span className="text-2xl">🔥</span>
-            <p className="text-[#ffcb77] text-sm mt-1">
-              {user.current_streak} günlük seri! Devam et.
-            </p>
+            <StreakPill streak={user.current_streak} />
+            <QuestPill completed={questProgress.completed} total={questProgress.total} />
+            {cityActive && (
+              <CityPill
+                cityEmoji={cityActive.emoji}
+                cityName={cityActive.name}
+                activeCount={cityActive.count}
+              />
+            )}
           </motion.div>
-        )}
 
-        {/* FOMO Message Banner */}
-        {fomoEnabled && fomoMessage && (
-          <FomoMessage message={fomoMessage} missedCount={missedQuests.length} />
-        )}
-
-        {/* Quest section */}
-        {(dailyQuest || weeklyQuest) && (
+          {/* Duration Selector */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6"
+          >
+            <p className="text-white/40 text-xs text-center mb-3">dakika</p>
+            <DurationSelector selected={duration} onChange={setDuration} />
+          </motion.div>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            className="mb-6 space-y-3"
+            className="space-y-3 mb-6"
           >
-            <div className="flex items-center justify-between">
-              <p className="text-gray-500 text-xs uppercase tracking-wide">Görevler</p>
-              <p className="text-gray-600 text-xs">
-                {hiddenCount}/{Object.keys(HIDDEN_QUEST_INFO).length} gizli görev
-              </p>
-            </div>
-            <MysteryQuestCard
-              quest={dailyQuest}
-              questType="daily"
-              fomoEnabled={fomoEnabled}
-              onRevealClick={() => setRevealModal('daily')}
-            />
-            <MysteryQuestCard
-              quest={weeklyQuest}
-              questType="weekly"
-              fomoEnabled={fomoEnabled}
-              onRevealClick={() => setRevealModal('weekly')}
-            />
+            <motion.button
+              whileHover={{ scale: canStartSession && !isRestricted ? 1.02 : 1 }}
+              whileTap={{ scale: canStartSession && !isRestricted ? 0.98 : 1 }}
+              onClick={handleSoloStart}
+              disabled={!canStartSession || !!isRestricted || isStarting}
+              className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all ${
+                canStartSession && !isRestricted
+                  ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/25'
+                  : 'bg-white/10 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isStarting ? 'Başlatılıyor...' : 'Solo Başla'}
+            </motion.button>
+
+            {!isRestricted && (
+              <motion.button
+                whileHover={{ scale: canStartSession ? 1.02 : 1 }}
+                whileTap={{ scale: canStartSession ? 0.98 : 1 }}
+                onClick={handleMatchStart}
+                disabled={!canStartSession}
+                className={`w-full py-3.5 rounded-2xl font-medium text-base transition-all border ${
+                  canStartSession
+                    ? 'border-white/20 text-white/80 hover:bg-white/5 backdrop-blur-sm'
+                    : 'border-white/5 text-gray-600 cursor-not-allowed'
+                }`}
+              >
+                Eşleşme Bul
+              </motion.button>
+            )}
           </motion.div>
-        )}
 
-        {/* Missed Quest Ghosts */}
-        {fomoEnabled && missedQuests.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {missedQuests.slice(0, 3).map((mq) => (
-              <MissedQuestGhost key={mq.id + mq.missed_at} questId={mq.id} missedAt={mq.missed_at} />
-            ))}
-          </div>
-        )}
+          {/* Daily limit info */}
+          {!user.is_premium && (
+            <p className="text-white/30 text-xs text-center mb-2">
+              Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans
+            </p>
+          )}
 
-        {/* Active match rejoin banner */}
-        {activeMatch && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-6"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{activeMatch.state === 'active' ? '⏱️' : '🔄'}</span>
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium">
-                  {activeMatch.state === 'active'
-                    ? 'Devam eden seansın var!'
-                    : 'Eşleşmeye geri dönebilirsin!'}
-                </p>
-                <p className="text-gray-400 text-xs">
-                  {activeMatch.state === 'active'
-                    ? 'Aktif bir seans devam ediyor.'
-                    : 'Eşin hala bekliyor olabilir.'}
-                </p>
-              </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={handleRejoin}
-                  className="bg-[#ffcb77] text-[#1a1a2e] px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap"
-                >
-                  Geri Dön
-                </button>
-                <button
-                  onClick={handleDismissMatch}
-                  className="text-gray-500 text-xs hover:text-gray-300 transition-colors"
-                >
-                  Kapat
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+          {!canStartSession && (
+            <p className="text-white/20 text-xs text-center">
+              Yarın tekrar gel veya premium&apos;a geç.
+            </p>
+          )}
 
-        {/* Günlük kullanım */}
-        {!user.is_premium && (
-          <div className="text-center text-gray-500 text-sm mb-4">
-            Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans
-          </div>
-        )}
-
-        {/* Rehabilitation Banner (trust < 50) */}
-        {isRestricted && (
-          <RehabBanner userId={user.id} />
-        )}
-
-        {/* Ana CTA */}
-        <motion.button
-          whileHover={{ scale: (canStartSession && !isRestricted) ? 1.02 : 1 }}
-          whileTap={{ scale: (canStartSession && !isRestricted) ? 0.98 : 1 }}
-          onClick={() => {
-            if (!canStartSession || isRestricted) return;
-            router.push('/session/quick-match');
-          }}
-          disabled={!canStartSession || isRestricted}
-          className={`
-            w-full py-4 rounded-2xl font-semibold text-lg transition-all
-            ${(canStartSession && !isRestricted)
-              ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/20'
-              : 'bg-white/10 text-gray-500 cursor-not-allowed'
-            }
-          `}
-        >
-          {isRestricted
-            ? 'Solo Modda Devam Et'
-            : (canStartSession ? COPY.DASHBOARD_CTA : 'Günlük limit doldu')}
-        </motion.button>
-
-        {!canStartSession && (
-          <p className="text-gray-600 text-xs text-center mt-3">
-            Yarın tekrar gel veya sınırsız erişim için premium&apos;a geç.
-          </p>
-        )}
-
-        {/* Toplam odak */}
-        <div className="mt-10 text-center">
-          <p className="text-gray-600 text-sm">
-            Toplam {Math.floor(user.total_minutes / 60)} saat {user.total_minutes % 60} dk odaklandın
-          </p>
+          {/* Bottom spacer */}
+          <div className="flex-1" />
         </div>
       </div>
-
-      {/* Quest Reveal Modal */}
-      <AnimatePresence>
-        {revealModal && revealMystery && (
-          <QuestRevealModal
-            questType={revealModal}
-            teaser={revealMystery.teaser}
-            hint={revealMystery.hint}
-            onReveal={() => handleRevealQuest(revealModal)}
-            onCancel={() => setRevealModal(null)}
-          />
-        )}
-      </AnimatePresence>
 
       <BottomNav />
     </div>

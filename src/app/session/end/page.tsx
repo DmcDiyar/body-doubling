@@ -174,6 +174,11 @@ function SessionEndPage() {
     router.push('/dashboard');
   };
 
+  const handleStream = () => {
+    reset();
+    router.push('/city');
+  };
+
   // ---------- Helpers ----------
   const getAvatar = (avatarId: number) => {
     return AVATARS.find((a) => a.id === avatarId)?.emoji ?? '🐱';
@@ -427,6 +432,14 @@ function SessionEndPage() {
                 className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl text-lg"
               >
                 {COPY.SESSION_AGAIN}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleStream}
+                className="w-full bg-purple-500/20 text-purple-300 font-medium py-3 rounded-xl text-sm border border-purple-500/20 hover:bg-purple-500/30 transition-colors"
+              >
+                Canli Akisi Gor
               </motion.button>
               <button
                 onClick={handleDone}
