@@ -12,7 +12,6 @@ import { VideoScene } from '@/components/stream/VideoScene';
 import { ChatOverlay } from '@/components/stream/ChatOverlay';
 import { MiniStats } from '@/components/stream/MiniStats';
 import { CityModal } from '@/components/stream/CityModal';
-import { CityCanvas } from '@/components/stream/CityCanvas';
 import { GlobalEventBanner } from '@/components/stream/GlobalEventBanner';
 import { BottomNav } from '@/components/layout/BottomNav';
 import {
@@ -35,6 +34,7 @@ interface StreamEventRow {
   event_type: string;
   city_id: string;
   user_id: string | null;
+  display_name: string | null;
   message: string;
   priority: number;
   created_at: string;
@@ -50,6 +50,7 @@ function rowToStreamEvent(row: StreamEventRow): StreamEvent {
     city_id: row.city_id,
     city_name: info?.name ?? row.city_id,
     city_emoji: info?.emoji ?? '',
+    user_name: row.display_name ?? undefined,
     message: row.message,
     priority: row.priority ?? EVENT_PRIORITY[eventType] ?? 2,
     ttl: EVENT_TTL[eventType] ?? 120,
@@ -66,7 +67,6 @@ export default function CityWarsStreamPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [selectedCityModal, setSelectedCityModal] = useState<string | null>(null);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
-  const [isCanvasExpanded, setIsCanvasExpanded] = useState(false);
 
   // Stream data — aggregate (map + stats)
   const [cities, setCities] = useState<CityActivity[]>([]);
@@ -335,21 +335,10 @@ export default function CityWarsStreamPage() {
               userCityName={userCityInfo?.name ?? null}
               userCityRank={userCityRank}
               userCityEmoji={userCityInfo?.emoji ?? null}
+              cities={cities}
             />
           </div>
 
-          {/* Canvas (bottom section — collapsible) */}
-          {userCityId && (
-            <div className="border-t border-white/5 bg-[#0f172a]/90 backdrop-blur-md p-3">
-              <CityCanvas
-                cityId={userCityId}
-                cityName={userCityInfo?.name ?? userCityId}
-                cityEmoji={userCityInfo?.emoji ?? '🏙️'}
-                isExpanded={isCanvasExpanded}
-                onToggle={() => setIsCanvasExpanded(!isCanvasExpanded)}
-              />
-            </div>
-          )}
         </div>
       </div>
 
@@ -380,21 +369,9 @@ export default function CityWarsStreamPage() {
             userCityName={userCityInfo?.name ?? null}
             userCityRank={userCityRank}
             userCityEmoji={userCityInfo?.emoji ?? null}
+            cities={cities}
           />
         </div>
-
-        {/* Canvas (mobile — collapsible section) */}
-        {userCityId && (
-          <div className="border-t border-white/5 bg-[#0f172a]/90 p-2">
-            <CityCanvas
-              cityId={userCityId}
-              cityName={userCityInfo?.name ?? userCityId}
-              cityEmoji={userCityInfo?.emoji ?? '🏙️'}
-              isExpanded={isCanvasExpanded}
-              onToggle={() => setIsCanvasExpanded(!isCanvasExpanded)}
-            />
-          </div>
-        )}
 
         {/* Mobile Chat — Floating button + Drawer */}
         <>
