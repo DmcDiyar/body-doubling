@@ -1,19 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
-import { motion } from 'framer-motion';
-import { DurationSelector } from '@/components/home/DurationSelector';
-import { HomeOverlay } from '@/components/home/HomeOverlay';
-import { StreakPill } from '@/components/home/StreakPill';
-import { QuestPill } from '@/components/home/QuestPill';
-import { CityPill } from '@/components/home/CityPill';
-import { BottomNav } from '@/components/layout/BottomNav';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { DashboardHeader } from '@/components/home/DashboardHeader';
+import { ModeSelector } from '@/components/home/ModeSelector';
+import { GoalPrompt } from '@/components/home/GoalPrompt';
+import { TimerDisplay } from '@/components/home/TimerDisplay';
+import { ActionButtons } from '@/components/home/ActionButtons';
+import { ActiveMatchBanner } from '@/components/home/ActiveMatchBanner';
+import { DailyLimitInfo } from '@/components/home/DailyLimitInfo';
+import { UtilityButtons } from '@/components/home/UtilityButtons';
+import { DashboardBottomNav } from '@/components/layout/DashboardBottomNav';
 import { createSoloSession } from '@/lib/session-actions';
-import { getCityInfo } from '@/lib/city-detection';
 import type { User, UserLimit } from '@/types/database';
 
 interface ActiveMatchInfo {
@@ -25,13 +28,12 @@ interface ActiveMatchInfo {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
+  const { isFullscreen, isSupported: isFullscreenSupported, toggle: toggleFullscreen } = useFullscreen();
   const [duration, setDuration] = useState(25);
   const [dailyUsed, setDailyUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
-  const [questProgress, setQuestProgress] = useState({ completed: 0, total: 0 });
-  const [cityActive, setCityActive] = useState<{ emoji: string; name: string; count: number } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -116,49 +118,6 @@ export default function DashboardPage() {
         });
       }
 
-      // Quest progress (sadece sayı — detay Aynam'da)
-      const userProfile = profile as User | null;
-      if (userProfile?.metadata) {
-        const meta = userProfile.metadata as {
-          quests?: {
-            daily?: { completed?: boolean };
-            weekly?: { completed?: boolean };
-          };
-        };
-        let completed = 0;
-        let total = 0;
-        if (meta.quests?.daily) {
-          total++;
-          if (meta.quests.daily.completed) completed++;
-        }
-        if (meta.quests?.weekly) {
-          total++;
-          if (meta.quests.weekly.completed) completed++;
-        }
-        setQuestProgress({ completed, total });
-      }
-
-      // Cross-page bağlantı: Home'da "Şehrin aktif" göstergesi
-      if (userProfile?.metadata) {
-        const cityId = (userProfile.metadata as Record<string, unknown>)?.city as string | undefined;
-        if (cityId) {
-          const info = getCityInfo(cityId);
-          if (info) {
-            const { data: atmosData } = await supabase.rpc('get_city_atmosphere', {
-              p_city_id: cityId,
-            });
-            const cityData = atmosData as { active_now?: number } | null;
-            if (cityData && (cityData.active_now ?? 0) > 0) {
-              setCityActive({
-                emoji: info.emoji,
-                name: info.name,
-                count: cityData.active_now ?? 0,
-              });
-            }
-          }
-        }
-      }
-
       setIsLoading(false);
     }
 
@@ -166,7 +125,7 @@ export default function DashboardPage() {
   }, [router, setUser]);
 
   const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
-  const isRestricted = user && user.trust_score < 50;
+  const isRestricted = user ? user.trust_score < 50 : false;
   const avatar = AVATARS.find(a => a.id === user?.avatar_id) ?? AVATARS[0];
 
   const handleSoloStart = async () => {
@@ -215,152 +174,105 @@ export default function DashboardPage() {
     setActiveMatch(null);
   };
 
+  const handleReset = () => {
+    setDuration(25);
+  };
+
+  // Loading state
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
-        <div className="text-white/50 text-lg">Yükleniyor...</div>
+      <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
+        <div className="text-white/40 text-lg">Yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden flex flex-col">
       {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/backgrounds/sunset-office.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col px-4 pb-24">
-        <div className="max-w-sm mx-auto w-full flex-1 flex flex-col">
-          {/* Top Overlay */}
-          <HomeOverlay avatarEmoji={avatar.emoji} userName={user.name} />
-
-          {/* Active match rejoin banner */}
-          {activeMatch && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-orange-500/15 border border-orange-500/30 rounded-xl p-3 mb-4 backdrop-blur-sm"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{activeMatch.state === 'active' ? '⏱️' : '🔄'}</span>
-                <div className="flex-1">
-                  <p className="text-white text-sm font-medium">
-                    {activeMatch.state === 'active'
-                      ? 'Devam eden seansın var!'
-                      : 'Eşleşmeye geri dönebilirsin!'}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <button
-                    onClick={handleRejoin}
-                    className="bg-[#ffcb77] text-[#1a1a2e] px-3 py-1.5 rounded-lg text-xs font-semibold"
-                  >
-                    Geri Dön
-                  </button>
-                  <button
-                    onClick={handleDismissMatch}
-                    className="text-gray-400 text-[10px] hover:text-gray-200 transition-colors"
-                  >
-                    Kapat
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Pills row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-2 mb-8"
-          >
-            <StreakPill streak={user.current_streak} />
-            <QuestPill completed={questProgress.completed} total={questProgress.total} />
-            {cityActive && (
-              <CityPill
-                cityEmoji={cityActive.emoji}
-                cityName={cityActive.name}
-                activeCount={cityActive.count}
-              />
-            )}
-          </motion.div>
-
-          {/* Duration Selector */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6"
-          >
-            <p className="text-white/40 text-xs text-center mb-3">dakika</p>
-            <DurationSelector selected={duration} onChange={setDuration} />
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="space-y-3 mb-6"
-          >
-            <motion.button
-              whileHover={{ scale: canStartSession && !isRestricted ? 1.02 : 1 }}
-              whileTap={{ scale: canStartSession && !isRestricted ? 0.98 : 1 }}
-              onClick={handleSoloStart}
-              disabled={!canStartSession || !!isRestricted || isStarting}
-              className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all ${
-                canStartSession && !isRestricted
-                  ? 'bg-[#ffcb77] text-[#1a1a2e] shadow-lg shadow-[#ffcb77]/25'
-                  : 'bg-white/10 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {isStarting ? 'Başlatılıyor...' : 'Solo Başla'}
-            </motion.button>
-
-            {!isRestricted && (
-              <motion.button
-                whileHover={{ scale: canStartSession ? 1.02 : 1 }}
-                whileTap={{ scale: canStartSession ? 0.98 : 1 }}
-                onClick={handleMatchStart}
-                disabled={!canStartSession}
-                className={`w-full py-3.5 rounded-2xl font-medium text-base transition-all border ${
-                  canStartSession
-                    ? 'border-white/20 text-white/80 hover:bg-white/5 backdrop-blur-sm'
-                    : 'border-white/5 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                Eşleşme Bul
-              </motion.button>
-            )}
-          </motion.div>
-
-          {/* Daily limit info */}
-          {!user.is_premium && (
-            <p className="text-white/30 text-xs text-center mb-2">
-              Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans
-            </p>
-          )}
-
-          {!canStartSession && (
-            <p className="text-white/20 text-xs text-center">
-              Yarın tekrar gel veya premium&apos;a geç.
-            </p>
-          )}
-
-          {/* Bottom spacer */}
-          <div className="flex-1" />
-        </div>
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/backgrounds/1b651162dfdd425d13f7.jpg"
+          alt="Focus background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          quality={90}
+        />
+        {/* Apple-style low-opacity overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.55))',
+          }}
+        />
       </div>
 
-      <BottomNav />
+      {/* Content */}
+      <div className="relative z-10 flex flex-col h-full px-6 pb-24">
+        {/* Header */}
+        <DashboardHeader avatarEmoji={avatar.emoji} userName={user.name} />
+
+        {/* Active match banner */}
+        {activeMatch && (
+          <ActiveMatchBanner
+            activeMatch={activeMatch}
+            onRejoin={handleRejoin}
+            onDismiss={handleDismissMatch}
+          />
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Mode Selector */}
+        <div className="mb-8">
+          <ModeSelector selected={duration} onChange={setDuration} />
+        </div>
+
+        {/* Goal Prompt */}
+        <GoalPrompt />
+
+        {/* Timer Display */}
+        <div className="flex items-center justify-center mb-8">
+          <TimerDisplay minutes={duration} />
+        </div>
+
+        {/* Action Buttons */}
+        <ActionButtons
+          onSoloStart={handleSoloStart}
+          onMatchStart={handleMatchStart}
+          canStart={canStartSession}
+          isRestricted={isRestricted}
+          isStarting={isStarting}
+        />
+
+        {/* Daily Limit Info */}
+        <DailyLimitInfo
+          used={dailyUsed}
+          limit={FREE_DAILY_LIMIT}
+          isPremium={user.is_premium}
+          canStart={canStartSession}
+        />
+
+        {/* Utility Buttons */}
+        <UtilityButtons onReset={handleReset} />
+
+        {/* Spacer */}
+        <div className="flex-1" />
+      </div>
+
+      {/* Bottom Nav */}
+      <DashboardBottomNav
+        streak={user.current_streak}
+        dailyUsed={dailyUsed}
+        dailyLimit={FREE_DAILY_LIMIT}
+        isPremium={user.is_premium}
+        isFullscreen={isFullscreen}
+        isFullscreenSupported={isFullscreenSupported}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </div>
   );
 }
