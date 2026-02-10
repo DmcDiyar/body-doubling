@@ -66,6 +66,8 @@ export function TimerDisplay({ minutes, seconds = 0, isFocusMode }: TimerDisplay
                    ${isLastMinute ? 'text-orange-300' : 'text-white'}
                    ${isCompleted ? 'text-green-300' : ''}`}
                 style={{
+                    fontVariantNumeric: 'tabular-nums',
+                    fontFeatureSettings: '"tnum"',
                     transition: 'color 1s ease',
                 }}
             >

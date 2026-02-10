@@ -16,85 +16,62 @@ import { ActionButtons } from '@/components/home/ActionButtons';
 import { ActiveMatchBanner } from '@/components/home/ActiveMatchBanner';
 import { DailyLimitInfo } from '@/components/home/DailyLimitInfo';
 import { UtilityButtons } from '@/components/home/UtilityButtons';
+import { FocusControls } from '@/components/home/FocusControls';
 import { DashboardBottomNav } from '@/components/layout/DashboardBottomNav';
-import { createSoloSession } from '@/lib/session-actions';
+import {
+  createSoloSession,
+  completeSoloSession,
+  abandonSession,
+  refreshUserProfile,
+  refreshDailyUsage,
+  beaconAbandonSession,
+} from '@/lib/session-actions';
 import type { User, UserLimit } from '@/types/database';
 
 // ── Apple Easing ────────────────────────────────────
-// cubic-bezier(0.16, 1, 0.3, 1) — Apple's secret weapon
 const APPLE_EASE = [0.16, 1, 0.3, 1] as const;
 
-// ── Staggered Exit Animations ───────────────────────
-// Order: Header↑ → Mode↓ → Actions↓ → Utility↓ → BottomBar↓↓
-// Each element has a specific direction and delay
+// ── Timer State Machine ─────────────────────────────
+type TimerState = 'idle' | 'running' | 'paused';
 
-const headerExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE } },
+// ── Staggered Animations ────────────────────────────
+const headerAnim = {
+  initial: { opacity: 0, y: -24 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.15 } },
   exit: { opacity: 0, y: -24, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0 } },
 };
 
-const headerEnter = {
-  initial: { opacity: 0, y: -24 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.15 } },
-};
-
-const modeExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE } },
+const modeAnim = {
+  initial: { opacity: 0, y: 32 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.2 } },
   exit: { opacity: 0, y: 32, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.04 } },
 };
 
-const modeEnter = {
-  initial: { opacity: 0, y: 32 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.2 } },
-};
-
-const goalExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE } },
+const goalAnim = {
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.25 } },
   exit: { opacity: 0, y: 24, transition: { duration: 0.38, ease: APPLE_EASE, delay: 0.06 } },
 };
 
-const goalEnter = {
+const actionsAnim = {
   initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.25 } },
-};
-
-const actionsExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.3 } },
   exit: { opacity: 0, y: 24, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.08 } },
 };
 
-const actionsEnter = {
+const utilityAnim = {
   initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.3 } },
-};
-
-const utilityExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.38, ease: APPLE_EASE } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.35 } },
   exit: { opacity: 0, y: 24, transition: { duration: 0.38, ease: APPLE_EASE, delay: 0.1 } },
 };
 
-const utilityEnter = {
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.35 } },
-};
-
-const bottomBarExit = {
-  initial: { opacity: 1, y: 0 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.52, ease: APPLE_EASE } },
+const bottomBarAnim = {
+  initial: { opacity: 0, y: 100 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.52, ease: APPLE_EASE, delay: 0.4 } },
   exit: { opacity: 0, y: 100, transition: { duration: 0.52, ease: APPLE_EASE, delay: 0.06 } },
 };
 
-const bottomBarEnter = {
-  initial: { opacity: 0, y: 100 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.52, ease: APPLE_EASE, delay: 0.4 } },
-};
-
-const finishBtnVariants = {
+const focusControlsAnim = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: APPLE_EASE, delay: 0.35 } },
   exit: { opacity: 0, y: 20, transition: { duration: 0.25, ease: APPLE_EASE } },
@@ -120,12 +97,17 @@ export default function DashboardPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
 
-  // Focus mode state
-  const [isFocusMode, setIsFocusMode] = useState(false);
+  // Timer state machine: idle → running ⇄ paused → idle
+  const [timerState, setTimerState] = useState<TimerState>('idle');
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number>(0); // for tab-inactive drift correction
+  const sessionStartTimeRef = useRef<number>(0); // when session actually started
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const isFocusMode = timerState === 'running';
+  const isPaused = timerState === 'paused';
 
   // ── Data Loading ──────────────────────────────────
   useEffect(() => {
@@ -217,22 +199,17 @@ export default function DashboardPage() {
   // ── Screen Wake Lock ──────────────────────────────
   useEffect(() => {
     if (isFocusMode) {
-      // Request wake lock to prevent screen from sleeping
       if ('wakeLock' in navigator) {
         navigator.wakeLock.request('screen').then((wl) => {
           wakeLockRef.current = wl;
-        }).catch(() => {
-          // Wake lock not available or denied — silent fail
-        });
+        }).catch(() => { });
       }
     } else {
-      // Release wake lock
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => { });
         wakeLockRef.current = null;
       }
     }
-
     return () => {
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => { });
@@ -241,26 +218,42 @@ export default function DashboardPage() {
     };
   }, [isFocusMode]);
 
-  // ── Countdown Timer ───────────────────────────────
+  // ── Beforeunload: abandon active session on page close ──
   useEffect(() => {
-    if (!isFocusMode || timeRemaining <= 0) return;
+    const handler = () => {
+      if (currentSessionId && timerState !== 'idle') {
+        beaconAbandonSession(currentSessionId);
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [currentSessionId, timerState]);
+
+  // ── Countdown Timer (drift-corrected) ─────────────
+  useEffect(() => {
+    if (timerState !== 'running' || timeRemaining <= 0) return;
+
+    startTimeRef.current = Date.now();
+    const expectedRemaining = timeRemaining;
 
     timerRef.current = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleFinish();
-          return 0;
-        }
-        return prev - 1;
-      });
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      const corrected = expectedRemaining - elapsed;
+
+      if (corrected <= 0) {
+        clearInterval(timerRef.current!);
+        setTimeRemaining(0);
+        handleFinish();
+      } else {
+        setTimeRemaining(corrected);
+      }
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocusMode, timeRemaining > 0]);
+  }, [timerState]);
 
   // ── Derived state ─────────────────────────────────
   const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
@@ -270,59 +263,115 @@ export default function DashboardPage() {
   const timerMinutes = Math.floor(timeRemaining / 60);
   const timerSeconds = timeRemaining % 60;
 
-  // ── Handlers ──────────────────────────────────────
+  // ── Handle mode change while paused ───────────────
+  const handleModeChange = (newDuration: number) => {
+    setDuration(newDuration);
+    // If paused, reset timer to new duration and clear session
+    if (isPaused) {
+      setTimeRemaining(0);
+      setTimerState('idle');
+      if (currentSessionId && user) {
+        abandonSession(currentSessionId, user.id);
+        setCurrentSessionId(null);
+      }
+    }
+  };
+
+  // ── BAŞLA / Devam Et ──────────────────────────────
   const handleSoloStart = async () => {
     if (!user || !canStartSession || isRestricted || isStarting) return;
-    setIsStarting(true);
 
+    // RESUME from paused
+    if (isPaused && timeRemaining > 0) {
+      setTimerState('running');
+      return;
+    }
+
+    // FRESH START — session created as 'active' with started_at
+    setIsStarting(true);
     const sessionId = await createSoloSession(user.id, duration);
     if (sessionId) {
       setCurrentSessionId(sessionId);
+      sessionStartTimeRef.current = Date.now();
     }
-
     setTimeRemaining(duration * 60);
-    setIsFocusMode(true);
+    setTimerState('running');
     setIsStarting(false);
   };
 
+  // ── DURAKLAT ──────────────────────────────────────
+  const handlePause = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimerState('paused');
+  };
+
+  // ── BİTİR ─────────────────────────────────────────
+  // Calls complete_solo_session RPC → streak, XP, trust, limits all updated
   const handleFinish = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
 
-    if (currentSessionId) {
-      const supabase = createClient();
-      await supabase
-        .from('sessions')
-        .update({ status: 'completed', ended_at: new Date().toISOString() })
-        .eq('id', currentSessionId);
+    const sid = currentSessionId;
+    const uid = user?.id;
+
+    if (sid && uid) {
+      // Call the RPC — handles streak, XP, trust, user_limits, participant
+      await completeSoloSession(sid, uid, false);
     }
 
-    // Small delay so completion flash can play
+    // Small delay for completion flash animation
     await new Promise(r => setTimeout(r, 350));
 
-    setIsFocusMode(false);
+    setTimerState('idle');
     setTimeRemaining(0);
     setCurrentSessionId(null);
 
-    // Refresh daily usage
-    const supabase = createClient();
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const today = new Date().toISOString().split('T')[0];
-      const { data: limit } = await supabase
-        .from('user_limits')
-        .select('sessions_used')
-        .eq('user_id', authUser.id)
-        .eq('date', today)
-        .maybeSingle();
-      setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
-    }
-  }, [currentSessionId]);
+    // Refresh user profile (streak, XP, trust updated by RPC)
+    const freshProfile = await refreshUserProfile();
+    if (freshProfile) setUser(freshProfile);
 
+    // Refresh daily usage
+    if (uid) {
+      const used = await refreshDailyUsage(uid);
+      setDailyUsed(used);
+    }
+  }, [currentSessionId, user?.id, setUser]);
+
+  // ── RESET ─────────────────────────────────────────
+  const handleReset = async () => {
+    if (!user || !canStartSession || isRestricted) return;
+
+    // Abandon old session if exists
+    if (currentSessionId) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      await abandonSession(currentSessionId, user.id);
+      setCurrentSessionId(null);
+    }
+
+    // Create new session & start immediately
+    setIsStarting(true);
+    const sessionId = await createSoloSession(user.id, duration);
+    if (sessionId) {
+      setCurrentSessionId(sessionId);
+      sessionStartTimeRef.current = Date.now();
+    }
+    setTimeRemaining(duration * 60);
+    setTimerState('running');
+    setIsStarting(false);
+  };
+
+  // ── Simple reset (idle mode, no auto-start) ───────
+  const handleSimpleReset = () => {
+    if (timerState !== 'idle') return;
+    setDuration(25);
+  };
+
+  // ── EŞLEŞME BUL ──────────────────────────────────
   const handleMatchStart = () => {
     if (!canStartSession || isRestricted) return;
     router.push(`/session/quick-match?duration=${duration}`);
   };
 
+  // ── REJOIN ────────────────────────────────────────
   const handleRejoin = async () => {
     if (!activeMatch) return;
     if (activeMatch.state === 'active') {
@@ -342,34 +391,28 @@ export default function DashboardPage() {
     }
   };
 
+  // ── DISMISS MATCH ─────────────────────────────────
   const handleDismissMatch = async () => {
     if (!activeMatch) return;
     const supabase = createClient();
     await supabase.rpc('complete_match', { p_match_id: activeMatch.matchId });
-    await supabase
-      .from('sessions')
-      .update({ status: 'abandoned', ended_at: new Date().toISOString() })
-      .eq('id', activeMatch.sessionId)
-      .in('status', ['waiting', 'preparing', 'active']);
+    await abandonSession(activeMatch.sessionId);
     setActiveMatch(null);
   };
-
-  const handleReset = () => setDuration(25);
 
   // ── Loading ───────────────────────────────────────
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-white/40 text-lg"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-white/40 text-lg">
           Yukleniyor...
         </motion.div>
       </div>
     );
   }
+
+  // Show dashboard UI when NOT in focus mode (idle or paused)
+  const showDashboardUI = !isFocusMode;
 
   // ── Render ────────────────────────────────────────
   return (
@@ -385,7 +428,6 @@ export default function DashboardPage() {
           sizes="100vw"
           quality={90}
         />
-        {/* Overlay — darkens in focus mode */}
         <motion.div
           className="absolute inset-0"
           animate={{
@@ -400,10 +442,10 @@ export default function DashboardPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full px-6 pb-24">
 
-        {/* ─── HEADER (slides UP on exit) ─── */}
+        {/* ─── HEADER ─── */}
         <AnimatePresence mode="wait">
-          {!isFocusMode && (
-            <motion.div key="header" {...headerExit} {...headerEnter}>
+          {showDashboardUI && (
+            <motion.div key="header" {...headerAnim}>
               <DashboardHeader avatarEmoji={avatar.emoji} userName={user.name} />
             </motion.div>
           )}
@@ -411,8 +453,8 @@ export default function DashboardPage() {
 
         {/* Active match banner */}
         <AnimatePresence>
-          {!isFocusMode && activeMatch && (
-            <motion.div key="match-banner" {...headerExit} {...headerEnter}>
+          {showDashboardUI && activeMatch && (
+            <motion.div key="match-banner" {...headerAnim}>
               <ActiveMatchBanner
                 activeMatch={activeMatch}
                 onRejoin={handleRejoin}
@@ -425,43 +467,61 @@ export default function DashboardPage() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* ─── MODE SELECTOR (slides DOWN on exit) ─── */}
+        {/* ─── MODE SELECTOR ─── */}
         <AnimatePresence mode="wait">
-          {!isFocusMode && (
-            <motion.div key="mode-selector" {...modeExit} {...modeEnter} className="mb-8">
-              <ModeSelector selected={duration} onChange={setDuration} />
+          {showDashboardUI && (
+            <motion.div key="mode-selector" {...modeAnim} className="mb-8">
+              <ModeSelector selected={duration} onChange={handleModeChange} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── GOAL PROMPT (slides DOWN on exit) ─── */}
+        {/* ─── GOAL PROMPT ─── */}
         <AnimatePresence mode="wait">
-          {!isFocusMode && (
-            <motion.div key="goal-prompt" {...goalExit} {...goalEnter}>
+          {showDashboardUI && (
+            <motion.div key="goal-prompt" {...goalAnim}>
               <GoalPrompt />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── TIMER — ALWAYS VISIBLE (hero element) ─── */}
+        {/* ─── TIMER — ALWAYS VISIBLE (hero) ─── */}
         <div className="flex items-center justify-center mb-8">
-          {isFocusMode ? (
-            <TimerDisplay minutes={timerMinutes} seconds={timerSeconds} isFocusMode />
+          {timerState !== 'idle' ? (
+            <TimerDisplay minutes={timerMinutes} seconds={timerSeconds} isFocusMode={isFocusMode} />
           ) : (
             <TimerDisplay minutes={duration} />
           )}
         </div>
 
-        {/* ─── ACTION BUTTONS (slides DOWN on exit) ─── */}
+        {/* ─── Paused indicator ─── */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              key="pause-indicator"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center mb-4"
+            >
+              <span className="text-white/30 text-sm font-medium tracking-wider uppercase">
+                Duraklatildi
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── ACTION BUTTONS (idle & paused) ─── */}
         <AnimatePresence mode="wait">
-          {!isFocusMode && (
-            <motion.div key="action-buttons" {...actionsExit} {...actionsEnter}>
+          {showDashboardUI && (
+            <motion.div key="action-buttons" {...actionsAnim}>
               <ActionButtons
                 onSoloStart={handleSoloStart}
                 onMatchStart={handleMatchStart}
                 canStart={canStartSession}
                 isRestricted={isRestricted}
                 isStarting={isStarting}
+                isPaused={isPaused}
               />
               <DailyLimitInfo
                 used={dailyUsed}
@@ -473,34 +533,38 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* ─── FOCUS MODE: Bitir Button ─── */}
+        {/* ─── FOCUS MODE: Duraklat + Bitir ─── */}
         <AnimatePresence>
           {isFocusMode && (
-            <motion.div
-              key="finish-btn"
-              {...finishBtnVariants}
-              className="flex justify-center"
-            >
-              <button
-                onClick={handleFinish}
-                className="bg-white/[0.1] border border-white/[0.15] text-white text-lg
-                           font-semibold px-14 py-4 rounded-2xl
-                           shadow-2xl hover:bg-white/[0.15] active:scale-[0.97]"
-                style={{
-                  transition: 'background-color 300ms, transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-              >
-                Bitir
-              </button>
+            <motion.div key="focus-controls" {...focusControlsAnim}>
+              <FocusControls onPause={handlePause} onFinish={handleFinish} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── UTILITY BUTTONS (slides DOWN on exit) ─── */}
+        {/* ─── UTILITY BUTTONS + RESET ─── */}
         <AnimatePresence mode="wait">
-          {!isFocusMode && (
-            <motion.div key="utility-buttons" {...utilityExit} {...utilityEnter}>
-              <UtilityButtons onReset={handleReset} />
+          {showDashboardUI && (
+            <motion.div key="utility-buttons" {...utilityAnim}>
+              {isPaused ? (
+                /* When paused: show reset which restarts with new session */
+                <div className="flex items-center justify-center gap-6 mt-10 text-white/40">
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-2 hover:text-white/80 transition-colors
+                               p-2 rounded-xl hover:bg-white/[0.05] text-sm font-medium"
+                    title="Sureyi sifirla ve yeniden basla"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                    Sifirla ve Basla
+                  </button>
+                </div>
+              ) : (
+                <UtilityButtons onReset={handleSimpleReset} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -509,10 +573,10 @@ export default function DashboardPage() {
         <div className="flex-1" />
       </div>
 
-      {/* ─── BOTTOM NAV (cinematic slide DOWN on exit) ─── */}
+      {/* ─── BOTTOM NAV ─── */}
       <AnimatePresence mode="wait">
-        {!isFocusMode && (
-          <motion.div key="bottom-nav" {...bottomBarExit} {...bottomBarEnter}>
+        {showDashboardUI && (
+          <motion.div key="bottom-nav" {...bottomBarAnim}>
             <DashboardBottomNav
               streak={user.current_streak}
               dailyUsed={dailyUsed}

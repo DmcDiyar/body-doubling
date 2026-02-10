@@ -8,6 +8,7 @@ interface ActionButtonsProps {
     canStart: boolean;
     isRestricted: boolean;
     isStarting: boolean;
+    isPaused?: boolean;
 }
 
 export function ActionButtons({
@@ -16,6 +17,7 @@ export function ActionButtons({
     canStart,
     isRestricted,
     isStarting,
+    isPaused = false,
 }: ActionButtonsProps) {
     return (
         <motion.div
@@ -24,7 +26,7 @@ export function ActionButtons({
             transition={{ delay: 0.3 }}
             className="flex items-center justify-center gap-4"
         >
-            {/* BAŞLA (Solo) */}
+            {/* BAŞLA / Devam Et (Solo) */}
             <motion.button
                 whileHover={{ scale: canStart && !isRestricted ? 1.03 : 1 }}
                 whileTap={{ scale: canStart && !isRestricted ? 0.97 : 1 }}
@@ -35,14 +37,25 @@ export function ActionButtons({
                         : 'bg-white/[0.06] text-white/30 cursor-not-allowed'
                     }`}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z" />
-                </svg>
-                {isStarting ? 'Başlatılıyor...' : 'BAŞLA'}
+                {isPaused ? (
+                    <>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                        Devam Et
+                    </>
+                ) : (
+                    <>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                        {isStarting ? 'Baslatiliyor...' : 'BASLA'}
+                    </>
+                )}
             </motion.button>
 
-            {/* Eşleşme Bul */}
-            {!isRestricted && (
+            {/* Eslesme Bul */}
+            {!isRestricted && !isPaused && (
                 <motion.button
                     whileHover={{ scale: canStart ? 1.03 : 1 }}
                     whileTap={{ scale: canStart ? 0.97 : 1 }}
@@ -59,7 +72,7 @@ export function ActionButtons({
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    Eşleşme Bul
+                    Eslesme Bul
                 </motion.button>
             )}
         </motion.div>

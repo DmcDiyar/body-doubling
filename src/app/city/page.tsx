@@ -22,10 +22,10 @@ import {
 } from '@/lib/stream-events';
 import type { User } from '@/types/database';
 
-// Dynamic import for Mapbox (no SSR — uses window/document)
-const MapboxCityMap = dynamic(
-  () => import('@/components/stream/MapboxCityMap').then((m) => m.MapboxCityMap),
-  { ssr: false, loading: () => <div className="w-full h-full bg-[#0f172a] animate-pulse" /> },
+// Dynamic import for Turkey Canvas (no SSR — uses Canvas API)
+const TurkeyCanvas = dynamic(
+  () => import('@/components/stream/TurkeyCanvas').then((m) => m.TurkeyCanvas),
+  { ssr: false, loading: () => <div className="w-full h-full bg-[#F4F5F7] animate-pulse" /> },
 );
 
 // DB row shape from stream_events table
@@ -244,8 +244,8 @@ export default function CityWarsStreamPage() {
   // ─── Loading state ───
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <div className="text-white/50 text-lg">Yukleniyor...</div>
+      <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
+        <div className="text-[#3C3228]/40 text-lg">Yukleniyor...</div>
       </div>
     );
   }
@@ -253,7 +253,7 @@ export default function CityWarsStreamPage() {
   // ─── City prompt ───
   if (showCityPrompt) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center px-4 pb-24">
+      <div className="min-h-screen bg-gradient-to-b from-[#F4F5F7] via-[#EDE8E0] to-[#F4F5F7] flex items-center justify-center px-4 pb-24">
         <div className="w-full max-w-sm">
           <CityPrompt
             onSelect={handleCitySelect}
@@ -296,7 +296,7 @@ export default function CityWarsStreamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] pb-20">
+    <div className="min-h-screen bg-[#F4F5F7] pb-20">
       {/* Global Event Banner */}
       <GlobalEventBanner />
 
@@ -321,10 +321,10 @@ export default function CityWarsStreamPage() {
         </div>
 
         {/* Sag Panel (40%) — Map + Stats + Canvas */}
-        <div className="relative w-[40%] h-full border-l border-white/5 flex flex-col">
+        <div className="relative w-[40%] h-full border-l border-[#C8C0B5]/20 flex flex-col">
           {/* Map (top section) */}
           <div className="relative flex-1 min-h-0">
-            <MapboxCityMap
+            <TurkeyCanvas
               cities={cities}
               userCityId={userCityId}
               onCityClick={setSelectedCityModal}
@@ -357,8 +357,8 @@ export default function CityWarsStreamPage() {
         </div>
 
         {/* Map (35% height) */}
-        <div className="relative h-[35vh] border-t border-white/5">
-          <MapboxCityMap
+        <div className="relative h-[35vh] border-t border-[#C8C0B5]/20">
+          <TurkeyCanvas
             cities={cities}
             userCityId={userCityId}
             onCityClick={setSelectedCityModal}
@@ -377,11 +377,11 @@ export default function CityWarsStreamPage() {
         <>
           <button
             onClick={() => setIsMobileChatOpen(true)}
-            className="fixed bottom-24 right-4 z-30 bg-[#1a1a2e]/90 backdrop-blur-md border border-white/10 rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
+            className="fixed bottom-24 right-4 z-30 bg-white/90 backdrop-blur-md border border-[#C8C0B5]/30 rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
           >
             <span className="text-lg">💬</span>
             {recentEventCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#ffcb77] text-[#1a1a2e] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-[#D4956B] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                 {Math.min(recentEventCount, 9)}
               </span>
             )}
@@ -394,13 +394,13 @@ export default function CityWarsStreamPage() {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed inset-x-0 bottom-0 z-40 h-[60vh] bg-[#1a1a2e]/95 backdrop-blur-xl rounded-t-2xl border-t border-white/10 p-4"
+                className="fixed inset-x-0 bottom-0 z-40 h-[60vh] bg-[#F4F5F7]/95 backdrop-blur-xl rounded-t-2xl border-t border-[#C8C0B5]/30 p-4"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-white text-sm font-medium">Akis</h3>
+                  <h3 className="text-[#3C3228] text-sm font-medium">Akis</h3>
                   <button
                     onClick={() => setIsMobileChatOpen(false)}
-                    className="text-white/40 hover:text-white/70 text-lg"
+                    className="text-[#3C3228]/40 hover:text-[#3C3228]/70 text-lg"
                   >
                     &times;
                   </button>
