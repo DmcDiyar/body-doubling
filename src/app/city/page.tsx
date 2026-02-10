@@ -3,15 +3,17 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { getCityInfo } from '@/lib/city-detection';
 import { CityPrompt } from '@/components/city/CityPrompt';
 import { VideoScene } from '@/components/stream/VideoScene';
 import { ChatOverlay } from '@/components/stream/ChatOverlay';
-import { TurkeyMap } from '@/components/stream/TurkeyMap';
 import { MiniStats } from '@/components/stream/MiniStats';
 import { CityModal } from '@/components/stream/CityModal';
+import { CityCanvas } from '@/components/stream/CityCanvas';
+import { GlobalEventBanner } from '@/components/stream/GlobalEventBanner';
 import { BottomNav } from '@/components/layout/BottomNav';
 import {
   type StreamEvent,
@@ -20,6 +22,12 @@ import {
   EVENT_TTL,
 } from '@/lib/stream-events';
 import type { User } from '@/types/database';
+
+// Dynamic import for Mapbox (no SSR — uses window/document)
+const MapboxCityMap = dynamic(
+  () => import('@/components/stream/MapboxCityMap').then((m) => m.MapboxCityMap),
+  { ssr: false, loading: () => <div className="w-full h-full bg-[#0f172a] animate-pulse" /> },
+);
 
 // DB row shape from stream_events table
 interface StreamEventRow {
@@ -58,6 +66,7 @@ export default function CityWarsStreamPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [selectedCityModal, setSelectedCityModal] = useState<string | null>(null);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [isCanvasExpanded, setIsCanvasExpanded] = useState(false);
 
   // Stream data — aggregate (map + stats)
   const [cities, setCities] = useState<CityActivity[]>([]);
@@ -167,7 +176,7 @@ export default function CityWarsStreamPage() {
     };
   }, [isLoading, fetchAggregateData, loadRecentEvents]);
 
-  // ─── Realtime #1: stream_events table → Chat (canonical source) ───
+  // ─── Realtime: stream_events table → Chat (canonical source) ───
   useEffect(() => {
     if (isLoading) return;
 
@@ -180,7 +189,7 @@ export default function CityWarsStreamPage() {
           event: 'INSERT',
           schema: 'public',
           table: 'stream_events',
-          filter: 'event_type=in.(session_started,session_completed,session_milestone,city_activity_change,city_milestone,user_message)',
+          filter: 'event_type=in.(session_started,session_completed,session_milestone,city_activity_change,city_milestone,user_message,global_focus_hour,country_challenge,canvas_reveal,system_announcement)',
         },
         (payload) => {
           const row = payload.new as StreamEventRow;
@@ -236,7 +245,7 @@ export default function CityWarsStreamPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <div className="text-white/50 text-lg">Yükleniyor...</div>
+        <div className="text-white/50 text-lg">Yukleniyor...</div>
       </div>
     );
   }
@@ -256,70 +265,111 @@ export default function CityWarsStreamPage() {
     );
   }
 
+  // ─── FOCUS MODE: Fullscreen video ───
+  if (focusMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black">
+        <VideoScene focusMode={true} />
+
+        {/* Exit focus button */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          onClick={() => setFocusMode(false)}
+          className="absolute top-6 right-6 z-[60] px-4 py-2 rounded-full bg-[#ffcb77] text-[#1a1a2e] text-sm font-semibold shadow-lg hover:scale-105 transition-transform"
+        >
+          Focustan Cik
+        </motion.button>
+
+        {/* Subtle overlay info */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[60]"
+        >
+          <p className="text-white/20 text-xs">Odaklan. Sadece sen ve zamanin.</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0f172a] pb-20">
+      {/* Global Event Banner */}
+      <GlobalEventBanner />
+
       {/* ===== DESKTOP: 60/40 Split Layout ===== */}
       <div className="hidden md:flex h-screen">
         {/* Sol Panel (60%) — Video Scene + Chat */}
         <div className="relative w-[60%] h-full">
-          <VideoScene focusMode={focusMode} />
+          <VideoScene focusMode={false} />
           <ChatOverlay
             events={events}
             userCityId={userCityId}
-            focusMode={focusMode}
+            focusMode={false}
           />
 
           {/* Focus mode toggle */}
           <button
-            onClick={() => setFocusMode(!focusMode)}
-            className={`absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              focusMode
-                ? 'bg-[#ffcb77] text-[#1a1a2e]'
-                : 'bg-black/40 backdrop-blur-md text-white/60 hover:text-white/90 border border-white/10'
-            }`}
+            onClick={() => setFocusMode(true)}
+            className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-black/40 backdrop-blur-md text-white/60 hover:text-white/90 border border-white/10 hover:bg-black/60"
           >
-            {focusMode ? 'Focus Mode' : 'Focus'}
+            Focus Mode
           </button>
         </div>
 
-        {/* Sag Panel (40%) — Map + Stats */}
-        <div className="relative w-[40%] h-full border-l border-white/5">
-          <TurkeyMap
-            cities={cities}
-            userCityId={userCityId}
-            onCityClick={setSelectedCityModal}
-          />
-          <MiniStats
-            totalActive={totalActive}
-            totalMinutesToday={totalMinutesToday}
-            userCityName={userCityInfo?.name ?? null}
-            userCityRank={userCityRank}
-            userCityEmoji={userCityInfo?.emoji ?? null}
-          />
+        {/* Sag Panel (40%) — Map + Stats + Canvas */}
+        <div className="relative w-[40%] h-full border-l border-white/5 flex flex-col">
+          {/* Map (top section) */}
+          <div className="relative flex-1 min-h-0">
+            <MapboxCityMap
+              cities={cities}
+              userCityId={userCityId}
+              onCityClick={setSelectedCityModal}
+            />
+            <MiniStats
+              totalActive={totalActive}
+              totalMinutesToday={totalMinutesToday}
+              userCityName={userCityInfo?.name ?? null}
+              userCityRank={userCityRank}
+              userCityEmoji={userCityInfo?.emoji ?? null}
+            />
+          </div>
+
+          {/* Canvas (bottom section — collapsible) */}
+          {userCityId && (
+            <div className="border-t border-white/5 bg-[#0f172a]/90 backdrop-blur-md p-3">
+              <CityCanvas
+                cityId={userCityId}
+                cityName={userCityInfo?.name ?? userCityId}
+                cityEmoji={userCityInfo?.emoji ?? '🏙️'}
+                isExpanded={isCanvasExpanded}
+                onToggle={() => setIsCanvasExpanded(!isCanvasExpanded)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* ===== MOBILE: Stacked Layout ===== */}
       <div className="md:hidden flex flex-col h-screen">
-        {/* Scene (40% height) */}
-        <div className="relative h-[40vh]">
-          <VideoScene focusMode={focusMode} />
+        {/* Scene (35% height) */}
+        <div className="relative h-[35vh]">
+          <VideoScene focusMode={false} />
 
           <button
-            onClick={() => setFocusMode(!focusMode)}
-            className={`absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-              focusMode
-                ? 'bg-[#ffcb77] text-[#1a1a2e]'
-                : 'bg-black/40 backdrop-blur-md text-white/60 border border-white/10'
-            }`}
+            onClick={() => setFocusMode(true)}
+            className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all bg-black/40 backdrop-blur-md text-white/60 border border-white/10"
           >
-            {focusMode ? 'Focus' : 'Focus'}
+            Focus
           </button>
         </div>
 
-        {/* Map (40% height) */}
-        <div className="relative h-[40vh] border-t border-white/5">
-          <TurkeyMap
+        {/* Map (35% height) */}
+        <div className="relative h-[35vh] border-t border-white/5">
+          <MapboxCityMap
             cities={cities}
             userCityId={userCityId}
             onCityClick={setSelectedCityModal}
@@ -333,53 +383,63 @@ export default function CityWarsStreamPage() {
           />
         </div>
 
-        {/* Mobile Chat — Floating button + Drawer with ChatOverlay reuse */}
-        {!focusMode && (
-          <>
-            <button
-              onClick={() => setIsMobileChatOpen(true)}
-              className="fixed bottom-24 right-4 z-30 bg-[#1a1a2e]/90 backdrop-blur-md border border-white/10 rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
-            >
-              <span className="text-lg">💬</span>
-              {recentEventCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#ffcb77] text-[#1a1a2e] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {Math.min(recentEventCount, 9)}
-                </span>
-              )}
-            </button>
-
-            <AnimatePresence>
-              {isMobileChatOpen && (
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="fixed inset-x-0 bottom-0 z-40 h-[60vh] bg-[#1a1a2e]/95 backdrop-blur-xl rounded-t-2xl border-t border-white/10 p-4"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-white text-sm font-medium">Akis</h3>
-                    <button
-                      onClick={() => setIsMobileChatOpen(false)}
-                      className="text-white/40 hover:text-white/70 text-lg"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                  {/* Reuse ChatOverlay with same priority/TTL logic */}
-                  <div className="relative h-[calc(100%-40px)]">
-                    <ChatOverlay
-                      events={events}
-                      userCityId={userCityId}
-                      focusMode={false}
-                      variant="drawer"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
+        {/* Canvas (mobile — collapsible section) */}
+        {userCityId && (
+          <div className="border-t border-white/5 bg-[#0f172a]/90 p-2">
+            <CityCanvas
+              cityId={userCityId}
+              cityName={userCityInfo?.name ?? userCityId}
+              cityEmoji={userCityInfo?.emoji ?? '🏙️'}
+              isExpanded={isCanvasExpanded}
+              onToggle={() => setIsCanvasExpanded(!isCanvasExpanded)}
+            />
+          </div>
         )}
+
+        {/* Mobile Chat — Floating button + Drawer */}
+        <>
+          <button
+            onClick={() => setIsMobileChatOpen(true)}
+            className="fixed bottom-24 right-4 z-30 bg-[#1a1a2e]/90 backdrop-blur-md border border-white/10 rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
+          >
+            <span className="text-lg">💬</span>
+            {recentEventCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#ffcb77] text-[#1a1a2e] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {Math.min(recentEventCount, 9)}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {isMobileChatOpen && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-x-0 bottom-0 z-40 h-[60vh] bg-[#1a1a2e]/95 backdrop-blur-xl rounded-t-2xl border-t border-white/10 p-4"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white text-sm font-medium">Akis</h3>
+                  <button
+                    onClick={() => setIsMobileChatOpen(false)}
+                    className="text-white/40 hover:text-white/70 text-lg"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="relative h-[calc(100%-40px)]">
+                  <ChatOverlay
+                    events={events}
+                    userCityId={userCityId}
+                    focusMode={false}
+                    variant="drawer"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
 
         <div className="h-[20vh]" />
       </div>

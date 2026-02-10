@@ -9,14 +9,15 @@ interface VideoSceneProps {
 }
 
 /**
- * Left panel video scene — ambient presence layer.
- * NOT interactive (no play/pause controls).
+ * Video scene — ambient presence layer.
  * Time-based scene switching (morning/afternoon/evening/night).
+ * Starts muted (browser autoplay policy), user can unmute via button.
  */
 export function VideoScene({ focusMode }: VideoSceneProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [sceneTime, setSceneTime] = useState<SceneTime>(getCurrentSceneTime);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const scene = SCENE_CONFIG[sceneTime];
 
   // Check scene time every 60s
@@ -38,11 +39,25 @@ export function VideoScene({ focusMode }: VideoSceneProps) {
 
   // Auto-play video
   const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    videoRef.current = el;
     if (el) {
-      (videoRef as React.MutableRefObject<HTMLVideoElement>).current = el;
-      el.play().catch(() => {/* autoplay blocked, ignore */});
+      el.muted = true; // Start muted for autoplay
+      el.play().catch(() => {/* autoplay blocked */});
     }
   }, []);
+
+  // Toggle mute
+  const toggleMute = useCallback(() => {
+    if (videoRef.current) {
+      const newMuted = !isMuted;
+      videoRef.current.muted = newMuted;
+      setIsMuted(newMuted);
+      // If unmuting and video paused, try to play
+      if (!newMuted && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isMuted]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-black">
@@ -59,11 +74,10 @@ export function VideoScene({ focusMode }: VideoSceneProps) {
           <video
             ref={handleVideoRef}
             src={scene.video}
-            muted
             loop
             playsInline
             className={`w-full h-full object-cover transition-all duration-1000 ${
-              focusMode ? 'brightness-50 saturate-50' : 'brightness-75 saturate-75'
+              focusMode ? 'brightness-75 saturate-75' : 'brightness-75 saturate-75'
             }`}
           />
         </motion.div>
@@ -78,17 +92,20 @@ export function VideoScene({ focusMode }: VideoSceneProps) {
       />
 
       {/* Bottom gradient for chat readability */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none bg-gradient-to-t from-black/70 to-transparent" />
-
-      {/* Focus mode overlay */}
-      {focusMode && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/30 pointer-events-none"
-        />
+      {!focusMode && (
+        <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none bg-gradient-to-t from-black/70 to-transparent" />
       )}
+
+      {/* Sound toggle button */}
+      <button
+        onClick={toggleMute}
+        className="absolute bottom-4 right-4 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-md border border-white/10 hover:bg-black/70 transition-all"
+        title={isMuted ? 'Sesi Ac' : 'Sesi Kapat'}
+      >
+        <span className="text-sm">
+          {isMuted ? '🔇' : '🔊'}
+        </span>
+      </button>
     </div>
   );
 }
