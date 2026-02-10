@@ -63,6 +63,32 @@ function getEventStyle(type: StreamEventType): { bg: string; accent: string } {
   }
 }
 
+/** Single event row — defined OUTSIDE parent to prevent remount */
+function EventRow({ event }: { event: StreamEvent }) {
+  const style = getEventStyle(event.type);
+  const icon = EVENT_ICON[event.type] || '\u{1F4AC}';
+
+  return (
+    <div className={`${style.bg} rounded-lg px-3 py-2 border border-white/[0.03]`}>
+      <div className="flex items-start gap-2">
+        <span className="text-sm flex-shrink-0 mt-0.5">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-white/80 text-xs leading-relaxed">
+            <span className={`font-medium ${style.accent}`}>
+              {event.city_emoji} {event.city_name}
+            </span>
+            {event.user_name && (
+              <span className="text-white/50"> - {event.user_name}</span>
+            )}
+            <span className="text-white/60"> {event.message}</span>
+          </p>
+          <p className="text-white/20 text-[9px] mt-0.5">{timeAgo(event.created_at)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ChatOverlay({
   events,
   userCityId,
@@ -75,6 +101,7 @@ export function ChatOverlay({
   const [cooldownEnd, setCooldownEnd] = useState(0);
   const [, setTick] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const maxMessages = variant === 'drawer' ? MAX_DRAWER : MAX_OVERLAY;
 
@@ -122,8 +149,6 @@ export function ChatOverlay({
     }
   }, [isSending, userCityId, cooldownEnd]);
 
-  const handlePreset = (text: string) => sendMessage(text);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(inputText);
@@ -133,34 +158,9 @@ export function ChatOverlay({
 
   if (focusMode) return null;
 
-  // ─── Single event message row ───
-  const EventRow = ({ event }: { event: StreamEvent }) => {
-    const style = getEventStyle(event.type);
-    const icon = EVENT_ICON[event.type] || '\u{1F4AC}';
+  // ─── Inline JSX blocks (NOT components — prevents remount) ───
 
-    return (
-      <div className={`${style.bg} rounded-lg px-3 py-2 border border-white/[0.03]`}>
-        <div className="flex items-start gap-2">
-          <span className="text-sm flex-shrink-0 mt-0.5">{icon}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/80 text-xs leading-relaxed">
-              <span className={`font-medium ${style.accent}`}>
-                {event.city_emoji} {event.city_name}
-              </span>
-              {event.user_name && (
-                <span className="text-white/50"> - {event.user_name}</span>
-              )}
-              <span className="text-white/60"> {event.message}</span>
-            </p>
-            <p className="text-white/20 text-[9px] mt-0.5">{timeAgo(event.created_at)}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ─── Scope toggle — 2 tabs only ───
-  const ScopeToggle = () => (
+  const scopeToggle = (
     <div className="flex gap-1 mb-2">
       {([['global', 'Global'], ['city', 'Sehrim']] as const).map(([s, label]) => (
         <button
@@ -178,15 +178,14 @@ export function ChatOverlay({
     </div>
   );
 
-  // ─── Message input ───
-  const MessageInput = () => (
+  const messageInput = (
     <div className="mt-2 border-t border-white/5 pt-2">
       {/* Preset quick messages */}
       <div className="flex flex-wrap gap-1 mb-2">
         {PRESET_MESSAGES.map((preset) => (
           <button
             key={preset.text}
-            onClick={() => handlePreset(`${preset.emoji} ${preset.text}`)}
+            onClick={() => sendMessage(`${preset.emoji} ${preset.text}`)}
             disabled={isSending || isOnCooldown}
             className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
           >
@@ -198,6 +197,7 @@ export function ChatOverlay({
       {/* Text input */}
       <form onSubmit={handleSubmit} className="flex gap-1.5">
         <input
+          ref={inputRef}
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -221,7 +221,7 @@ export function ChatOverlay({
   if (variant === 'drawer') {
     return (
       <div className="flex flex-col h-full">
-        <ScopeToggle />
+        {scopeToggle}
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
           {filteredEvents.length > 0 ? (
@@ -237,15 +237,15 @@ export function ChatOverlay({
           )}
         </div>
 
-        <MessageInput />
+        {messageInput}
       </div>
     );
   }
 
   // ─── OVERLAY variant: floating on video ───
   return (
-    <div className="absolute bottom-4 left-4 z-10 w-[300px] md:w-[340px]">
-      <ScopeToggle />
+    <div className="absolute bottom-4 left-4 z-10 w-[300px] md:w-[340px] pointer-events-auto">
+      {scopeToggle}
 
       <div ref={scrollRef} className="space-y-1 max-h-[260px] overflow-y-auto">
         <AnimatePresence mode="popLayout">
@@ -287,7 +287,7 @@ export function ChatOverlay({
         </AnimatePresence>
       </div>
 
-      <MessageInput />
+      {messageInput}
     </div>
   );
 }
