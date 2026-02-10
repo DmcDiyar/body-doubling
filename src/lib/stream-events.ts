@@ -125,13 +125,14 @@ export function applyPriorityQueue(
 /**
  * Time-based scene selection
  */
-export type SceneTime = 'morning' | 'afternoon' | 'evening' | 'night';
+export type SceneTime = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
 
 export function getCurrentSceneTime(): SceneTime {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 22) return 'evening';
+  if (hour >= 5 && hour < 8) return 'dawn';
+  if (hour >= 8 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'evening';
   return 'night';
 }
 
@@ -140,18 +141,23 @@ export const SCENE_CONFIG: Record<SceneTime, {
   gradient: string[];
   mood: string;
 }> = {
+  dawn: {
+    video: '/videos/ambient-3.mp4',
+    gradient: ['#ffecd2', '#fcb69f'],
+    mood: 'awakening',
+  },
   morning: {
     video: '/videos/ambient-1.mp4',
-    gradient: ['#ffecd2', '#fcb69f'],
+    gradient: ['#f5af19', '#f12711'],
     mood: 'energetic',
   },
   afternoon: {
-    video: '/videos/ambient-1.mp4',
+    video: '/videos/ambient-4.mp4',
     gradient: ['#4facfe', '#00f2fe'],
     mood: 'focused',
   },
   evening: {
-    video: '/videos/ambient-2.mp4',
+    video: '/videos/ambient-5.mp4',
     gradient: ['#667eea', '#764ba2'],
     mood: 'calm',
   },
