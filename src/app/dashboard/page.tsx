@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
@@ -19,22 +20,41 @@ import { DashboardBottomNav } from '@/components/layout/DashboardBottomNav';
 import { createSoloSession } from '@/lib/session-actions';
 import type { User, UserLimit } from '@/types/database';
 
+// ── Animations ──────────────────────────────────────
+const fadeSlide = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 20, transition: { duration: 0.25 } },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+};
+
+// ── Types ───────────────────────────────────────────
 interface ActiveMatchInfo {
   matchId: string;
   sessionId: string;
   state: string;
 }
 
+// ── Component ───────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const { isFullscreen, isSupported: isFullscreenSupported, toggle: toggleFullscreen } = useFullscreen();
+
+  // UI state
   const [duration, setDuration] = useState(25);
   const [dailyUsed, setDailyUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [activeMatch, setActiveMatch] = useState<ActiveMatchInfo | null>(null);
 
+  // Focus mode state
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0); // in seconds
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Data Loading ──────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
 
@@ -53,14 +73,14 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Profil yüklenemedi:', profileError.message);
+        console.error('Profil yuklenemedi:', profileError.message);
         if (profileError.code === '42P01' || !profile) {
           const { data: newProfile } = await supabase
             .from('users')
             .upsert({
               id: authUser.id,
               email: authUser.email ?? '',
-              name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
+              name: authUser.email?.split('@')[0] ?? 'Kullanici',
               avatar_id: 1,
             })
             .select('*')
@@ -89,7 +109,7 @@ export default function DashboardPage() {
           .upsert({
             id: authUser.id,
             email: authUser.email ?? '',
-            name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
+            name: authUser.email?.split('@')[0] ?? 'Kullanici',
             avatar_id: 1,
           })
           .select('*')
@@ -97,7 +117,7 @@ export default function DashboardPage() {
         if (newProfile) setUser(newProfile as User);
       }
 
-      // Günlük limit
+      // Gunluk limit
       const today = new Date().toISOString().split('T')[0];
       const { data: limit } = await supabase
         .from('user_limits')
@@ -124,19 +144,84 @@ export default function DashboardPage() {
     load();
   }, [router, setUser]);
 
+  // ── Countdown Timer ───────────────────────────────
+  useEffect(() => {
+    if (!isFocusMode || timeRemaining <= 0) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          // Timer completed
+          clearInterval(timerRef.current!);
+          handleFinish();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocusMode, timeRemaining > 0]);
+
+  // ── Derived state ─────────────────────────────────
   const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
   const isRestricted = user ? user.trust_score < 50 : false;
   const avatar = AVATARS.find(a => a.id === user?.avatar_id) ?? AVATARS[0];
 
+  const timerMinutes = Math.floor(timeRemaining / 60);
+  const timerSeconds = timeRemaining % 60;
+
+  // ── Handlers ──────────────────────────────────────
   const handleSoloStart = async () => {
     if (!user || !canStartSession || isRestricted || isStarting) return;
     setIsStarting(true);
+
+    // Create session in DB
     const sessionId = await createSoloSession(user.id, duration);
     if (sessionId) {
-      router.push(`/session/prepare?id=${sessionId}&solo=true&duration=${duration}`);
+      setCurrentSessionId(sessionId);
     }
+
+    // Enter focus mode
+    setTimeRemaining(duration * 60);
+    setIsFocusMode(true);
     setIsStarting(false);
   };
+
+  const handleFinish = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    // Mark session as completed in DB
+    if (currentSessionId) {
+      const supabase = createClient();
+      await supabase
+        .from('sessions')
+        .update({ status: 'completed', ended_at: new Date().toISOString() })
+        .eq('id', currentSessionId);
+    }
+
+    // Exit focus mode with animation
+    setIsFocusMode(false);
+    setTimeRemaining(0);
+    setCurrentSessionId(null);
+
+    // Refresh daily usage
+    const supabase = createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: limit } = await supabase
+        .from('user_limits')
+        .select('sessions_used')
+        .eq('user_id', authUser.id)
+        .eq('date', today)
+        .maybeSingle();
+      setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
+    }
+  }, [currentSessionId]);
 
   const handleMatchStart = () => {
     if (!canStartSession || isRestricted) return;
@@ -178,15 +263,16 @@ export default function DashboardPage() {
     setDuration(25);
   };
 
-  // Loading state
+  // ── Loading ───────────────────────────────────────
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
-        <div className="text-white/40 text-lg">Yükleniyor...</div>
+        <div className="text-white/40 text-lg">Yukleniyor...</div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────
   return (
     <div className="relative h-screen overflow-hidden flex flex-col">
       {/* Background Image */}
@@ -200,79 +286,152 @@ export default function DashboardPage() {
           sizes="100vw"
           quality={90}
         />
-        {/* Apple-style low-opacity overlay */}
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.55))',
+            background: isFocusMode
+              ? 'linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7))'
+              : 'linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.55))',
+            transition: 'background 0.6s ease',
           }}
         />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full px-6 pb-24">
-        {/* Header */}
-        <DashboardHeader avatarEmoji={avatar.emoji} userName={user.name} />
 
-        {/* Active match banner */}
-        {activeMatch && (
-          <ActiveMatchBanner
-            activeMatch={activeMatch}
-            onRejoin={handleRejoin}
-            onDismiss={handleDismissMatch}
-          />
-        )}
+        {/* ─── NORMAL UI (hidden in focus mode) ─── */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <>
+              {/* Header */}
+              <motion.div {...fadeSlide} key="header">
+                <DashboardHeader avatarEmoji={avatar.emoji} userName={user.name} />
+              </motion.div>
+
+              {/* Active match banner */}
+              {activeMatch && (
+                <motion.div {...fadeSlide} key="match-banner">
+                  <ActiveMatchBanner
+                    activeMatch={activeMatch}
+                    onRejoin={handleRejoin}
+                    onDismiss={handleDismissMatch}
+                  />
+                </motion.div>
+              )}
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Mode Selector */}
-        <div className="mb-8">
-          <ModeSelector selected={duration} onChange={setDuration} />
-        </div>
+        {/* Mode Selector (hidden in focus) */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <motion.div {...fadeSlide} key="mode-selector" className="mb-8">
+              <ModeSelector selected={duration} onChange={setDuration} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Goal Prompt */}
-        <GoalPrompt />
+        {/* Goal Prompt (hidden in focus) */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <motion.div {...fadeSlide} key="goal-prompt">
+              <GoalPrompt />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Timer Display */}
+        {/* Timer Display — ALWAYS VISIBLE */}
         <div className="flex items-center justify-center mb-8">
-          <TimerDisplay minutes={duration} />
+          {isFocusMode ? (
+            <TimerDisplay minutes={timerMinutes} seconds={timerSeconds} isFocusMode />
+          ) : (
+            <TimerDisplay minutes={duration} />
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <ActionButtons
-          onSoloStart={handleSoloStart}
-          onMatchStart={handleMatchStart}
-          canStart={canStartSession}
-          isRestricted={isRestricted}
-          isStarting={isStarting}
-        />
+        {/* Action Buttons (hidden in focus) */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <motion.div {...fadeSlide} key="action-buttons">
+              <ActionButtons
+                onSoloStart={handleSoloStart}
+                onMatchStart={handleMatchStart}
+                canStart={canStartSession}
+                isRestricted={isRestricted}
+                isStarting={isStarting}
+              />
+              <DailyLimitInfo
+                used={dailyUsed}
+                limit={FREE_DAILY_LIMIT}
+                isPremium={user.is_premium}
+                canStart={canStartSession}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Daily Limit Info */}
-        <DailyLimitInfo
-          used={dailyUsed}
-          limit={FREE_DAILY_LIMIT}
-          isPremium={user.is_premium}
-          canStart={canStartSession}
-        />
+        {/* ─── FOCUS MODE: Bitir Button ─── */}
+        <AnimatePresence>
+          {isFocusMode && (
+            <motion.div
+              key="finish-btn"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="flex justify-center"
+            >
+              <button
+                onClick={handleFinish}
+                className="bg-white/[0.12] border border-white/[0.2] text-white text-lg
+                           font-semibold px-12 py-4 rounded-2xl backdrop-blur-[6px]
+                           shadow-2xl hover:bg-white/[0.18] transition-all active:scale-95"
+              >
+                Bitir
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Utility Buttons */}
-        <UtilityButtons onReset={handleReset} />
+        {/* Utility Buttons (hidden in focus) */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <motion.div {...fadeSlide} key="utility-buttons">
+              <UtilityButtons onReset={handleReset} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Spacer */}
         <div className="flex-1" />
       </div>
 
-      {/* Bottom Nav */}
-      <DashboardBottomNav
-        streak={user.current_streak}
-        dailyUsed={dailyUsed}
-        dailyLimit={FREE_DAILY_LIMIT}
-        isPremium={user.is_premium}
-        isFullscreen={isFullscreen}
-        isFullscreenSupported={isFullscreenSupported}
-        onToggleFullscreen={toggleFullscreen}
-      />
+      {/* Bottom Nav (hidden in focus mode) */}
+      <AnimatePresence>
+        {!isFocusMode && (
+          <motion.div
+            key="bottom-nav"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40, transition: { duration: 0.25 } }}
+            transition={{ delay: 0.5, duration: 0.4 }}
+          >
+            <DashboardBottomNav
+              streak={user.current_streak}
+              dailyUsed={dailyUsed}
+              dailyLimit={FREE_DAILY_LIMIT}
+              isPremium={user.is_premium}
+              isFullscreen={isFullscreen}
+              isFullscreenSupported={isFullscreenSupported}
+              onToggleFullscreen={toggleFullscreen}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
