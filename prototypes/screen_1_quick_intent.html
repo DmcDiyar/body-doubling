@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Ekran 1 — Quick Intent + Config</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#eea62b",
+                        "background-dark": "#221b10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            background-color: #221b10;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(34, 27, 16, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(238, 166, 43, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+        .amber-glow {
+            text-shadow: 0 0 10px rgba(238, 166, 43, 0.5);
+        }
+        .rain-overlay {
+            background-image: linear-gradient(to bottom, rgba(34, 27, 16, 0.75), rgba(34, 27, 16, 0.92)),
+                url('https://lh3.googleusercontent.com/aida-public/AB6AXuBAhv7qRwlO-bjoaGHylwowH5ypnBf99zVqhf3b96mf56mgI_OTQpWswT2YvLinVlaTov7fdsnZU-0iJkK9K4X2rjBFjQWZc6ZP_5klKPGoSCtRMbzHWws7degdfS9-iUMCXTJzX6MVgIsuOfiYlaJQ0t51knbeuz0JnLTWfbpL1nzQDSgQo_9IWllobtmSsppRM328y34rcrfFN4lgb0F4deybWml8-pTevv3zjTgsw6oljLwfPRpv-7lkJClvsz_zaBUbikoLDmg');
+            background-size: cover;
+            background-position: center;
+        }
+        .intent-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .intent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(238, 166, 43, 0.15);
+        }
+        .intent-card.selected {
+            background: rgba(238, 166, 43, 0.15) !important;
+            border-color: rgba(238, 166, 43, 0.6) !important;
+            box-shadow: 0 0 25px rgba(238, 166, 43, 0.2);
+        }
+        .duration-pill {
+            transition: all 0.25s ease;
+        }
+        .duration-pill.active {
+            background: #eea62b !important;
+            color: #221b10 !important;
+            box-shadow: 0 0 15px rgba(238, 166, 43, 0.35);
+        }
+        .glow-button {
+            box-shadow: 0 0 20px rgba(238, 166, 43, 0.3);
+            transition: all 0.3s ease;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 35px rgba(238, 166, 43, 0.5);
+            transform: translateY(-2px);
+        }
+        .glow-button:active {
+            transform: scale(0.97);
+        }
+        .live-dot {
+            animation: live-pulse 2s ease-in-out infinite;
+        }
+        @keyframes live-pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+        }
+        .stat-number {
+            animation: count-up 0.6s ease-out;
+        }
+        @keyframes count-up {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .streak-badge {
+            animation: streak-glow 3s ease-in-out infinite;
+        }
+        @keyframes streak-glow {
+            0%, 100% { box-shadow: 0 0 8px rgba(238, 166, 43, 0.2); }
+            50% { box-shadow: 0 0 18px rgba(238, 166, 43, 0.4); }
+        }
+    </style>
+</head>
+<body class="text-white font-display">
+    <!-- Background -->
+    <div class="fixed inset-0 rain-overlay -z-10"></div>
+    <!-- Light leaks -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-5">
+        <div class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center p-4 md:p-6">
+        <div class="glass-panel w-full max-w-lg rounded-xl overflow-hidden flex flex-col py-8 px-6 md:px-8 space-y-7">
+
+            <!-- Header: Back + Streak -->
+            <div class="flex items-center justify-between">
+                <button class="flex items-center gap-1.5 text-primary/60 hover:text-primary transition-colors">
+                    <span class="material-icons-round text-xl">arrow_back</span>
+                    <span class="text-sm font-medium">Geri</span>
+                </button>
+                <div class="streak-badge flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5">
+                    <span class="text-base">🔥</span>
+                    <span class="text-primary text-sm font-bold">7 günlük seri!</span>
+                </div>
+            </div>
+
+            <!-- Main Question -->
+            <div class="text-center space-y-1">
+                <h1 class="text-2xl md:text-3xl font-bold text-white">Bugün ne yapacaksın?</h1>
+                <p class="text-primary/60 text-sm">Bir niyet seç, odaklan</p>
+            </div>
+
+            <!-- Intent Grid: 2x2 -->
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Intent 1 -->
+                <button class="intent-card bg-white/[0.03] border border-primary/10 rounded-xl p-4 flex flex-col items-center gap-2 text-center" onclick="selectIntent(this)">
+                    <span class="text-3xl">🎯</span>
+                    <span class="text-white font-semibold text-sm">Bitirmek</span>
+                    <span class="text-primary/40 text-xs">Yarım kalanı tamamla</span>
+                </button>
+                <!-- Intent 2: Selected -->
+                <button class="intent-card selected bg-white/[0.03] border border-primary/10 rounded-xl p-4 flex flex-col items-center gap-2 text-center" onclick="selectIntent(this)">
+                    <span class="text-3xl">🚀</span>
+                    <span class="text-white font-semibold text-sm">Başlamak</span>
+                    <span class="text-primary/40 text-xs">Yeni bir şeye adım at</span>
+                </button>
+                <!-- Intent 3 -->
+                <button class="intent-card bg-white/[0.03] border border-primary/10 rounded-xl p-4 flex flex-col items-center gap-2 text-center" onclick="selectIntent(this)">
+                    <span class="text-3xl">🧘</span>
+                    <span class="text-white font-semibold text-sm">Sakin kalmak</span>
+                    <span class="text-primary/40 text-xs">Stressiz çalış</span>
+                </button>
+                <!-- Intent 4 -->
+                <button class="intent-card bg-white/[0.03] border border-primary/10 rounded-xl p-4 flex flex-col items-center gap-2 text-center" onclick="selectIntent(this)">
+                    <span class="text-3xl">👁️</span>
+                    <span class="text-white font-semibold text-sm">Var olmak</span>
+                    <span class="text-primary/40 text-xs">Sadece orada ol</span>
+                </button>
+            </div>
+
+            <!-- Duration Selector -->
+            <div class="space-y-3">
+                <p class="text-xs uppercase tracking-widest text-primary/50 font-semibold text-center">Süre Seç</p>
+                <div class="flex items-center justify-center gap-2">
+                    <button class="duration-pill px-4 py-2 rounded-full text-sm font-semibold bg-white/[0.05] text-primary/60 border border-primary/10" onclick="selectDuration(this, 15)">15dk</button>
+                    <button class="duration-pill active px-5 py-2.5 rounded-full text-sm font-bold bg-white/[0.05] text-primary/60 border border-primary/10" onclick="selectDuration(this, 25)">25dk</button>
+                    <button class="duration-pill px-4 py-2 rounded-full text-sm font-semibold bg-white/[0.05] text-primary/60 border border-primary/10" onclick="selectDuration(this, 50)">50dk</button>
+                    <button class="duration-pill px-4 py-2 rounded-full text-sm font-semibold bg-white/[0.05] text-primary/60 border border-primary/10" onclick="selectDuration(this, 90)">90dk</button>
+                </div>
+            </div>
+
+            <!-- FOMO Stats Panel -->
+            <div class="bg-white/[0.03] border border-primary/10 rounded-xl p-4 space-y-2.5">
+                <div class="flex items-center gap-2.5">
+                    <span class="live-dot w-2.5 h-2.5 bg-green-500 rounded-full inline-block"></span>
+                    <span class="text-white/90 text-sm font-medium stat-number"><strong class="text-primary">12</strong> kişi şu an çalışıyor</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="material-icons-round text-primary text-base">bolt</span>
+                    <span class="text-white/70 text-sm stat-number">Bugün <strong class="text-primary">47</strong> seans tamamlandı</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="material-icons-round text-primary text-base">group</span>
+                    <span class="text-white/70 text-sm stat-number"><strong class="text-primary">25dk</strong>'da <strong class="text-primary">3</strong> kişi bekliyor</span>
+                </div>
+            </div>
+
+            <!-- CTA Button -->
+            <button class="glow-button w-full py-4 bg-primary text-background-dark font-bold text-lg rounded-xl flex items-center justify-center gap-2">
+                <span class="material-icons-round">bolt</span>
+                ✨ Eşleş ve Başla
+            </button>
+
+            <!-- Expectation text -->
+            <p class="text-center text-primary/40 text-xs">Eşleşme genellikle 5-15 saniye sürer</p>
+        </div>
+    </div>
+
+    <script>
+        function selectIntent(el) {
+            document.querySelectorAll('.intent-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+        function selectDuration(el, dur) {
+            document.querySelectorAll('.duration-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>

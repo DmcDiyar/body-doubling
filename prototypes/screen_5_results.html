@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Ekran 5 — Quick Reflection + Results (Kullanıcı Tasarımı)</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9b406",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#231d0f",
+                    },
+                    fontFamily: { "display": ["Plus Jakarta Sans"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            background-color: #231d0f;
+        }
+
+        .glass-card {
+            background: rgba(35, 29, 15, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(249, 180, 6, 0.15);
+        }
+
+        .wood-panel {
+            background: linear-gradient(145deg, #2d2412, #1a150a);
+            border: 1px solid rgba(249, 180, 6, 0.1);
+        }
+
+        .glow-button {
+            box-shadow: 0 0 20px rgba(249, 180, 6, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glow-button:hover {
+            box-shadow: 0 0 30px rgba(249, 180, 6, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .lofi-bg {
+            background-image: linear-gradient(rgba(35, 29, 15, 0.85), rgba(35, 29, 15, 0.85)),
+                url('https://lh3.googleusercontent.com/aida-public/AB6AXuAwTWoZ-smEVhjZ7_QjXDQp__c__YBtvPN9V5ya-8xR0cyFBZXrAOzEopV_Tw4_Hi1hrvbLs7xYYI9z-KjiDQRcxD_mcQuUPSrDZ8wczvJA28aku_lq0euwH9sxcT_96C25rmJxy3xwq9Fucz2s5s8SEFmh_pyMY8IoMY3viB4LQVpSmD-e5nHt6Un1kmTUIalHRni0aQcK00wFGfii6aNV_aJJy_0rIWQ0nYynX0fX4RH1M2zb55cqCoIUJmvfFCLR7A37G7w1vrU');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-white min-h-screen flex items-center justify-center p-4 lofi-bg font-display">
+    <div class="max-w-2xl w-full flex flex-col items-center space-y-8">
+        <header class="text-center space-y-2">
+            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">🎉 Tebrikler!</h1>
+            <p class="text-primary text-xl font-medium">25 dakika tamamlandı</p>
+        </header>
+        <div class="glass-card w-full rounded-xl p-8 space-y-8">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center space-y-1">
+                    <span class="text-primary/80 text-sm block">Deneyim</span>
+                    <div class="text-2xl font-bold text-white flex items-center justify-center gap-1">+25 <span
+                            class="text-primary text-lg">XP</span></div>
+                </div>
+                <div class="text-center space-y-1 border-x border-primary/10">
+                    <span class="text-primary/80 text-sm block">Seri</span>
+                    <div class="text-2xl font-bold text-white flex items-center justify-center gap-1">🔥 8 <span
+                            class="text-primary text-sm font-normal">Gün</span></div>
+                </div>
+                <div class="text-center space-y-1">
+                    <span class="text-primary/80 text-sm block">Ödül</span>
+                    <div class="text-2xl font-bold text-white flex items-center justify-center gap-1">+2 <span
+                            class="text-primary">💎</span></div>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                    <span class="text-sm font-semibold text-primary/90 uppercase tracking-wider">Seviye 4</span>
+                    <span class="text-xs text-primary/60">Sonraki seviyeye 140 XP kaldı</span>
+                </div>
+                <div class="h-3 w-full bg-primary/10 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full" style="width: 65%;"></div>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 pt-4">
+                <div class="space-y-4">
+                    <p class="text-sm font-medium text-primary/80">Nasıl hissediyorsun?</p>
+                    <div class="flex justify-between">
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">😫</button>
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">😐</button>
+                        <button class="p-2 bg-primary/20 rounded-lg transition-colors text-2xl">😊</button>
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">🚀</button>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-sm font-medium text-primary/80">Ortağını değerlendir</p>
+                    <div class="flex justify-between">
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">👎</button>
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">💬</button>
+                        <button class="p-2 bg-primary/20 rounded-lg transition-colors text-2xl">⭐</button>
+                        <button class="p-2 hover:bg-primary/20 rounded-lg transition-colors text-2xl">🤝</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+            class="wood-panel w-full rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-primary/10 rounded-lg text-primary">
+                    <span class="material-icons-round text-3xl">insights</span>
+                </div>
+                <div class="space-y-0.5">
+                    <p class="text-white font-semibold">📊 Bu hafta: 5/7 gün</p>
+                    <p class="text-primary/60 text-sm">🏆 2 seans daha = "Veteran"</p>
+                </div>
+            </div>
+            <p class="text-primary font-medium italic text-sm">🔥 Yarın da gel, seriyi koru</p>
+        </div>
+        <div class="w-full flex flex-col items-center space-y-6">
+            <button
+                class="glow-button w-full max-w-md py-4 bg-primary text-background-dark font-bold text-lg rounded-xl flex items-center justify-center gap-2 hover:bg-opacity-90 active:scale-95">
+                <span class="material-icons-round">bolt</span>
+                <span>✨ Tekrar Eşleş ✨</span>
+            </button>
+            <nav class="flex gap-8">
+                <a class="text-primary/50 hover:text-primary transition-colors text-sm font-medium uppercase tracking-widest flex items-center gap-2"
+                    href="#">
+                    <span class="material-icons-round text-base">live_tv</span>
+                    [Canlı Akış]
+                </a>
+                <a class="text-primary/50 hover:text-primary transition-colors text-sm font-medium uppercase tracking-widest flex items-center gap-2"
+                    href="#">
+                    <span class="material-icons-round text-base">dashboard</span>
+                    [Dashboard]
+                </a>
+            </nav>
+        </div>
+    </div>
+</body>
+
+</html>

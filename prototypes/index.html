@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sessiz Ortak — Akış Prototipleri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#eea62b", "background-dark": "#221b10" },
+                    fontFamily: { "display": ["Plus Jakarta Sans"] },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            background: #1a150a;
+        }
+
+        .card {
+            background: rgba(34, 27, 16, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(238, 166, 43, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(238, 166, 43, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body class="text-white font-display min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-primary mb-2">Sessiz Ortak — Yeni Akış Prototipleri</h1>
+        <p class="text-white/50 mb-10">6 ekranın tümünü incele. Her kart tarayıcıda açılır.</p>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Screen 1 -->
+            <a href="screen_1_quick_intent.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">🎯</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 1: Quick Intent</h3>
+                <p class="text-primary/60 text-sm">Intent seçimi + süre + FOMO panel. Eski 80sn ritual → 5sn.</p>
+                <span class="text-primary text-xs font-bold mt-3 inline-block">YENİ TASARIM →</span>
+            </a>
+
+            <!-- Screen 2 -->
+            <a href="screen_2_matching.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">🔍</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 2: Matching</h3>
+                <p class="text-primary/60 text-sm">Son eşleşmeler feed'i, fun fact, canlı sayaçlar.</p>
+                <span class="text-primary text-xs font-bold mt-3 inline-block">YENİ TASARIM →</span>
+            </a>
+
+            <!-- Screen 3 -->
+            <a href="screen_3_partner_reveal.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">🎉</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 3: Partner Reveal</h3>
+                <p class="text-primary/60 text-sm">Partner kartı, intent karşılaştırma, auto-start.</p>
+                <span class="text-green-400 text-xs font-bold mt-3 inline-block">SENİN TASARIMIN →</span>
+            </a>
+
+            <!-- Screen 4 -->
+            <a href="screen_4_active_session.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">⏱️</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 4: Active Session</h3>
+                <p class="text-primary/60 text-sm">Partner intent, incentive banner, odak göstergesi.</p>
+                <span class="text-primary text-xs font-bold mt-3 inline-block">GÜNCELLENMİŞ →</span>
+            </a>
+
+            <!-- Screen 5 -->
+            <a href="screen_5_results.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">🏆</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 5: Results</h3>
+                <p class="text-primary/60 text-sm">XP/streak/trust + mood + rating + FOMO panel.</p>
+                <span class="text-green-400 text-xs font-bold mt-3 inline-block">SENİN TASARIMIN →</span>
+            </a>
+
+            <!-- Screen 6 -->
+            <a href="screen_6_adaptive_intent.html" class="card rounded-xl p-6 block">
+                <div class="text-3xl mb-3">⚡</div>
+                <h3 class="text-lg font-bold text-white mb-1">Ekran 6: Adaptive Intent</h3>
+                <p class="text-primary/60 text-sm">Tekrarlayan kullanıcı: "Aynı mı?" bottom sheet.</p>
+                <span class="text-primary text-xs font-bold mt-3 inline-block">YENİ TASARIM →</span>
+            </a>
+        </div>
+
+        <div class="mt-10 bg-primary/5 border border-primary/10 rounded-xl p-6">
+            <h3 class="text-primary font-bold mb-3">Akış Sırası</h3>
+            <div class="flex items-center gap-2 text-sm text-white/60 flex-wrap">
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded font-bold text-xs">1</span> Quick Intent
+                <span class="text-primary/30">→</span>
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded font-bold text-xs">2</span> Matching
+                <span class="text-primary/30">→</span>
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded font-bold text-xs">3</span> Partner Reveal
+                <span class="text-primary/30">→</span>
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded font-bold text-xs">4</span> Active Session
+                <span class="text-primary/30">→</span>
+                <span class="bg-primary/20 text-primary px-2 py-1 rounded font-bold text-xs">5</span> Results
+            </div>
+            <p class="text-primary/40 text-xs mt-3">Ekran 6 (Adaptive Intent) = tekrarlayan kullanıcılar için Ekran 1'in
+                kısaltılmış hali</p>
+        </div>
+    </div>
+</body>
+
+</html>
