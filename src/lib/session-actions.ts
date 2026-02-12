@@ -159,12 +159,25 @@ export async function refreshDailyUsage(userId: string): Promise<number> {
 }
 
 // ── Beacon Abandon (beforeunload) ────────────────────
-// Uses sendBeacon for reliable fire-and-forget on page close.
-// Falls back to fetch keepalive.
+// Uses fetch keepalive for reliable fire-and-forget on page close.
+// Reads user's auth token from localStorage for proper RLS auth.
 export function beaconAbandonSession(sessionId: string): void {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) return;
+
+  // Read auth token from Supabase localStorage (sync — safe in beforeunload)
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.access_token) accessToken = parsed.access_token;
+    }
+  } catch {
+    // Fall back to anon key
+  }
 
   const url = `${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&status=in.(waiting,active)`;
   const body = JSON.stringify({ status: 'abandoned', ended_at: new Date().toISOString() });
@@ -172,7 +185,7 @@ export function beaconAbandonSession(sessionId: string): void {
   const headers = {
     'Content-Type': 'application/json',
     'apikey': supabaseKey,
-    'Authorization': `Bearer ${supabaseKey}`,
+    'Authorization': `Bearer ${accessToken}`,
     'Prefer': 'return=minimal',
   };
 

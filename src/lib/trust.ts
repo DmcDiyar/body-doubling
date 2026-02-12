@@ -158,20 +158,20 @@ export function calculateEarlyExitPenalty(
 ): { eventType: TrustEventType; penalty: number } {
     const percentComplete = elapsedMinutes / totalDuration;
 
-    if (percentComplete < 0.2) {
-        // İlk %20: Mild
+    if (percentComplete >= 0.6) {
+        // %60+: Neredeyse bitmiş, hafif ceza
         return {
             eventType: TRUST_EVENT_TYPES.EARLY_EXIT_MILD,
             penalty: TRUST_SCORE_CHANGES.early_exit_mild,
         };
-    } else if (percentComplete < 0.6) {
-        // %20-60: Moderate
+    } else if (percentComplete >= 0.2) {
+        // %20-60: Orta ceza
         return {
             eventType: TRUST_EVENT_TYPES.EARLY_EXIT_MODERATE,
             penalty: TRUST_SCORE_CHANGES.early_exit_moderate,
         };
     } else {
-        // %60+: Severe
+        // <%20: Neredeyse hiç çalışmamış, ağır ceza
         return {
             eventType: TRUST_EVENT_TYPES.EARLY_EXIT_SEVERE,
             penalty: TRUST_SCORE_CHANGES.early_exit_severe,

@@ -91,41 +91,6 @@ export const HIDDEN_QUEST_INFO: Record<string, HiddenQuest> = {
         reward_xp: 10,
         reward_trust: 1,
     },
-    hidden_ritual_streak_3: {
-        id: 'hidden_ritual_streak_3',
-        title: 'Ritüel Ustası 🧘',
-        description: '3 gün üst üste ritüel tamamladın.',
-        reward_xp: 10,
-        reward_trust: 1,
-    },
-    hidden_duration_mix: {
-        id: 'hidden_duration_mix',
-        title: 'Çeşitlilik 🎨',
-        description: '7 günde 3 farklı süre denedin.',
-        reward_xp: 10,
-        reward_trust: 1,
-    },
-    hidden_streak_save: {
-        id: 'hidden_streak_save',
-        title: 'Son Dakika ⏰',
-        description: 'Seriyi son anda kurtardın.',
-        reward_xp: 10,
-        reward_trust: 1,
-    },
-    hidden_3_sessions_day: {
-        id: 'hidden_3_sessions_day',
-        title: 'Üçlü Güç 💪',
-        description: 'Bir günde 3 seans tamamladın.',
-        reward_xp: 10,
-        reward_trust: 1,
-    },
-    hidden_5_sessions_week: {
-        id: 'hidden_5_sessions_week',
-        title: 'Hafta Yıldızı ⭐',
-        description: 'Bir haftada 5 seans tamamladın.',
-        reward_xp: 10,
-        reward_trust: 1,
-    },
 };
 
 // ============================================================

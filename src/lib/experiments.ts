@@ -20,12 +20,6 @@ export const EXPERIMENTS = {
     weights: [0.5, 0.5],
     description: 'Self-competition panel with trends',
   },
-  CITY_WARS: {
-    id: 'city_wars',
-    variants: ['control', 'treatment'],
-    weights: [0.5, 0.5],
-    description: 'City atmosphere and mood system',
-  },
 } as const;
 
 export type ExperimentId = (typeof EXPERIMENTS)[keyof typeof EXPERIMENTS]['id'];

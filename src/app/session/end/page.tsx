@@ -312,12 +312,12 @@ function SessionEndPage() {
               >
                 <div className="flex justify-between text-xs text-gray-500 mb-2">
                   <span>Seviye {user.level}</span>
-                  <span>{user.xp} / {user.level * 100} XP</span>
+                  <span>{user.xp % 100} / 100 XP</span>
                 </div>
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, (user.xp / (user.level * 100)) * 100)}%` }}
+                    animate={{ width: `${user.xp % 100}%` }}
                     transition={{ delay: 0.8, duration: 1, ease: 'easeOut' }}
                     className="h-full bg-gradient-to-r from-[#ffcb77] to-[#ff9f1c] rounded-full"
                   />

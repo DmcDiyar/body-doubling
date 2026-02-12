@@ -168,42 +168,6 @@ export const SCENE_CONFIG: Record<SceneTime, {
   },
 };
 
-// City geo coordinates [lng, lat] — for Mapbox
-export const CITY_GEO: Record<string, { lng: number; lat: number; zoom: number }> = {
-  istanbul:   { lng: 28.9784, lat: 41.0082, zoom: 10 },
-  ankara:     { lng: 32.8597, lat: 39.9334, zoom: 10 },
-  izmir:      { lng: 27.1428, lat: 38.4237, zoom: 10 },
-  bursa:      { lng: 29.0610, lat: 40.1885, zoom: 10 },
-  antalya:    { lng: 30.7133, lat: 36.8969, zoom: 10 },
-  adana:      { lng: 35.3308, lat: 37.0000, zoom: 10 },
-  konya:      { lng: 32.4846, lat: 37.8746, zoom: 10 },
-  gaziantep:  { lng: 37.3781, lat: 37.0662, zoom: 10 },
-  diyarbakir: { lng: 40.2189, lat: 37.9144, zoom: 10 },
-  eskisehir:  { lng: 30.5206, lat: 39.7767, zoom: 10 },
-  trabzon:    { lng: 39.7168, lat: 41.0027, zoom: 10 },
-  kayseri:    { lng: 35.4894, lat: 38.7312, zoom: 10 },
-  other_tr:   { lng: 35.0, lat: 39.0, zoom: 6 },
-  abroad:     { lng: 10.0, lat: 50.0, zoom: 3 },
-};
-
-// Turkey center for default view
-export const TURKEY_CENTER = { lng: 35.2433, lat: 38.9637, zoom: 5.8 };
-
-// ── Canvas constants ──
-export const CANVAS_SIZE = 64;
-export const CANVAS_PIXEL_COUNT = CANVAS_SIZE * CANVAS_SIZE; // 4096
-
-export const COLOR_PALETTE = [
-  '#FFFFFF', // 0: white
-  '#1A1A2E', // 1: dark navy (bg)
-  '#FFCB77', // 2: amber (brand)
-  '#FF6B6B', // 3: red
-  '#4ECDC4', // 4: teal
-  '#A78BFA', // 5: purple
-  '#34D399', // 6: green
-  '#60A5FA', // 7: blue
-] as const;
-
 // ── Global Event types ──
 export interface GlobalEvent {
   id: string;

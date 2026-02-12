@@ -164,7 +164,6 @@ export interface EnhancedStatsData {
   total_sessions: number;
   completed_sessions: number;
   avg_sessions_per_week: number;
-  city_contributions: number;
 }
 
 export function getPersonalInsights(stats: EnhancedStatsData): string[] {
