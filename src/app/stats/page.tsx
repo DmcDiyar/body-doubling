@@ -307,10 +307,14 @@ export default function StatsPage() {
         >
           <GlassCard className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-5">
-              {/* Avatar */}
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#ffca75]/20 to-[#ffca75]/5 border border-[#ffca75]/20 flex items-center justify-center text-4xl shrink-0 shadow-lg shadow-[#ffca75]/5">
+              {/* Avatar with breathing animation */}
+              <motion.div
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#ffca75]/20 to-[#ffca75]/5 border border-[#ffca75]/20 flex items-center justify-center text-4xl shrink-0 shadow-lg shadow-[#ffca75]/5"
+              >
                 {avatar}
-              </div>
+              </motion.div>
 
               <div className="flex-1 min-w-0 text-center sm:text-left w-full">
                 {/* Name + trust badge */}
@@ -406,6 +410,7 @@ export default function StatsPage() {
                 unit="gün"
                 accent="from-orange-500/15 to-red-500/5"
                 textColor="text-orange-400"
+                borderColor="#f97316"
                 trend={selfComp ? (selfComp.current.streak > 0 ? 'up' : 'same') : undefined}
               />
               <MiniStatCard
@@ -415,6 +420,7 @@ export default function StatsPage() {
                 unit={`s ${user.total_minutes % 60}dk`}
                 accent="from-[#ffca75]/15 to-yellow-500/5"
                 textColor="text-[#ffca75]"
+                borderColor="#ffca75"
                 trend={selfComp ? (selfComp.current.minutes > selfComp.previous.minutes ? 'up' : selfComp.current.minutes < selfComp.previous.minutes ? 'down' : 'same') : undefined}
               />
               <MiniStatCard
@@ -424,6 +430,7 @@ export default function StatsPage() {
                 unit="/ 200"
                 accent="from-blue-500/15 to-cyan-500/5"
                 textColor="text-blue-400"
+                borderColor="#3b82f6"
               />
               <MiniStatCard
                 icon="✓"
@@ -432,6 +439,7 @@ export default function StatsPage() {
                 unit="%"
                 accent="from-emerald-500/15 to-green-500/5"
                 textColor="text-emerald-400"
+                borderColor="#10b981"
               />
             </motion.div>
 
@@ -575,19 +583,19 @@ export default function StatsPage() {
               {records && (
                 <GlassCard className="p-5">
                   <h2 className="text-white/50 text-[11px] uppercase tracking-[0.08em] font-semibold mb-4">Kişisel Rekorlar</h2>
-                  <div className="space-y-2.5">
-                    <RecordRow icon="🔥" label="En uzun seri" value={`${records.longest_streak} gün`} />
-                    <RecordRow icon="🏆" label="En uzun seans" value={`${records.longest_session_minutes} dk`} />
+                  <div className="space-y-1.5">
+                    <RecordRow icon="🔥" label="En uzun seri" value={`${records.longest_streak} gün`} accent="bg-orange-500/10" />
+                    <RecordRow icon="🏆" label="En uzun seans" value={`${records.longest_session_minutes} dk`} accent="bg-amber-500/10" />
                     {records.most_sessions_in_day && (
-                      <RecordRow icon="💪" label="Günde en çok" value={`${records.most_sessions_in_day.count} seans`} />
+                      <RecordRow icon="💪" label="Günde en çok" value={`${records.most_sessions_in_day.count} seans`} accent="bg-emerald-500/10" />
                     )}
                     {records.earliest_session && (
-                      <RecordRow icon="🌅" label="En erken" value={`${String(records.earliest_session.hour).padStart(2, '0')}:00`} />
+                      <RecordRow icon="🌅" label="En erken" value={`${String(records.earliest_session.hour).padStart(2, '0')}:00`} accent="bg-sky-500/10" />
                     )}
                     {records.latest_session && (
-                      <RecordRow icon="🌙" label="En geç" value={`${String(records.latest_session.hour).padStart(2, '0')}:00`} />
+                      <RecordRow icon="🌙" label="En geç" value={`${String(records.latest_session.hour).padStart(2, '0')}:00`} accent="bg-indigo-500/10" />
                     )}
-                    <RecordRow icon="📅" label="Aktif gün" value={`${records.total_active_days}`} />
+                    <RecordRow icon="📅" label="Aktif gün" value={`${records.total_active_days}`} accent="bg-purple-500/10" />
                   </div>
                 </GlassCard>
               )}
@@ -633,11 +641,29 @@ export default function StatsPage() {
           </motion.section>
         )}
 
-        {/* ━━━ FOOTER ━━━ */}
-        <div className="text-center space-y-3 pt-6 pb-4">
+        {/* ━━━ CTA BUTTON ━━━ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-center"
+        >
+          <motion.button
+            whileHover={{ scale: 1.03, boxShadow: '0 0 40px rgba(255,202,117,0.2)' }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push('/quick-match')}
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#ffca75] to-[#f6ad55] text-[#1a1f29] font-bold text-base shadow-lg shadow-[#ffca75]/20 hover:shadow-xl hover:shadow-[#ffca75]/30 transition-all duration-300"
+          >
+            <span className="text-xl">🎯</span>
+            Seans Başlat
+          </motion.button>
           {!user.is_premium && (
-            <p className="text-white/20 text-xs">Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans</p>
+            <p className="text-white/20 text-xs mt-3">Bugün: {dailyUsed}/{FREE_DAILY_LIMIT} seans kullanıldı</p>
           )}
+        </motion.div>
+
+        {/* ━━━ FOOTER ━━━ */}
+        <div className="text-center space-y-3 pt-4 pb-4">
           <button
             onClick={handleLogout}
             className="text-white/20 hover:text-white/40 text-xs transition-colors duration-200"
@@ -736,7 +762,7 @@ function FocusRing({ score }: { score: number }) {
         </defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-[#f7fafc] tabular-nums">
+        <span className="text-2xl font-black text-[#f7fafc] tabular-nums">
           <CountUp end={score} duration={1200} delay={400} />
         </span>
         <span className="text-[8px] text-white/30 uppercase tracking-[0.1em]">puan</span>
@@ -854,14 +880,17 @@ function RadarChart({ axes }: { axes: { label: string; value: number; max: numbe
 }
 
 // ── Mini Stat Card ──
-function MiniStatCard({ icon, label, value, unit, accent, textColor, trend }: {
+function MiniStatCard({ icon, label, value, unit, accent, textColor, trend, borderColor }: {
   icon: string; label: string; value: number; unit: string; accent: string; textColor: string;
-  trend?: 'up' | 'down' | 'same';
+  trend?: 'up' | 'down' | 'same'; borderColor?: string;
 }) {
   const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : null;
   const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : '';
   return (
-    <GlassCard className={`bg-gradient-to-br ${accent} p-3.5`}>
+    <GlassCard className={`bg-gradient-to-br ${accent} p-3.5 relative overflow-hidden`}>
+      {borderColor && (
+        <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: borderColor }} />
+      )}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
           <span className="text-sm">{icon}</span>
@@ -870,7 +899,7 @@ function MiniStatCard({ icon, label, value, unit, accent, textColor, trend }: {
         {trendIcon && <span className={`text-[10px] font-bold ${trendColor}`}>{trendIcon}</span>}
       </div>
       <div className="flex items-baseline gap-1">
-        <span className={`text-xl font-bold tabular-nums ${textColor}`}>
+        <span className={`text-xl font-black tabular-nums ${textColor}`}>
           <CountUp end={value} duration={800} delay={200} />
         </span>
         <span className="text-white/25 text-[10px]">{unit}</span>
@@ -974,7 +1003,7 @@ function StreakVisual({ current, longest, lastDate }: {
     <div className="space-y-4">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2">
-          <span className="text-4xl font-bold text-orange-400 tabular-nums">
+          <span className="text-4xl font-black text-orange-400 tabular-nums">
             <CountUp end={current} duration={800} delay={300} />
           </span>
           <span className="text-white/30 text-sm">gün</span>
@@ -1223,15 +1252,19 @@ function MonthDots({ days, year, month }: { days: CalendarDay[]; year: number; m
   );
 }
 
-// ── Record Row ──
-function RecordRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+// ── Record Row (with circular icon bg) ──
+function RecordRow({ icon, label, value, accent = 'bg-white/[0.06]' }: {
+  icon: string; label: string; value: string; accent?: string;
+}) {
   return (
-    <div className="flex items-center justify-between group">
-      <div className="flex items-center gap-2">
-        <span className="text-sm group-hover:scale-110 transition-transform">{icon}</span>
-        <span className="text-[11px] text-white/40">{label}</span>
+    <div className="flex items-center justify-between group hover:scale-[1.02] transition-transform duration-200 py-1">
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-full ${accent} flex items-center justify-center text-sm shrink-0 group-hover:scale-110 transition-transform`}>
+          {icon}
+        </div>
+        <span className="text-[11px] text-white/45 font-medium">{label}</span>
       </div>
-      <span className="text-[11px] font-semibold text-[#f7fafc] tabular-nums">{value}</span>
+      <span className="text-sm font-black text-[#f7fafc] tabular-nums">{value}</span>
     </div>
   );
 }
