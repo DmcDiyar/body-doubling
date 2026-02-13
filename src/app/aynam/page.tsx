@@ -170,12 +170,12 @@ export default function AynamPage() {
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h1 className="text-xl font-bold">{user.name}</h1>
+                                    <h1 className="text-xl font-bold text-slate-800 dark:text-white">{user.name}</h1>
                                     <span className="bg-[#FFB800]/10 text-[#FFB800] text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider border border-[#FFB800]/20">
                                         {trustBadge(user.trust_level)}
                                     </span>
                                 </div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
+                                <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5 font-medium">
                                     Seviye {user.level} • {user.completed_sessions} seans • {formatMinutes(user.total_minutes)}
                                 </p>
                             </div>
@@ -271,27 +271,27 @@ export default function AynamPage() {
                                                 </defs>
                                             </svg>
                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                <span className="text-3xl font-black">{score}</span>
-                                                <span className="text-[10px] font-bold text-slate-500 -mt-1">PUAN</span>
+                                                <span className="text-3xl font-black text-slate-800 dark:text-white">{score}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 -mt-1 uppercase tracking-widest">Puan</span>
                                             </div>
                                         </div>
                                         {/* Score breakdown */}
                                         <div className="flex-1 space-y-2">
-                                            <div className="flex justify-between text-[11px]">
+                                            <div className="flex justify-between text-[11px] font-medium">
                                                 <span className="text-slate-500">Tutarlılık</span>
-                                                <span className="font-bold">{data.focus_score.consistency}/{data.focus_score.max_per_component}</span>
+                                                <span className="font-bold text-slate-700 dark:text-slate-200">{data.focus_score.consistency}/{data.focus_score.max_per_component}</span>
                                             </div>
-                                            <div className="flex justify-between text-[11px]">
+                                            <div className="flex justify-between text-[11px] font-medium">
                                                 <span className="text-slate-500">Tamamlama</span>
-                                                <span className="font-bold">{data.focus_score.completion}/{data.focus_score.max_per_component}</span>
+                                                <span className="font-bold text-slate-700 dark:text-slate-200">{data.focus_score.completion}/{data.focus_score.max_per_component}</span>
                                             </div>
-                                            <div className="flex justify-between text-[11px]">
+                                            <div className="flex justify-between text-[11px] font-medium">
                                                 <span className="text-slate-500">Seri</span>
-                                                <span className="font-bold">{data.focus_score.streak}/{data.focus_score.max_per_component}</span>
+                                                <span className="font-bold text-slate-700 dark:text-slate-200">{data.focus_score.streak}/{data.focus_score.max_per_component}</span>
                                             </div>
-                                            <div className="flex justify-between text-[11px]">
+                                            <div className="flex justify-between text-[11px] font-medium">
                                                 <span className="text-slate-500">Hacim</span>
-                                                <span className="font-bold">{data.focus_score.volume}/{data.focus_score.max_per_component}</span>
+                                                <span className="font-bold text-slate-700 dark:text-slate-200">{data.focus_score.volume}/{data.focus_score.max_per_component}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -359,31 +359,31 @@ export default function AynamPage() {
                     {/* ---- 4 MİNİ KART ---- */}
                     <section className="grid grid-cols-4 gap-4">
                         {/* Aktif Seri */}
-                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl group hover:border-[#FFB800]/30 transition-all">
+                        <div className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl group hover:border-[#FFB800]/30 transition-all">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-orange-500 text-lg">local_fire_department</span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">Aktif Seri</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Aktif Seri</span>
                             </div>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black">{user.current_streak}</span>
-                                <span className="text-xs text-slate-500">gün</span>
+                                <span className="text-2xl font-black text-slate-800 dark:text-white">{user.current_streak}</span>
+                                <span className="text-xs text-slate-500 font-bold">gün</span>
                             </div>
                         </div>
 
                         {/* Toplam */}
-                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl">
+                        <div className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-blue-500 text-lg">schedule</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Toplam</span>
                             </div>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black">{Math.floor(user.total_minutes / 60)}</span>
-                                <span className="text-xs text-slate-500">s {user.total_minutes % 60}dk</span>
+                                <span className="text-2xl font-black text-slate-800 dark:text-white">{Math.floor(user.total_minutes / 60)}</span>
+                                <span className="text-xs text-slate-500 font-bold">s {user.total_minutes % 60}dk</span>
                             </div>
                         </div>
 
                         {/* Güven */}
-                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-blue-500">
+                        <div className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-blue-500">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-blue-400 text-lg">verified_user</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Güven</span>
@@ -395,7 +395,7 @@ export default function AynamPage() {
                         </div>
 
                         {/* Tamamlama */}
-                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-emerald-500">
+                        <div className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-emerald-500">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-emerald-500 text-lg">task_alt</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Tamamlama</span>
@@ -415,7 +415,7 @@ export default function AynamPage() {
                     <section className="grid grid-cols-5 gap-6">
                         {/* Kendini Kıyasla */}
                         {visibility.showWeeklyComparison && (
-                            <div className="col-span-2 glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
+                            <div className="col-span-2 glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Kendini Kıyasla</h3>
                                     <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-400">Haftalık</span>
@@ -424,7 +424,7 @@ export default function AynamPage() {
                                     <div className="flex justify-between items-center text-xs">
                                         <span className="text-slate-400">Seans</span>
                                         <div className="flex items-center gap-1">
-                                            <span className="font-bold">{data.weekly.this_week.sessions}</span>
+                                            <span className="font-bold text-slate-800 dark:text-white">{data.weekly.this_week.sessions}</span>
                                             <span className={`material-icons-round text-xs ${data.weekly.session_trend === 'up' ? 'text-green-500' :
                                                 data.weekly.session_trend === 'down' ? 'text-red-500' : 'text-slate-500'
                                                 }`}>
@@ -436,7 +436,7 @@ export default function AynamPage() {
                                     <div className="flex justify-between items-center text-xs">
                                         <span className="text-slate-400">Odak Süresi</span>
                                         <div className="flex items-center gap-1">
-                                            <span className="font-bold">{data.weekly.this_week.minutes}dk</span>
+                                            <span className="font-bold text-slate-800 dark:text-white">{data.weekly.this_week.minutes}dk</span>
                                             <span className={`material-icons-round text-xs ${data.weekly.minutes_trend === 'up' ? 'text-green-500' :
                                                 data.weekly.minutes_trend === 'down' ? 'text-red-500' : 'text-slate-500'
                                                 }`}>
@@ -456,11 +456,11 @@ export default function AynamPage() {
                         )}
 
                         {/* Seri Analizi */}
-                        <div className={`${visibility.showWeeklyComparison ? 'col-span-3' : 'col-span-5'} glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl`}>
+                        <div className={`${visibility.showWeeklyComparison ? 'col-span-3' : 'col-span-5'} glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl`}>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Seri Analizi</h3>
                             <div className="flex flex-col items-center justify-center">
                                 <span className="text-4xl font-black text-[#FFB800] mb-1">{user.current_streak}</span>
-                                <span className="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest">GÜN</span>
+                                <span className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-[0.2em]">GÜN</span>
                                 <div className="flex justify-between w-full px-4 gap-2">
                                     {data.streak_days.slice(0, 5).map((day, i) => (
                                         <div key={i} className="flex flex-col items-center gap-2">
@@ -489,7 +489,7 @@ export default function AynamPage() {
                             <motion.section
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
+                                className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
                             >
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Aktivite Haritası</h3>
@@ -539,7 +539,7 @@ export default function AynamPage() {
                             <motion.section
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
+                                className="glass-panel bg-white/70 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
                             >
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Rozetler</h3>
@@ -611,14 +611,12 @@ export default function AynamPage() {
                                         alt={user.name}
                                         width={256}
                                         height={256}
-                                        className="w-64 h-64 object-cover rounded-full drop-shadow-2xl border-2 border-[#FFB800]/20"
-                                        style={{ animation: 'breathe 4s ease-in-out infinite' }}
+                                        className="w-64 h-64 object-cover rounded-full drop-shadow-2xl border-2 border-[#FFB800]/20 avatar-breathe"
                                         unoptimized
                                     />
                                 ) : (
                                     /* Fotoğraf yoksa initial */
-                                    <div className="w-64 h-64 rounded-full bg-gradient-to-br from-[#FFB800]/30 to-[#FFB800]/10 border-2 border-[#FFB800]/20 flex items-center justify-center drop-shadow-2xl"
-                                        style={{ animation: 'breathe 4s ease-in-out infinite' }}>
+                                    <div className="w-64 h-64 rounded-full bg-gradient-to-br from-[#FFB800]/30 to-[#FFB800]/10 border-2 border-[#FFB800]/20 flex items-center justify-center drop-shadow-2xl avatar-breathe">
                                         <span className="text-8xl font-black text-[#FFB800]/80">
                                             {user.name.charAt(0).toUpperCase()}
                                         </span>
@@ -676,29 +674,29 @@ export default function AynamPage() {
                                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Kişisel Rekorlar</h3>
                                 <div className="space-y-4">
                                     {/* En uzun seri */}
-                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
                                                 <span className="material-icons-round">local_fire_department</span>
                                             </div>
-                                            <span className="text-sm font-semibold text-slate-500">En uzun seri</span>
+                                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">En uzun seri</span>
                                         </div>
-                                        <span className="text-base font-black">{data.records.longest_streak} gün</span>
+                                        <span className="text-base font-black text-slate-800 dark:text-white">{data.records.longest_streak} gün</span>
                                     </div>
 
                                     {/* En uzun seans */}
-                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-[#FFB800]/10 flex items-center justify-center text-[#FFB800]">
                                                 <span className="material-icons-round">timer</span>
                                             </div>
-                                            <span className="text-sm font-semibold text-slate-500">En uzun seans</span>
+                                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">En uzun seans</span>
                                         </div>
-                                        <span className="text-base font-black">{data.records.longest_session_minutes} dk</span>
+                                        <span className="text-base font-black text-slate-800 dark:text-white">{data.records.longest_session_minutes} dk</span>
                                     </div>
 
                                     {/* Bir günde en çok */}
-                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/5 transition-all hover:scale-[1.02]">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                                                 <span className="material-icons-round">layers</span>

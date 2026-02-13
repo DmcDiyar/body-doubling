@@ -3,30 +3,44 @@
 @tailwind utilities;
 
 :root {
-  --background: #1a1a2e;
-  --foreground: #ededed;
+  --background: #F8F9FA;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.05);
+  --primary: #FFB800;
+}
+
+.dark {
+  --background: #121214;
+  --foreground: #f1f5f9;
+  --card: rgba(30, 30, 34, 0.7);
+  --border: rgba(255, 255, 255, 0.05);
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  font-family: var(--font-plus-jakarta), var(--font-geist-sans), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Scrollbar minimal */
 ::-webkit-scrollbar {
   width: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 203, 119, 0.15);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 203, 119, 0.3);
 }
@@ -39,6 +53,6 @@ body {
 
 /* Selection color */
 ::selection {
-  background: rgba(255, 203, 119, 0.3);
-  color: #fff;
+  background: rgba(255, 184, 0, 0.3);
+  color: #000;
 }

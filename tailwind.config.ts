@@ -11,7 +11,11 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        primary: '#7C3AED',
+        primary: '#FFB800',
+        'background-light': '#F8F9FA',
+        'background-dark': '#121214',
+        'card-dark': 'rgba(30, 30, 34, 0.7)',
+        'border-dark': 'rgba(255, 255, 255, 0.05)',
         brand: {
           dark: '#1a1a2e',
           mid: '#16213e',
@@ -19,15 +23,9 @@ const config: Config = {
           gold: '#ffcb77',
           'gold-light': '#ffe0a6',
         },
-        aynam: {
-          primary: '#FFB800',
-          bg: '#121214',
-          card: 'rgba(30, 30, 34, 0.7)',
-          border: 'rgba(255, 255, 255, 0.05)',
-        },
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-plus-jakarta)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'monospace'],
       },
     },
