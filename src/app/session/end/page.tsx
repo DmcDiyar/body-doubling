@@ -94,10 +94,13 @@ function SessionEndPage() {
       }
 
       // Check suspicious flags on participation
-      if (myPart && (myPart as any).suspicious_flags) {
-        const flags = (myPart as any).suspicious_flags as string[];
-        if (flags && flags.length > 0) {
-          setSuspiciousFlags(flags);
+      if (myPart) {
+        const partRecord = myPart as unknown as Record<string, unknown>;
+        if (partRecord.suspicious_flags) {
+          const flags = partRecord.suspicious_flags as string[];
+          if (flags && flags.length > 0) {
+            setSuspiciousFlags(flags);
+          }
         }
       }
 

@@ -6,7 +6,36 @@ import { useProfilePhoto } from '@/hooks/useProfilePhoto';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase-client';
+
+// ============================================================
+// Types
+// ============================================================
+
+interface SeasonInfo {
+    season_number: number;
+    day_in_season: number;
+    season_length_days: number;
+    days_remaining: number;
+}
+
+interface MenteeInfo {
+    mentee_name: string;
+    mentee_sessions: number;
+    mentee_stage: string;
+    mentee_streak: number;
+}
+
+interface MentorSummary {
+    is_mentor: boolean;
+    as_mentor?: MenteeInfo[];
+    as_mentee?: {
+        mentor_name: string;
+        mentor_sessions: number;
+        your_sessions_during: number;
+    } | null;
+}
 
 // ============================================================
 // AYNAM — Profil / Ayna Sayfası
@@ -36,9 +65,9 @@ export default function AynamPage() {
     );
 
     // Sezon bilgisi
-    const [season, setSeason] = useState<any>(null);
+    const [season, setSeason] = useState<SeasonInfo | null>(null);
     // Mentor bilgisi
-    const [mentor, setMentor] = useState<any>(null);
+    const [mentor, setMentor] = useState<MentorSummary | null>(null);
 
     useEffect(() => {
         if (!data) return;
@@ -113,7 +142,7 @@ export default function AynamPage() {
                             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#FFB800]/20 to-[#FFB800] p-1 shadow-lg shadow-[#FFB800]/20">
                                 <div className="w-full h-full rounded-full bg-[#121214] flex items-center justify-center overflow-hidden">
                                     {avatarUrl ? (
-                                        <img src={avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                                        <Image src={avatarUrl} alt={user.name} width={64} height={64} className="w-full h-full object-cover" unoptimized />
                                     ) : (
                                         <span className="text-2xl font-bold text-[#FFB800]">
                                             {user.name.charAt(0).toUpperCase()}
@@ -500,7 +529,7 @@ export default function AynamPage() {
                                 </div>
                                 <div className="grid grid-cols-6 gap-6">
                                     {data.badges.slice(0, 6).map(badge => {
-                                        const tierKey = badge.unlocked ? ((badge as any).tier as string || 'gold') : 'gold';
+                                        const tierKey = badge.unlocked ? (((badge as unknown as Record<string, unknown>).tier as string) || 'gold') : 'gold';
                                         const tierStyles: Record<string, string> = {
                                             bronze: 'bg-orange-500/10 border-2 border-orange-600/40 shadow-lg shadow-orange-500/10',
                                             silver: 'bg-slate-300/10 border-2 border-slate-400/40 shadow-lg shadow-slate-300/10',
@@ -559,11 +588,14 @@ export default function AynamPage() {
                             <div className="relative z-10 w-full h-full flex items-center justify-center">
                                 {avatarUrl ? (
                                     /* Kullanıcı fotoğrafı */
-                                    <img
+                                    <Image
                                         src={avatarUrl}
                                         alt={user.name}
+                                        width={256}
+                                        height={256}
                                         className="w-64 h-64 object-cover rounded-full drop-shadow-2xl border-2 border-[#FFB800]/20"
                                         style={{ animation: 'breathe 4s ease-in-out infinite' }}
+                                        unoptimized
                                     />
                                 ) : (
                                     /* Fotoğraf yoksa initial */
@@ -700,7 +732,7 @@ export default function AynamPage() {
                             {mentor.is_mentor && mentor.as_mentor && mentor.as_mentor.length > 0 && (
                                 <div className="space-y-3">
                                     <p className="text-[10px] text-slate-500">{mentor.as_mentor.length} aktif mentee</p>
-                                    {mentor.as_mentor.map((m: any, i: number) => (
+                                    {mentor.as_mentor.map((m: MenteeInfo, i: number) => (
                                         <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
