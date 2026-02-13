@@ -152,105 +152,95 @@ ALTER TABLE public.users
 CREATE OR REPLACE FUNCTION public.rescue_streak(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_user RECORD;
-  v_days_since_rescue INT;
-  v_previous_streak INT;
-BEGIN
-  SELECT * INTO v_user FROM users WHERE id = p_user_id;
-
-  IF v_user IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'reason', 'user_not_found');
-  END IF;
-
-  -- Streak zaten aktif mi?
-  IF v_user.current_streak > 0 THEN
-    RETURN jsonb_build_object('success', false, 'reason', 'streak_active', 'current_streak', v_user.current_streak);
-  END IF;
-
-  -- Son kurtarma 30 günden yeni mi?
-  IF v_user.last_streak_rescue IS NOT NULL THEN
-    v_days_since_rescue := (CURRENT_DATE - v_user.last_streak_rescue);
-    IF v_days_since_rescue < 30 THEN
-      RETURN jsonb_build_object(
-        'success', false,
-        'reason', 'cooldown',
-        'days_remaining', 30 - v_days_since_rescue
-      );
-    END IF;
-  END IF;
-
-  -- last_session_date dün mü veya bugün mü? (max 1 gün tolerans)
-  IF v_user.last_session_date IS NULL OR v_user.last_session_date < CURRENT_DATE - 2 THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'too_late',
-      'last_session', v_user.last_session_date
-    );
-  END IF;
-
-  -- Kurtarma: longest_streak'i tekrar current_streak'e yaz (1 geri al)
-  v_previous_streak := GREATEST(1, COALESCE(
-    (SELECT current_streak FROM users WHERE id = p_user_id
-     -- En son streak değerini tahmin et: last_session_date farkı
-    ), 1
-  ));
-
-  -- Aslında: dünkü streak = bugün 0 oldu, geri al
-  -- Basit yaklaşım: current_streak = 1 (kurtarıldı), kullanıcı bugün seans yaparsa 2 olur
-  UPDATE users SET
-    current_streak = 1,
-    last_session_date = CURRENT_DATE - 1, -- Dün seans yapmış gibi say
-    last_streak_rescue = CURRENT_DATE,
-    streak_rescues_used = streak_rescues_used + 1
-  WHERE id = p_user_id;
-
-  -- Kayıt
-  INSERT INTO analytics_events (user_id, event_name, properties)
-  VALUES (p_user_id, 'streak_rescued', jsonb_build_object(
-    'rescue_number', v_user.streak_rescues_used + 1,
-    'previous_longest', v_user.longest_streak
-  ));
-
-  -- Bildirim
-  PERFORM emit_notification(
-    p_user_id,
-    'streak_rescued',
-    'Serin Kurtarıldı! 🔥',
-    'Streak kurtarma hakkını kullandın. Bugün seans yap ve serini devam ettir!',
-    '{}'::jsonb
-  );
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'new_streak', 1,
-    'rescues_remaining', GREATEST(0, 1 - (v_user.streak_rescues_used + 1) % 1),
-    'next_rescue_available', CURRENT_DATE + 30
-  );
-END;
-$$;
-
-
--- Streak kurtarma durumunu sorgula
-CREATE OR REPLACE FUNCTION public.get_streak_rescue_status(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.rescue_streak()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_uid UUID := auth.uid();
+  v_last_rescue TIMESTAMPTZ;
+  v_last_session_date DATE;
+  v_current_streak INT;
+BEGIN
+  -- Parametre yerine auth.uid()
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'not_authenticated');
+  END IF;
+
+  SELECT current_streak, last_session_date INTO v_current_streak, v_last_session_date
+  FROM users WHERE id = v_uid;
+
+  -- Streak zaten aktif mi?
+  IF v_current_streak > 0 THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'streak_active', 'current_streak', v_current_streak);
+  END IF;
+
+  -- Bu ay kullanıldı mı?
+  SELECT created_at INTO v_last_rescue
+  FROM analytics_events
+  WHERE user_id = v_uid AND event_name = 'streak_rescued'
+  AND created_at > date_trunc('month', NOW())
+  LIMIT 1;
+
+  IF v_last_rescue IS NOT NULL THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'rescue_used_this_month',
+      'next_available', (date_trunc('month', NOW()) + INTERVAL '1 month')
+    );
+  END IF;
+
+  -- 48 saat tolerans
+  IF v_last_session_date IS NULL OR (CURRENT_DATE - v_last_session_date) > 2 THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'streak_too_old');
+  END IF;
+
+  -- Kurtar (en son completed_sessions'dan tahmini bir streak veya son bilinen longest_streak değil, basitçe +1 veya db'de yedek yoksa varsayılan)
+  -- Sistemde streak history olmadığı için sadece 1'e set ediyoruz (veya son seans dünkü ise devam ettiriyoruz)
+  UPDATE users SET
+    current_streak = 1,
+    last_session_date = CURRENT_DATE - 1 -- Dün seans yapmış gibi say
+  WHERE id = v_uid;
+
+  INSERT INTO analytics_events (user_id, event_name, properties)
+  VALUES (v_uid, 'streak_rescued', jsonb_build_object('restored_to', 1));
+
+  -- Bildirim
+  PERFORM emit_notification(
+    v_uid,
+    'streak_rescued',
+    'Serin Kurtarıldı! 🔥',
+    'Streak kurtarma hakkını kullandın. Bugün seans yap ve serini devam ettir!',
+    '{}'::jsonb
+  );
+
+  RETURN jsonb_build_object('success', true, 'restored_to', 1);
+END;
+$$;
+
+
+-- Streak kurtarma durumunu sorgula
+CREATE OR REPLACE FUNCTION public.get_streak_rescue_status()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid UUID := auth.uid();
   v_user RECORD;
   v_available BOOLEAN := true;
   v_days_remaining INT := 0;
+  v_next_available_date DATE;
+  v_last_rescue_event TIMESTAMPTZ;
 BEGIN
-  SELECT current_streak, last_streak_rescue, streak_rescues_used, last_session_date
-  INTO v_user FROM users WHERE id = p_user_id;
+  SELECT current_streak, last_session_date
+  INTO v_user FROM users WHERE id = v_uid;
 
   IF v_user IS NULL THEN
-    RETURN jsonb_build_object('available', false);
+    RETURN jsonb_build_object('available', false, 'reason', 'user_not_found');
   END IF;
 
   -- Streak zaten aktif
@@ -389,29 +379,34 @@ $$;
 -- cron_daily_maintenance'da sezon geçişini de kontrol et
 
 -- get_aynam_data'da sezon bilgisi ekle
-CREATE OR REPLACE FUNCTION public.get_season_info(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.get_season_info()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_uid UUID := auth.uid();
   v_user RECORD;
   v_season_day INT;
   v_season_number INT;
   v_last_season RECORD;
 BEGIN
-  SELECT season_start_date INTO v_user FROM users WHERE id = p_user_id;
+  SELECT season_start_date INTO v_user FROM users WHERE id = v_uid;
+
+  IF v_user IS NULL THEN
+    RETURN NULL;
+  END IF;
 
   v_season_day := COALESCE((CURRENT_DATE - v_user.season_start_date), 0);
 
   SELECT COALESCE(MAX(season_number), 0) INTO v_season_number
-  FROM season_history WHERE user_id = p_user_id;
+  FROM season_history WHERE user_id = v_uid;
 
   -- Son sezon
   SELECT * INTO v_last_season
   FROM season_history
-  WHERE user_id = p_user_id
+  WHERE user_id = v_uid
   ORDER BY season_number DESC LIMIT 1;
 
   RETURN jsonb_build_object(
@@ -437,7 +432,7 @@ $$;
 -- ============================================================
 
 GRANT EXECUTE ON FUNCTION public.check_season_transition(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.rescue_streak(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_streak_rescue_status(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rescue_streak() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_streak_rescue_status() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_focus_score() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_season_info(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_season_info() TO authenticated;

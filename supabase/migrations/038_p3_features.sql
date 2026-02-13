@@ -213,19 +213,21 @@ $$;
 
 
 -- Mentor bul (sistem eşleştirir: discovery/formation kullanıcısına uygun mentor)
-CREATE OR REPLACE FUNCTION public.find_mentor(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.find_mentor()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_uid UUID := auth.uid();
   v_user RECORD;
   v_mentor RECORD;
   v_existing_mentor UUID;
 BEGIN
+  -- Parametre yerine v_uid
   SELECT maturity_stage, completed_sessions INTO v_user
-  FROM users WHERE id = p_user_id;
+  FROM users WHERE id = v_uid;
 
   IF v_user IS NULL THEN
     RETURN jsonb_build_object('found', false, 'reason', 'user_not_found');
@@ -239,7 +241,7 @@ BEGIN
   -- Zaten aktif mentoru var mı?
   SELECT mentor_id INTO v_existing_mentor
   FROM mentor_relationships
-  WHERE mentee_id = p_user_id AND status = 'active'
+  WHERE mentee_id = v_uid AND status = 'active'
   LIMIT 1;
 
   IF v_existing_mentor IS NOT NULL THEN
@@ -255,7 +257,7 @@ BEGIN
     AND u.maturity_stage IN ('growth', 'mastery')
     AND u.trust_score >= 100
     AND u.completed_sessions >= 50
-    AND u.id != p_user_id
+    AND u.id != v_uid
     AND (SELECT COUNT(*) FROM mentor_relationships mr2 WHERE mr2.mentor_id = u.id AND mr2.status = 'active') < 3
   ORDER BY
     u.last_active_at DESC,
@@ -268,7 +270,7 @@ BEGIN
 
   -- Mentor ilişkisi kur
   INSERT INTO mentor_relationships (mentor_id, mentee_id)
-  VALUES (v_mentor.id, p_user_id);
+  VALUES (v_mentor.id, v_uid);
 
   -- Bildirimleri gönder
   PERFORM emit_notification(
@@ -276,11 +278,11 @@ BEGIN
     'system',
     'Yeni Mentee! 🌱',
     'Bir kullanıcı sana mentor olarak atandı. İlerleme sayfandan takip edebilirsin.',
-    jsonb_build_object('mentee_id', p_user_id)
+    jsonb_build_object('mentee_id', v_uid)
   );
 
   PERFORM emit_notification(
-    p_user_id,
+    v_uid,
     'system',
     'Mentorun Atandı! 🎓',
     v_mentor.name || ' artık senin mentorun. Yolculuğuna eşlik edecek.',
@@ -299,13 +301,14 @@ $$;
 
 
 -- Mentor ilerleme özeti (mentor veya mentee çağırabilir)
-CREATE OR REPLACE FUNCTION public.get_mentor_summary(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.get_mentor_summary()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_uid UUID := auth.uid();
   v_as_mentor JSONB;
   v_as_mentee JSONB;
   v_rel RECORD;
@@ -323,7 +326,7 @@ BEGIN
   INTO v_as_mentor
   FROM mentor_relationships mr
   JOIN users u ON u.id = mr.mentee_id
-  WHERE mr.mentor_id = p_user_id AND mr.status = 'active';
+  WHERE mr.mentor_id = v_uid AND mr.status = 'active';
 
   -- Mentee olarak
   SELECT jsonb_build_object(
@@ -339,11 +342,11 @@ BEGIN
   INTO v_as_mentee
   FROM mentor_relationships mr
   JOIN users u ON u.id = mr.mentor_id
-  WHERE mr.mentee_id = p_user_id AND mr.status = 'active'
+  WHERE mr.mentee_id = v_uid AND mr.status = 'active'
   LIMIT 1;
 
   RETURN jsonb_build_object(
-    'is_mentor', COALESCE((SELECT (metadata->>'is_mentor')::BOOLEAN FROM users WHERE id = p_user_id), false),
+    'is_mentor', COALESCE((SELECT (metadata->>'is_mentor')::BOOLEAN FROM users WHERE id = v_uid), false),
     'as_mentor', v_as_mentor,
     'as_mentee', v_as_mentee
   );
@@ -418,6 +421,6 @@ CREATE TRIGGER on_participant_complete_mentor
 
 GRANT EXECUTE ON FUNCTION public.get_badges_with_tiers(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.become_mentor() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.find_mentor(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_mentor_summary(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.find_mentor() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_mentor_summary() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_mentor_stats(UUID) TO authenticated;

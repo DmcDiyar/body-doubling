@@ -368,13 +368,13 @@ BEGIN
     'description', a.description,
     'icon', a.icon,
     'rarity', a.rarity,
+    'tier', a.tier,
     'unlocked', ua.unlocked_at IS NOT NULL,
     'unlocked_at', ua.unlocked_at
-  )), '[]'::JSONB)
+  ) ORDER BY a.id), '[]'::JSONB)
   INTO v_badges
   FROM achievements a
-  LEFT JOIN user_achievements ua ON ua.achievement_id = a.id AND ua.user_id = v_uid
-  ORDER BY a.id;
+  LEFT JOIN user_achievements ua ON ua.achievement_id = a.id AND ua.user_id = v_uid;
 
   -- Seri günleri (bu hafta)
   SELECT COALESCE(jsonb_agg(jsonb_build_object(

@@ -79,7 +79,7 @@ export default function AynamPage() {
         });
 
         // Mentor
-        supabase.rpc('get_mentor_summary', { p_user_id: '' }).then(({ data: mInfo }) => {
+        supabase.rpc('get_mentor_summary').then(({ data: mInfo }) => {
             if (mInfo) setMentor(mInfo);
         });
     }, [data]);
@@ -87,7 +87,7 @@ export default function AynamPage() {
     // ---- LOADING ----
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#121214] flex items-center justify-center">
+            <div className="min-h-screen bg-[#121214] flex items-center justify-center font-['Plus_Jakarta_Sans',_sans-serif]">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-2 border-[#FFB800]/30 border-t-[#FFB800] animate-spin" />
                     <span className="text-sm text-slate-400 font-medium">Aynam yükleniyor...</span>
@@ -99,11 +99,11 @@ export default function AynamPage() {
     // ---- ERROR ----
     if (error || !data) {
         return (
-            <div className="min-h-screen bg-[#121214] flex items-center justify-center">
+            <div className="min-h-screen bg-[#121214] flex items-center justify-center font-['Plus_Jakarta_Sans',_sans-serif]">
                 <div className="text-center">
                     <span className="text-4xl mb-4 block">🪞</span>
-                    <p className="text-slate-400 text-sm">Aynam yüklenemedi</p>
-                    <p className="text-slate-600 text-xs mt-1">{error}</p>
+                    <p className="text-slate-400 text-sm font-bold">Aynam yüklenemedi</p>
+                    <p className="text-slate-600 text-xs mt-1 font-medium">{error}</p>
                 </div>
             </div>
         );
@@ -127,8 +127,26 @@ export default function AynamPage() {
     // RENDER
     // ============================================================
     return (
-        <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#121214] text-slate-800 dark:text-slate-100 selection:bg-[#FFB800] selection:text-black"
-            style={{ fontFamily: "var(--font-plus-jakarta), var(--font-geist-sans), sans-serif" }}>
+        <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#121214] text-slate-800 dark:text-slate-100 selection:bg-[#FFB800] selection:text-black font-['Plus_Jakarta_Sans',_sans-serif]">
+
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+                
+                .glass-panel {
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                }
+                
+                @keyframes breathe {
+                    0%, 100% { transform: scale(1); opacity: 0.9; }
+                    50% { transform: scale(1.02); opacity: 1; }
+                }
+
+                .avatar-breathe {
+                    animation: breathe 4s ease-in-out infinite;
+                }
+            `}</style>
 
             <div className="max-w-[1440px] mx-auto px-6 py-8 flex gap-8">
 
@@ -136,7 +154,7 @@ export default function AynamPage() {
                 <main className="w-[60%] space-y-6">
 
                     {/* ---- HEADER ---- */}
-                    <header className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl flex items-center justify-between">
+                    <header className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             {/* Avatar circle */}
                             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#FFB800]/20 to-[#FFB800] p-1 shadow-lg shadow-[#FFB800]/20">
@@ -187,7 +205,7 @@ export default function AynamPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl flex items-center justify-between"
+                            className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl flex items-center justify-between"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
@@ -225,7 +243,7 @@ export default function AynamPage() {
                                 className="grid grid-cols-2 gap-6"
                             >
                                 {/* Odak Skoru */}
-                                <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl">
+                                <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl">
                                     <div className="flex justify-between items-start mb-6">
                                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Odak Skoru</h3>
                                         {data.weekly.session_trend === 'up' && (
@@ -281,7 +299,7 @@ export default function AynamPage() {
 
                                 {/* Yetenek Haritası (Radar) */}
                                 {visibility.showRadar && (
-                                    <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl relative overflow-hidden">
+                                    <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl relative overflow-hidden">
                                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-6">Yetenek Haritası</h3>
                                         <div className="relative w-full h-28 flex items-center justify-center">
                                             <div className="absolute w-24 h-24 border border-dashed border-slate-700 rounded-full opacity-20" />
@@ -312,7 +330,7 @@ export default function AynamPage() {
 
                     {/* Discovery stage mesajı (Odak Skoru yerine) */}
                     {!visibility.showFocusScore && (
-                        <section className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl">
+                        <section className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl">
                             <div className="flex items-center gap-4">
                                 <div className="w-14 h-14 rounded-2xl bg-[#FFB800]/10 flex items-center justify-center">
                                     <span className="text-2xl">🪞</span>
@@ -341,7 +359,7 @@ export default function AynamPage() {
                     {/* ---- 4 MİNİ KART ---- */}
                     <section className="grid grid-cols-4 gap-4">
                         {/* Aktif Seri */}
-                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl group hover:border-[#FFB800]/30 transition-all">
+                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl group hover:border-[#FFB800]/30 transition-all">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-orange-500 text-lg">local_fire_department</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Aktif Seri</span>
@@ -353,7 +371,7 @@ export default function AynamPage() {
                         </div>
 
                         {/* Toplam */}
-                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl">
+                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-blue-500 text-lg">schedule</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Toplam</span>
@@ -365,7 +383,7 @@ export default function AynamPage() {
                         </div>
 
                         {/* Güven */}
-                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-blue-500">
+                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-blue-500">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-blue-400 text-lg">verified_user</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Güven</span>
@@ -377,7 +395,7 @@ export default function AynamPage() {
                         </div>
 
                         {/* Tamamlama */}
-                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-emerald-500">
+                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl border-l-4 border-l-emerald-500">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="material-icons-round text-emerald-500 text-lg">task_alt</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Tamamlama</span>
@@ -397,7 +415,7 @@ export default function AynamPage() {
                     <section className="grid grid-cols-5 gap-6">
                         {/* Kendini Kıyasla */}
                         {visibility.showWeeklyComparison && (
-                            <div className="col-span-2 glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
+                            <div className="col-span-2 glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Kendini Kıyasla</h3>
                                     <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-400">Haftalık</span>
@@ -438,7 +456,7 @@ export default function AynamPage() {
                         )}
 
                         {/* Seri Analizi */}
-                        <div className={`${visibility.showWeeklyComparison ? 'col-span-3' : 'col-span-5'} glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl`}>
+                        <div className={`${visibility.showWeeklyComparison ? 'col-span-3' : 'col-span-5'} glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl`}>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Seri Analizi</h3>
                             <div className="flex flex-col items-center justify-center">
                                 <span className="text-4xl font-black text-[#FFB800] mb-1">{user.current_streak}</span>
@@ -471,7 +489,7 @@ export default function AynamPage() {
                             <motion.section
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
+                                className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
                             >
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Aktivite Haritası</h3>
@@ -521,7 +539,7 @@ export default function AynamPage() {
                             <motion.section
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
+                                className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-6 rounded-2xl"
                             >
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Rozetler</h3>
@@ -579,7 +597,7 @@ export default function AynamPage() {
 
                 {/* ==================== ASIDE (40%) ==================== */}
                 <aside className="w-[40%] space-y-6">
-                    <div className="glass-aynam bg-white dark:bg-[rgba(30,30,34,0.7)] rounded-[32px] overflow-hidden sticky top-8 shadow-2xl shadow-black/20">
+                    <div className="glass-panel bg-white dark:bg-[rgba(30,30,34,0.7)] rounded-[32px] overflow-hidden sticky top-8 shadow-2xl shadow-black/20">
                         {/* Avatar area — tıklayınca fotoğraf yükle */}
                         <div
                             className="relative h-[480px] w-full flex items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-neutral-800/50 dark:to-neutral-900/50 p-8 cursor-pointer group"
@@ -622,7 +640,7 @@ export default function AynamPage() {
                             <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-blue-500/10 blur-[80px] rounded-full" />
 
                             {/* Controls */}
-                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 px-6 py-3 bg-white/10 glass-aynam rounded-full" onClick={e => e.stopPropagation()}>
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 px-6 py-3 bg-white/10 glass-panel rounded-full" onClick={e => e.stopPropagation()}>
                                 <button
                                     onClick={() => router.push('/session/quick-match')}
                                     className="w-8 h-8 rounded-full bg-[#FFB800] flex items-center justify-center text-black"
@@ -723,7 +741,7 @@ export default function AynamPage() {
 
                     {/* ---- MENTOR BÖLÜMÜ ---- */}
                     {mentor && (mentor.is_mentor || mentor.as_mentee) && (
-                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
+                        <div className="glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
                                 {mentor.is_mentor ? '🎓 Mentor Paneli' : '🌱 Mentorluk'}
                             </h3>
@@ -786,7 +804,7 @@ export default function AynamPage() {
             </div>
 
             {/* ---- BOTTOM NAV ---- */}
-            <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.8)] px-6 py-3 rounded-2xl flex items-center gap-8 shadow-2xl z-50">
+            <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass-panel bg-white/60 dark:bg-[rgba(30,30,34,0.8)] px-6 py-3 rounded-2xl flex items-center gap-8 shadow-2xl z-50">
                 <Link href="/dashboard" className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#FFB800] transition-colors">
                     <span className="material-icons-round">home</span>
                     <span className="text-[9px] font-bold uppercase tracking-wider">Ana Sayfa</span>
