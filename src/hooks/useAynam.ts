@@ -21,6 +21,7 @@ export interface AynamUser {
     abandoned_sessions: number;
     total_minutes: number;
     maturity_stage: MaturityStage;
+    avatar_url: string | null;
     created_at: string;
 }
 

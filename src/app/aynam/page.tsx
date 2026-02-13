@@ -1,9 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAynam } from '@/hooks/useAynam';
+import { useProfilePhoto } from '@/hooks/useProfilePhoto';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase-client';
 
 // ============================================================
 // AYNAM — Profil / Ayna Sayfası
@@ -26,6 +29,31 @@ export default function AynamPage() {
         formatMinutes,
         trustBadge,
     } = useAynam();
+
+    // Profil fotoğrafı
+    const { avatarUrl, uploading, triggerUpload, remove: removePhoto } = useProfilePhoto(
+        data?.user?.avatar_url ?? null
+    );
+
+    // Sezon bilgisi
+    const [season, setSeason] = useState<any>(null);
+    // Mentor bilgisi
+    const [mentor, setMentor] = useState<any>(null);
+
+    useEffect(() => {
+        if (!data) return;
+        const supabase = createClient();
+
+        // Sezon bilgisi
+        supabase.rpc('get_season_info').then(({ data: sInfo }) => {
+            if (sInfo) setSeason(sInfo);
+        });
+
+        // Mentor
+        supabase.rpc('get_mentor_summary', { p_user_id: '' }).then(({ data: mInfo }) => {
+            if (mInfo) setMentor(mInfo);
+        });
+    }, [data]);
 
     // ---- LOADING ----
     if (loading) {
@@ -84,9 +112,13 @@ export default function AynamPage() {
                             {/* Avatar circle */}
                             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#FFB800]/20 to-[#FFB800] p-1 shadow-lg shadow-[#FFB800]/20">
                                 <div className="w-full h-full rounded-full bg-[#121214] flex items-center justify-center overflow-hidden">
-                                    <span className="text-2xl font-bold text-[#FFB800]">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </span>
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-2xl font-bold text-[#FFB800]">
+                                            {user.name.charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div>
@@ -120,6 +152,40 @@ export default function AynamPage() {
                             </div>
                         </div>
                     </header>
+
+                    {/* ---- SEZON BİLGİSİ ---- */}
+                    {season && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-4 rounded-2xl flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                                    <span className="text-lg">🏆</span>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold">Sezon {season.season_number}</p>
+                                    <p className="text-[10px] text-slate-500">
+                                        Gün {season.day_in_season}/{season.season_length_days} • Kalan {season.days_remaining} gün
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="w-24">
+                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.round((season.day_in_season / season.season_length_days) * 100)}%` }}
+                                        transition={{ duration: 1, ease: 'easeOut' }}
+                                    />
+                                </div>
+                                <p className="text-[9px] text-slate-500 text-right mt-1">
+                                    {Math.round((season.day_in_season / season.season_length_days) * 100)}%
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* ---- ODAK SKORU + RADAR ---- */}
                     <AnimatePresence>
@@ -433,21 +499,49 @@ export default function AynamPage() {
                                     <span className="text-xs font-bold text-[#FFB800]">{unlockedBadges}/{totalBadges} Unlocked</span>
                                 </div>
                                 <div className="grid grid-cols-6 gap-6">
-                                    {data.badges.slice(0, 6).map(badge => (
-                                        <div key={badge.id} className="relative group">
-                                            <div className={`w-full aspect-square rounded-xl flex items-center justify-center transition-all ${badge.unlocked
-                                                ? 'bg-[#FFB800]/10 border border-[#FFB800]/20 shadow-lg shadow-[#FFB800]/5'
-                                                : 'bg-slate-200 dark:bg-slate-800/50 grayscale opacity-40 hover:opacity-100 hover:grayscale-0'
-                                                }`}>
-                                                <span className="text-2xl">{badge.icon}</span>
+                                    {data.badges.slice(0, 6).map(badge => {
+                                        const tierKey = badge.unlocked ? ((badge as any).tier as string || 'gold') : 'gold';
+                                        const tierStyles: Record<string, string> = {
+                                            bronze: 'bg-orange-500/10 border-2 border-orange-600/40 shadow-lg shadow-orange-500/10',
+                                            silver: 'bg-slate-300/10 border-2 border-slate-400/40 shadow-lg shadow-slate-300/10',
+                                            gold: 'bg-[#FFB800]/10 border-2 border-[#FFB800]/40 shadow-lg shadow-[#FFB800]/10',
+                                        };
+                                        const tierStyle = badge.unlocked
+                                            ? (tierStyles[tierKey] || tierStyles.gold)
+                                            : 'bg-slate-200 dark:bg-slate-800/50 grayscale opacity-40 hover:opacity-100 hover:grayscale-0';
+
+                                        const tierLabels: Record<string, string> = {
+                                            bronze: '🥉',
+                                            silver: '🥈',
+                                            gold: '🥇',
+                                        };
+                                        const tierLabel = badge.unlocked ? tierLabels[tierKey] || null : null;
+
+                                        return (
+                                            <div key={badge.id} className="relative group">
+                                                <div className={`w-full aspect-square rounded-xl flex items-center justify-center transition-all ${tierStyle}`}>
+                                                    <span className="text-2xl">{badge.icon}</span>
+                                                </div>
+                                                {/* Tier indicator */}
+                                                {tierLabel && (
+                                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px]">
+                                                        {tierLabel}
+                                                    </span>
+                                                )}
+                                                {!badge.unlocked && (
+                                                    <span className="absolute -top-1 -right-1 material-icons-round text-[14px] text-slate-600 bg-[#121214] rounded-full">
+                                                        lock
+                                                    </span>
+                                                )}
+                                                {/* Tooltip on hover */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                    <div className="bg-black/90 text-white text-[9px] px-2 py-1 rounded-lg whitespace-nowrap">
+                                                        {badge.name}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            {!badge.unlocked && (
-                                                <span className="absolute -top-1 -right-1 material-icons-round text-[14px] text-slate-600 bg-[#121214] rounded-full">
-                                                    lock
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </motion.section>
                         )}
@@ -457,15 +551,38 @@ export default function AynamPage() {
                 {/* ==================== ASIDE (40%) ==================== */}
                 <aside className="w-[40%] space-y-6">
                     <div className="glass-aynam bg-white dark:bg-[rgba(30,30,34,0.7)] rounded-[32px] overflow-hidden sticky top-8 shadow-2xl shadow-black/20">
-                        {/* Avatar area */}
-                        <div className="relative h-[480px] w-full flex items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-neutral-800/50 dark:to-neutral-900/50 p-8">
+                        {/* Avatar area — tıklayınca fotoğraf yükle */}
+                        <div
+                            className="relative h-[480px] w-full flex items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-neutral-800/50 dark:to-neutral-900/50 p-8 cursor-pointer group"
+                            onClick={triggerUpload}
+                        >
                             <div className="relative z-10 w-full h-full flex items-center justify-center">
-                                {/* Büyük avatar initial */}
-                                <div className="w-64 h-64 rounded-full bg-gradient-to-br from-[#FFB800]/30 to-[#FFB800]/10 border-2 border-[#FFB800]/20 flex items-center justify-center drop-shadow-2xl"
-                                    style={{ animation: 'breathe 4s ease-in-out infinite' }}>
-                                    <span className="text-8xl font-black text-[#FFB800]/80">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </span>
+                                {avatarUrl ? (
+                                    /* Kullanıcı fotoğrafı */
+                                    <img
+                                        src={avatarUrl}
+                                        alt={user.name}
+                                        className="w-64 h-64 object-cover rounded-full drop-shadow-2xl border-2 border-[#FFB800]/20"
+                                        style={{ animation: 'breathe 4s ease-in-out infinite' }}
+                                    />
+                                ) : (
+                                    /* Fotoğraf yoksa initial */
+                                    <div className="w-64 h-64 rounded-full bg-gradient-to-br from-[#FFB800]/30 to-[#FFB800]/10 border-2 border-[#FFB800]/20 flex items-center justify-center drop-shadow-2xl"
+                                        style={{ animation: 'breathe 4s ease-in-out infinite' }}>
+                                        <span className="text-8xl font-black text-[#FFB800]/80">
+                                            {user.name.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Upload overlay (hover'da görünür) */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="bg-black/50 rounded-full p-4">
+                                        {uploading ? (
+                                            <div className="w-8 h-8 rounded-full border-2 border-[#FFB800]/30 border-t-[#FFB800] animate-spin" />
+                                        ) : (
+                                            <span className="material-icons-round text-3xl text-white">photo_camera</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             {/* Glow effects */}
@@ -473,18 +590,32 @@ export default function AynamPage() {
                             <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-blue-500/10 blur-[80px] rounded-full" />
 
                             {/* Controls */}
-                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 px-6 py-3 bg-white/10 glass-aynam rounded-full">
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 px-6 py-3 bg-white/10 glass-aynam rounded-full" onClick={e => e.stopPropagation()}>
                                 <button
                                     onClick={() => router.push('/session/quick-match')}
                                     className="w-8 h-8 rounded-full bg-[#FFB800] flex items-center justify-center text-black"
                                 >
                                     <span className="material-icons-round text-lg">play_arrow</span>
                                 </button>
-                                <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                    <span className="material-icons-round text-lg">refresh</span>
+                                <button
+                                    onClick={async () => {
+                                        if (avatarUrl && confirm('Fotoğrafını silmek istiyor musun?')) {
+                                            await removePhoto();
+                                        } else {
+                                            triggerUpload();
+                                        }
+                                    }}
+                                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                                    title={avatarUrl ? 'Fotoğrafı sil' : 'Fotoğraf yükle'}
+                                >
+                                    <span className="material-icons-round text-lg">{avatarUrl ? 'delete' : 'photo_camera'}</span>
                                 </button>
-                                <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                    <span className="material-icons-round text-lg">videocam</span>
+                                <button
+                                    onClick={triggerUpload}
+                                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                                    title="Fotoğraf değiştir"
+                                >
+                                    <span className="material-icons-round text-lg">refresh</span>
                                 </button>
                             </div>
                         </div>
@@ -557,6 +688,68 @@ export default function AynamPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* ---- MENTOR BÖLÜMÜ ---- */}
+                    {mentor && (mentor.is_mentor || mentor.as_mentee) && (
+                        <div className="glass-aynam bg-white/60 dark:bg-[rgba(30,30,34,0.7)] p-5 rounded-2xl">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
+                                {mentor.is_mentor ? '🎓 Mentor Paneli' : '🌱 Mentorluk'}
+                            </h3>
+
+                            {/* Mentor olarak */}
+                            {mentor.is_mentor && mentor.as_mentor && mentor.as_mentor.length > 0 && (
+                                <div className="space-y-3">
+                                    <p className="text-[10px] text-slate-500">{mentor.as_mentor.length} aktif mentee</p>
+                                    {mentor.as_mentor.map((m: any, i: number) => (
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                                    <span className="text-sm">🌱</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold">{m.mentee_name}</p>
+                                                    <p className="text-[10px] text-slate-500">
+                                                        {m.mentee_sessions} seans • {m.mentee_stage}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-bold text-emerald-500">
+                                                🔥 {m.mentee_streak}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Mentee olarak */}
+                            {mentor.as_mentee && (
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                            <span className="text-sm">🎓</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold">{mentor.as_mentee.mentor_name}</p>
+                                            <p className="text-[10px] text-slate-500">
+                                                Mentor • {mentor.as_mentee.mentor_sessions} seans
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-slate-500">Senin seans</p>
+                                        <p className="text-xs font-bold">{mentor.as_mentee.your_sessions_during}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Mentor gereksinim */}
+                            {!mentor.is_mentor && !mentor.as_mentee && (
+                                <p className="text-[10px] text-slate-500 italic">
+                                    Mentor olmak için: growth+ seviye, 50 seans, 100 güven puanı.
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </aside>
             </div>
 

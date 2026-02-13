@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import StreakRescueBanner from '@/components/dashboard/StreakRescueBanner';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
@@ -459,6 +460,18 @@ export default function DashboardPage() {
                 activeMatch={activeMatch}
                 onRejoin={handleRejoin}
                 onDismiss={handleDismissMatch}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Streak Rescue Banner (streak = 0) */}
+        <AnimatePresence>
+          {showDashboardUI && user.current_streak === 0 && (
+            <motion.div key="streak-rescue" {...headerAnim}>
+              <StreakRescueBanner
+                currentStreak={user.current_streak}
+                onRescued={(newStreak) => setUser({ ...user, current_streak: newStreak })}
               />
             </motion.div>
           )}

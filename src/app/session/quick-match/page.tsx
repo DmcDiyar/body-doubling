@@ -97,6 +97,16 @@ export default function QuickMatchPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
 
+    // ★ SERTLEŞTIRME: Seans arası cooldown kontrolü (5dk)
+    const { data: cooldownData } = await supabase.rpc('check_session_cooldown', {
+      p_user_id: authUser.id
+    });
+    if (cooldownData && !cooldownData.allowed) {
+      const remaining = Math.ceil(cooldownData.remaining_seconds / 60);
+      alert(`Lütfen ${remaining} dakika bekle. Seanslar arası kısa bir mola gerekli.`);
+      return;
+    }
+
     // Save intent for adaptive flow
     await saveIntent(selectedIntent, duration);
 

@@ -43,6 +43,9 @@ function SessionEndPage() {
   const [weeklyQuest, setWeeklyQuest] = useState<WeeklyQuest | null>(null);
   const questProcessedRef = useRef(false);
 
+  // Suspicious session flags
+  const [suspiciousFlags, setSuspiciousFlags] = useState<string[]>([]);
+
   // Early exit params
   const isEarlyExit = searchParams.get('earlyExit') === 'true';
   const beforeScore = parseInt(searchParams.get('before') || '0', 10);
@@ -88,6 +91,14 @@ function SessionEndPage() {
       if (userData) {
         setUser(userData as User);
         setAfterScore((userData as User).trust_score);
+      }
+
+      // Check suspicious flags on participation
+      if (myPart && (myPart as any).suspicious_flags) {
+        const flags = (myPart as any).suspicious_flags as string[];
+        if (flags && flags.length > 0) {
+          setSuspiciousFlags(flags);
+        }
       }
 
       // Results from participation
@@ -235,6 +246,33 @@ function SessionEndPage() {
         {/* NORMAL COMPLETION VIEW */}
         {!isEarlyExit && (
           <>
+            {/* Suspicious session warning */}
+            {suspiciousFlags.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="material-icons-round text-amber-400 text-lg">info</span>
+                  <span className="text-xs font-bold text-amber-400">Seans Notu</span>
+                </div>
+                <p className="text-[10px] text-amber-300/80 leading-relaxed">
+                  Bu seansın bazı kalite kontrollerinden geçemedi:
+                  {suspiciousFlags.map(f => {
+                    const flagLabels: Record<string, string> = {
+                      too_short: 'Çok kısa süre',
+                      too_many_today: 'Günlük seans limiti aşıldı',
+                      rapid_succession: 'Çok hızlı art arda seans',
+                      pattern_abuse: 'Tekrarlayan kalıp algılandı',
+                    };
+                    return ` ${flagLabels[f] || f}`;
+                  }).join(' ·')}
+                  . XP ve güven puanı etkilenmiş olabilir.
+                </p>
+              </motion.div>
+            )}
             {/* Celebration */}
             <motion.div
               initial={{ scale: 0 }}

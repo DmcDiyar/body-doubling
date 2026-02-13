@@ -44,6 +44,7 @@ export interface User {
   email: string;
   name: string;
   avatar_id: number;
+  avatar_url: string | null;
   preferred_times: string[];
   music_preference: MusicPreference;
   language: string;
