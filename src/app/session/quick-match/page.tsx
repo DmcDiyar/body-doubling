@@ -9,6 +9,8 @@ import { useSessionStore } from '@/stores/session-store';
 import { useUserIntent } from '@/hooks/useRitualFlow';
 import LiveStatsPanel from '@/components/session/LiveStatsPanel';
 import RecentMatchesFeed from '@/components/session/RecentMatchesFeed';
+import { useRateLimit } from '@/hooks/useRateLimit';
+import { RateLimitBanner } from '@/components/ui/RateLimitUI';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Session, SessionParticipant, User } from '@/types/database';
 
@@ -45,6 +47,9 @@ export default function QuickMatchPage() {
   const [partner, setPartner] = useState<PartnerPreview | null>(null);
   const [revealCountdown, setRevealCountdown] = useState(5);
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Rate limiting
+  const { limited: rateLimited, status: rateLimitStatus, findMatchWithLimit, reset: resetRateLimit } = useRateLimit();
 
   // Adaptive intent: if returning user, show their last intent
   const showAdaptive = userIntent?.hasIntent && userIntent.lastIntent;
@@ -132,12 +137,17 @@ export default function QuickMatchPage() {
       });
     }
 
-    // Try match
-    const { data: foundSessionId } = await supabase.rpc('find_match', {
-      p_user_id: authUser.id,
-      p_duration: duration,
-      p_theme: theme,
-    });
+    // Try match (rate-limited)
+    const { sessionId: foundSessionId, rateLimited: wasLimited } = await findMatchWithLimit(
+      authUser.id,
+      duration,
+      theme
+    );
+
+    if (wasLimited) {
+      setPhase('intent');
+      return;
+    }
 
     if (foundSessionId) {
       await handleMatchFound(foundSessionId as string, authUser.id);
@@ -279,6 +289,12 @@ export default function QuickMatchPage() {
   // ============================================================
   return (
     <div className="min-h-screen bg-[#221b10] text-white font-[family-name:var(--font-geist-sans)]">
+      {/* Rate Limit Banner */}
+      <RateLimitBanner
+        show={rateLimited}
+        status={rateLimitStatus}
+        onDismiss={resetRateLimit}
+      />
       {/* Background */}
       <div className="fixed inset-0 bg-gradient-to-b from-[#221b10]/70 to-[#221b10]/90 -z-10" />
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-5">

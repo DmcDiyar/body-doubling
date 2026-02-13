@@ -10,15 +10,13 @@ interface CompletionResult {
 }
 
 // ── Create Solo Session ──────────────────────────────
-// Creates session + participant, sets both to 'active' immediately
 export async function createSoloSession(
   userId: string,
   duration: number
 ): Promise<string | null> {
   const supabase = createClient();
 
-  // First clean up any orphan sessions from this user
-  // (sessions stuck in waiting/active that belong to us)
+  // Clean up orphans first
   await cleanupOrphanSessions(userId);
 
   const { data: session } = await supabase
@@ -27,7 +25,7 @@ export async function createSoloSession(
       duration,
       mode: 'solo',
       theme: 'rainy_cafe',
-      status: 'active',         // ← directly active (solo = no waiting)
+      status: 'active',
       started_at: new Date().toISOString(),
     })
     .select('id')
@@ -38,7 +36,7 @@ export async function createSoloSession(
   await supabase.from('session_participants').insert({
     session_id: session.id,
     user_id: userId,
-    status: 'active',           // ← participant also active
+    status: 'active',
     joined_at: new Date().toISOString(),
   });
 
@@ -46,7 +44,6 @@ export async function createSoloSession(
 }
 
 // ── Complete Solo Session (RPC) ──────────────────────
-// Calls the DB function that handles streak, XP, trust, user_limits
 export async function completeSoloSession(
   sessionId: string,
   userId: string,
@@ -62,7 +59,6 @@ export async function completeSoloSession(
 
   if (error) {
     console.error('complete_solo_session error:', error.message);
-    // Fallback: at minimum mark session as completed
     await supabase
       .from('sessions')
       .update({ status: 'completed', ended_at: new Date().toISOString() })
@@ -74,7 +70,6 @@ export async function completeSoloSession(
 }
 
 // ── Abandon Session ──────────────────────────────────
-// Marks session + participant as abandoned
 export async function abandonSession(
   sessionId: string,
   userId?: string
@@ -97,13 +92,11 @@ export async function abandonSession(
   }
 }
 
-// ── Cleanup Orphan Sessions ──────────────────────────
-// Finds sessions belonging to user that are stuck in waiting/active
-// and marks them as abandoned. Called before creating new session.
+// ── Cleanup Orphan Sessions (batch) ──────────────────
+// Fixed: single batch UPDATE instead of N+1 loop
 export async function cleanupOrphanSessions(userId: string): Promise<void> {
   const supabase = createClient();
 
-  // Find solo sessions where this user is a participant and session is stuck
   const { data: orphans } = await supabase
     .from('session_participants')
     .select('session_id, sessions!inner(id, mode, status)')
@@ -113,22 +106,22 @@ export async function cleanupOrphanSessions(userId: string): Promise<void> {
 
   if (!orphans || orphans.length === 0) return;
 
-  for (const orphan of orphans) {
-    const sessionId = orphan.session_id;
-    await supabase
-      .from('sessions')
-      .update({ status: 'abandoned', ended_at: new Date().toISOString() })
-      .eq('id', sessionId);
-    await supabase
-      .from('session_participants')
-      .update({ status: 'left_early', left_at: new Date().toISOString() })
-      .eq('session_id', sessionId)
-      .eq('user_id', userId);
-  }
+  const sessionIds = orphans.map(o => o.session_id);
+
+  // Batch update — 2 queries instead of 2*N
+  await supabase
+    .from('sessions')
+    .update({ status: 'abandoned', ended_at: new Date().toISOString() })
+    .in('id', sessionIds);
+
+  await supabase
+    .from('session_participants')
+    .update({ status: 'left_early', left_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .in('session_id', sessionIds);
 }
 
 // ── Refresh User Profile ─────────────────────────────
-// Fetches latest user data from DB (after completion, trust/streak updated)
 export async function refreshUserProfile(): Promise<User | null> {
   const supabase = createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -159,14 +152,12 @@ export async function refreshDailyUsage(userId: string): Promise<number> {
 }
 
 // ── Beacon Abandon (beforeunload) ────────────────────
-// Uses fetch keepalive for reliable fire-and-forget on page close.
-// Reads user's auth token from localStorage for proper RLS auth.
+// Fixed: now also updates session_participants via RPC-style PATCH
 export function beaconAbandonSession(sessionId: string): void {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) return;
 
-  // Read auth token from Supabase localStorage (sync — safe in beforeunload)
   let accessToken = supabaseKey;
   try {
     const storageKey = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`;
@@ -179,9 +170,6 @@ export function beaconAbandonSession(sessionId: string): void {
     // Fall back to anon key
   }
 
-  const url = `${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&status=in.(waiting,active)`;
-  const body = JSON.stringify({ status: 'abandoned', ended_at: new Date().toISOString() });
-
   const headers = {
     'Content-Type': 'application/json',
     'apikey': supabaseKey,
@@ -189,15 +177,25 @@ export function beaconAbandonSession(sessionId: string): void {
     'Prefer': 'return=minimal',
   };
 
-  // fetch keepalive — works in beforeunload
+  const now = new Date().toISOString();
+
+  // 1. Update session status
   try {
-    fetch(url, {
+    fetch(`${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&status=in.(waiting,active)`, {
       method: 'PATCH',
       headers,
-      body,
+      body: JSON.stringify({ status: 'abandoned', ended_at: now }),
       keepalive: true,
     });
-  } catch {
-    // Best effort — nothing more we can do
-  }
+  } catch { /* best effort */ }
+
+  // 2. Update participant status (FIX: previously missing)
+  try {
+    fetch(`${supabaseUrl}/rest/v1/session_participants?session_id=eq.${sessionId}&status=in.(waiting,active)`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status: 'left_early', left_at: now }),
+      keepalive: true,
+    });
+  } catch { /* best effort */ }
 }

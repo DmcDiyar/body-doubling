@@ -1,16 +1,34 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase-client';
 
 interface GoalPromptProps {
     onGoalSet?: (goal: string) => void;
+    initialGoal?: string;
 }
 
-export function GoalPrompt({ onGoalSet }: GoalPromptProps) {
+export function GoalPrompt({ onGoalSet, initialGoal = '' }: GoalPromptProps) {
     const [isEditing, setIsEditing] = useState(false);
-    const [goal, setGoal] = useState('');
+    const [goal, setGoal] = useState(initialGoal);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Load last intent from DB on mount
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const supabase = createClient();
+                const { data } = await supabase.rpc('get_user_intent');
+                if (data?.last_intent) {
+                    setGoal(data.last_intent);
+                }
+            } catch {
+                // Silent fail
+            }
+        };
+        if (!initialGoal) load();
+    }, [initialGoal]);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -18,19 +36,32 @@ export function GoalPrompt({ onGoalSet }: GoalPromptProps) {
         }
     }, [isEditing]);
 
-    const handleSubmit = () => {
-        if (goal.trim()) {
-            onGoalSet?.(goal.trim());
+    const handleSubmit = useCallback(() => {
+        const trimmed = goal.trim();
+        if (trimmed) {
+            onGoalSet?.(trimmed);
+            // Persist to DB
+            const save = async () => {
+                try {
+                    const supabase = createClient();
+                    await supabase.rpc('save_user_intent', {
+                        p_intent: trimmed,
+                        p_duration: 25,
+                    });
+                } catch {
+                    // Silent fail
+                }
+            };
+            save();
         }
         setIsEditing(false);
-    };
+    }, [goal, onGoalSet]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             handleSubmit();
         } else if (e.key === 'Escape') {
             setIsEditing(false);
-            setGoal('');
         }
     };
 
@@ -51,14 +82,16 @@ export function GoalPrompt({ onGoalSet }: GoalPromptProps) {
                     onBlur={handleSubmit}
                     placeholder="Bugünkü odağın..."
                     maxLength={60}
+                    aria-label="Bugünkü hedefini yaz"
                     className="bg-transparent border-b border-white/20 text-white/90 text-lg font-medium
                      text-center outline-none placeholder:text-white/30 pb-1 w-64
-                     focus:border-primary/60 transition-colors"
+                     focus:border-[#eea62b]/60 transition-colors"
                 />
             ) : (
                 <button
                     onClick={() => setIsEditing(true)}
                     className="flex items-center gap-2 group"
+                    aria-label="Hedef belirle"
                 >
                     <span className="text-white/70 text-lg font-medium">
                         {goal || 'Neye odaklanmak istersin?'}

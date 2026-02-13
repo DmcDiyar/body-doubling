@@ -44,7 +44,7 @@ export function DashboardBottomNav({
                     {/* Left: Stats */}
                     <div className="flex items-center gap-4">
                         {/* Streak */}
-                        <div className="flex items-center gap-1.5 text-orange-400">
+                        <div className="flex items-center gap-1.5 text-[#eea62b]" aria-label={`${streak} günlük seri`}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 23c-3.6 0-8-3.12-8-8.59C4 9.8 9 3.32 11.33 1c.22-.22.54-.28.82-.15.28.13.47.42.47.73 0 .2.02 1.77.39 2.77C13.74 6.3 14.71 8 17 10c.11.1.2.22.24.35l.05.15c.44 1.5.71 3 .71 4.09C18 19.88 15.6 23 12 23z" />
                             </svg>
@@ -55,7 +55,7 @@ export function DashboardBottomNav({
                         {!isPremium && (
                             <>
                                 <div className="h-5 w-px bg-white/[0.08]" />
-                                <div className="flex items-center gap-1.5 text-white/50">
+                                <div className="flex items-center gap-1.5 text-white/50" aria-label={`${dailyUsed}/${dailyLimit} seans kullanıldı`}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="10" />
                                         <polyline points="12 6 12 12 16 14" />
@@ -69,16 +69,18 @@ export function DashboardBottomNav({
                     <div className="h-5 w-px bg-white/[0.08] mx-4" />
 
                     {/* Center: Navigation */}
-                    <div className="flex items-center gap-5 flex-1 justify-center">
+                    <nav className="flex items-center gap-5 flex-1 justify-center" aria-label="Ana navigasyon">
                         {NAV_ITEMS.map((item) => {
                             const isActive = pathname === item.path;
                             return (
                                 <button
                                     key={item.path}
                                     onClick={() => router.push(item.path)}
-                                    className={`transition-colors ${isActive ? 'text-primary' : 'text-white/40 hover:text-white/70'
+                                    className={`transition-colors ${isActive ? 'text-[#eea62b]' : 'text-white/40 hover:text-white/70'
                                         }`}
                                     title={item.label}
+                                    aria-label={item.label}
+                                    aria-current={isActive ? 'page' : undefined}
                                 >
                                     {item.icon === 'eco' && (
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -100,18 +102,19 @@ export function DashboardBottomNav({
                                 </button>
                             );
                         })}
-                    </div>
+                    </nav>
 
                     <div className="h-5 w-px bg-white/[0.08] mx-4" />
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-4">
-                        {/* Aynam (Stats) */}
+                        {/* Stats */}
                         <button
                             onClick={() => router.push('/stats')}
-                            className={`transition-colors ${pathname === '/stats' ? 'text-primary' : 'text-white/40 hover:text-white/70'
+                            className={`transition-colors ${pathname === '/stats' ? 'text-[#eea62b]' : 'text-white/40 hover:text-white/70'
                                 }`}
                             title="Aynam"
+                            aria-label="İstatistikler"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -126,6 +129,7 @@ export function DashboardBottomNav({
                                 onClick={onToggleFullscreen}
                                 className="text-white/40 hover:text-white/70 transition-colors"
                                 title={isFullscreen ? 'Tam ekrandan çık' : 'Tam ekran'}
+                                aria-label={isFullscreen ? 'Tam ekrandan çık' : 'Tam ekran'}
                             >
                                 {isFullscreen ? (
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

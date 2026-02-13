@@ -19,22 +19,11 @@ export function UtilityButtons({ onReset }: UtilityButtonsProps) {
                 onClick={onReset}
                 className="hover:text-white/80 transition-colors p-2 rounded-xl hover:bg-white/[0.05]"
                 title="Süreyi sıfırla"
+                aria-label="Süreyi sıfırla"
             >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="23 4 23 10 17 10" />
                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg>
-            </button>
-
-            {/* Music placeholder */}
-            <button
-                className="hover:text-white/80 transition-colors p-2 rounded-xl hover:bg-white/[0.05]"
-                title="Müzik (yakında)"
-            >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18V5l12-2v13" />
-                    <circle cx="6" cy="18" r="3" />
-                    <circle cx="18" cy="16" r="3" />
                 </svg>
             </button>
         </motion.div>

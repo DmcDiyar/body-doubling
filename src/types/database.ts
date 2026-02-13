@@ -37,6 +37,8 @@ export type TrustEventType =
 
 // ---- TABLE TYPES ----
 
+export type MaturityStage = 'discovery' | 'formation' | 'growth' | 'mastery';
+
 export interface User {
   id: string;
   email: string;
@@ -57,6 +59,10 @@ export interface User {
   level: number;
   is_premium: boolean;
   is_banned: boolean;
+  timezone: string;
+  abandoned_sessions: number;
+  maturity_stage: MaturityStage;
+  season_start_date: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   last_active_at: string;

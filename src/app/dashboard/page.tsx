@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { AVATARS, FREE_DAILY_LIMIT } from '@/lib/constants';
 import { useFullscreen } from '@/hooks/useFullscreen';
+import { useLiveStats } from '@/hooks/useRitualFlow';
 import { DashboardHeader } from '@/components/home/DashboardHeader';
 import { ModeSelector } from '@/components/home/ModeSelector';
 import { GoalPrompt } from '@/components/home/GoalPrompt';
@@ -90,6 +91,9 @@ export default function DashboardPage() {
   const { user, setUser } = useAuthStore();
   const { isFullscreen, isSupported: isFullscreenSupported, toggle: toggleFullscreen } = useFullscreen();
 
+  // FOMO: live stats
+  const { stats } = useLiveStats();
+
   // UI state
   const [duration, setDuration] = useState(25);
   const [dailyUsed, setDailyUsed] = useState(0);
@@ -102,14 +106,14 @@ export default function DashboardPage() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimeRef = useRef<number>(0); // for tab-inactive drift correction
-  const sessionStartTimeRef = useRef<number>(0); // when session actually started
+  const startTimeRef = useRef<number>(0);
+  const sessionStartTimeRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const isFocusMode = timerState === 'running';
   const isPaused = timerState === 'paused';
 
-  // ── Data Loading ──────────────────────────────────
+  // ── Data Loading (PARALLEL — fixed waterfall) ─────
   useEffect(() => {
     const supabase = createClient();
 
@@ -120,21 +124,27 @@ export default function DashboardPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .maybeSingle();
+      // Parallel fetch: profile + daily limits + active match
+      const [profileResult, limitResult, matchResult] = await Promise.all([
+        supabase.from('users').select('*').eq('id', authUser.id).maybeSingle(),
+        supabase.from('user_limits').select('sessions_used')
+          .eq('user_id', authUser.id)
+          .eq('date', new Date().toISOString().split('T')[0])
+          .maybeSingle(),
+        supabase.rpc('get_active_match'),
+      ]);
 
+      // Profile handling
+      const { data: profile, error: profileError } = profileResult;
       if (profileError) {
-        console.error('Profil yuklenemedi:', profileError.message);
+        console.error('Profil yüklenemedi:', profileError.message);
         if (profileError.code === '42P01' || !profile) {
           const { data: newProfile } = await supabase
             .from('users')
             .upsert({
               id: authUser.id,
               email: authUser.email ?? '',
-              name: authUser.email?.split('@')[0] ?? 'Kullanici',
+              name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
               avatar_id: 1,
             })
             .select('*')
@@ -163,7 +173,7 @@ export default function DashboardPage() {
           .upsert({
             id: authUser.id,
             email: authUser.email ?? '',
-            name: authUser.email?.split('@')[0] ?? 'Kullanici',
+            name: authUser.email?.split('@')[0] ?? 'Kullanıcı',
             avatar_id: 1,
           })
           .select('*')
@@ -171,17 +181,11 @@ export default function DashboardPage() {
         if (newProfile) setUser(newProfile as User);
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const { data: limit } = await supabase
-        .from('user_limits')
-        .select('sessions_used')
-        .eq('user_id', authUser.id)
-        .eq('date', today)
-        .maybeSingle();
+      // Daily usage
+      setDailyUsed((limitResult.data as UserLimit | null)?.sessions_used ?? 0);
 
-      setDailyUsed((limit as UserLimit | null)?.sessions_used ?? 0);
-
-      const { data: activeMatchResult } = await supabase.rpc('get_active_match');
+      // Active match
+      const activeMatchResult = matchResult.data;
       if (activeMatchResult && activeMatchResult.has_active) {
         setActiveMatch({
           matchId: activeMatchResult.match_id,
@@ -229,7 +233,33 @@ export default function DashboardPage() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [currentSessionId, timerState]);
 
-  // ── Countdown Timer (drift-corrected) ─────────────
+  // ── FINISH handler (stable ref for timer) ─────────
+  const handleFinish = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const sid = currentSessionId;
+    const uid = user?.id;
+
+    if (sid && uid) {
+      await completeSoloSession(sid, uid, false);
+    }
+
+    await new Promise(r => setTimeout(r, 350));
+
+    setTimerState('idle');
+    setTimeRemaining(0);
+    setCurrentSessionId(null);
+
+    const freshProfile = await refreshUserProfile();
+    if (freshProfile) setUser(freshProfile);
+
+    if (uid) {
+      const used = await refreshDailyUsage(uid);
+      setDailyUsed(used);
+    }
+  }, [currentSessionId, user?.id, setUser]);
+
+  // ── Countdown Timer (drift-corrected, fixed closure) ──
   useEffect(() => {
     if (timerState !== 'running' || timeRemaining <= 0) return;
 
@@ -252,8 +282,7 @@ export default function DashboardPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timerState]);
+  }, [timerState, handleFinish]);
 
   // ── Derived state ─────────────────────────────────
   const canStartSession = user?.is_premium || dailyUsed < FREE_DAILY_LIMIT;
@@ -263,10 +292,12 @@ export default function DashboardPage() {
   const timerMinutes = Math.floor(timeRemaining / 60);
   const timerSeconds = timeRemaining % 60;
 
+  // FOMO: waiting count for selected duration
+  const waitingCount = (stats?.waiting as Record<string, number> | undefined)?.[String(duration)] ?? 0;
+
   // ── Handle mode change while paused ───────────────
   const handleModeChange = (newDuration: number) => {
     setDuration(newDuration);
-    // If paused, reset timer to new duration and clear session
     if (isPaused) {
       setTimeRemaining(0);
       setTimerState('idle');
@@ -281,13 +312,11 @@ export default function DashboardPage() {
   const handleSoloStart = async () => {
     if (!user || !canStartSession || isRestricted || isStarting) return;
 
-    // RESUME from paused
     if (isPaused && timeRemaining > 0) {
       setTimerState('running');
       return;
     }
 
-    // FRESH START — session created as 'active' with started_at
     setIsStarting(true);
     const sessionId = await createSoloSession(user.id, duration);
     if (sessionId) {
@@ -305,49 +334,16 @@ export default function DashboardPage() {
     setTimerState('paused');
   };
 
-  // ── BİTİR ─────────────────────────────────────────
-  // Calls complete_solo_session RPC → streak, XP, trust, limits all updated
-  const handleFinish = useCallback(async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    const sid = currentSessionId;
-    const uid = user?.id;
-
-    if (sid && uid) {
-      // Call the RPC — handles streak, XP, trust, user_limits, participant
-      await completeSoloSession(sid, uid, false);
-    }
-
-    // Small delay for completion flash animation
-    await new Promise(r => setTimeout(r, 350));
-
-    setTimerState('idle');
-    setTimeRemaining(0);
-    setCurrentSessionId(null);
-
-    // Refresh user profile (streak, XP, trust updated by RPC)
-    const freshProfile = await refreshUserProfile();
-    if (freshProfile) setUser(freshProfile);
-
-    // Refresh daily usage
-    if (uid) {
-      const used = await refreshDailyUsage(uid);
-      setDailyUsed(used);
-    }
-  }, [currentSessionId, user?.id, setUser]);
-
   // ── RESET ─────────────────────────────────────────
   const handleReset = async () => {
     if (!user || !canStartSession || isRestricted) return;
 
-    // Abandon old session if exists
     if (currentSessionId) {
       if (timerRef.current) clearInterval(timerRef.current);
       await abandonSession(currentSessionId, user.id);
       setCurrentSessionId(null);
     }
 
-    // Create new session & start immediately
     setIsStarting(true);
     const sessionId = await createSoloSession(user.id, duration);
     if (sessionId) {
@@ -359,7 +355,7 @@ export default function DashboardPage() {
     setIsStarting(false);
   };
 
-  // ── Simple reset (idle mode, no auto-start) ───────
+  // ── Simple reset (idle mode) ──────────────────────
   const handleSimpleReset = () => {
     if (timerState !== 'idle') return;
     setDuration(25);
@@ -405,13 +401,12 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-white/40 text-lg">
-          Yukleniyor...
+          Yükleniyor...
         </motion.div>
       </div>
     );
   }
 
-  // Show dashboard UI when NOT in focus mode (idle or paused)
   const showDashboardUI = !isFocusMode;
 
   // ── Render ────────────────────────────────────────
@@ -446,7 +441,12 @@ export default function DashboardPage() {
         <AnimatePresence mode="wait">
           {showDashboardUI && (
             <motion.div key="header" {...headerAnim}>
-              <DashboardHeader avatarEmoji={avatar.emoji} userName={user.name} />
+              <DashboardHeader
+                avatarEmoji={avatar.emoji}
+                userName={user.name}
+                streak={user.current_streak}
+                activeUsers={stats?.activeUsers ?? 0}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -505,7 +505,7 @@ export default function DashboardPage() {
               className="text-center mb-4"
             >
               <span className="text-white/30 text-sm font-medium tracking-wider uppercase">
-                Duraklatildi
+                Duraklatıldı
               </span>
             </motion.div>
           )}
@@ -522,6 +522,7 @@ export default function DashboardPage() {
                 isRestricted={isRestricted}
                 isStarting={isStarting}
                 isPaused={isPaused}
+                waitingCount={waitingCount}
               />
               <DailyLimitInfo
                 used={dailyUsed}
@@ -547,19 +548,19 @@ export default function DashboardPage() {
           {showDashboardUI && (
             <motion.div key="utility-buttons" {...utilityAnim}>
               {isPaused ? (
-                /* When paused: show reset which restarts with new session */
                 <div className="flex items-center justify-center gap-6 mt-10 text-white/40">
                   <button
                     onClick={handleReset}
                     className="flex items-center gap-2 hover:text-white/80 transition-colors
                                p-2 rounded-xl hover:bg-white/[0.05] text-sm font-medium"
-                    title="Sureyi sifirla ve yeniden basla"
+                    title="Süreyi sıfırla ve yeniden başla"
+                    aria-label="Sıfırla ve başla"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="23 4 23 10 17 10" />
                       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                     </svg>
-                    Sifirla ve Basla
+                    Sıfırla ve Başla
                   </button>
                 </div>
               ) : (

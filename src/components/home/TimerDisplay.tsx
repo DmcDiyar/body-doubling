@@ -60,16 +60,18 @@ export function TimerDisplay({ minutes, seconds = 0, isFocusMode }: TimerDisplay
                 initial={{ opacity: 0.7 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                className={`text-[140px] sm:text-[180px] md:text-[220px] font-extrabold
-                   leading-none tracking-[-0.02em] select-none
+                className={`font-extrabold leading-none tracking-[-0.02em] select-none
                    drop-shadow-[0_10px_40px_rgba(0,0,0,0.6)]
                    ${isLastMinute ? 'text-orange-300' : 'text-white'}
                    ${isCompleted ? 'text-green-300' : ''}`}
                 style={{
+                    fontSize: 'clamp(100px, 22vw, 220px)',
                     fontVariantNumeric: 'tabular-nums',
                     fontFeatureSettings: '"tnum"',
                     transition: 'color 1s ease',
                 }}
+                role="timer"
+                aria-label={`${mm} dakika ${ss} saniye kaldı`}
             >
                 {mm}:{ss}
             </motion.div>

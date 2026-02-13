@@ -19,6 +19,12 @@ const config: Config = {
           gold: '#ffcb77',
           'gold-light': '#ffe0a6',
         },
+        aynam: {
+          primary: '#FFB800',
+          bg: '#121214',
+          card: 'rgba(30, 30, 34, 0.7)',
+          border: 'rgba(255, 255, 255, 0.05)',
+        },
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
