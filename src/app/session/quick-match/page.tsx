@@ -1,45 +1,73 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
-import { DURATIONS, THEMES, COPY, TRUST, MATCHING_TIMEOUT_MS, AVATARS, getRandomMessage, getRandomFunFact } from '@/lib/constants';
+import { DURATIONS, TRUST, MATCHING_TIMEOUT_MS, AVATARS, getRandomFunFact } from '@/lib/constants';
+import { INTENTS, INTENT_MAP } from '@/lib/intents';
 import { useSessionStore } from '@/stores/session-store';
+import { useUserIntent } from '@/hooks/useRitualFlow';
+import LiveStatsPanel from '@/components/session/LiveStatsPanel';
+import RecentMatchesFeed from '@/components/session/RecentMatchesFeed';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Session, SessionParticipant, User } from '@/types/database';
 
-type Phase = 'config' | 'matching' | 'found' | 'solo-offer';
+// ============================================================
+// Phase: intent → matching → reveal → (redirect to active)
+// ============================================================
+type Phase = 'intent' | 'matching' | 'reveal' | 'solo-offer';
+
+interface PartnerPreview {
+  name: string;
+  sessions: number;
+  trustScore: number;
+  streak: number;
+  intent: string | null;
+}
 
 export default function QuickMatchPage() {
   const router = useRouter();
   const { setSession, setMyParticipation } = useSessionStore();
+  const { intent: userIntent, saveIntent } = useUserIntent();
 
-  const [phase, setPhase] = useState<Phase>('config');
+  // Config state
+  const [phase, setPhase] = useState<Phase>('intent');
+  const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
   const [duration, setDuration] = useState(25);
-  const [theme, setTheme] = useState('rainy_cafe');
-  const [matchTimer, setMatchTimer] = useState(30);
-  const [motivationalMsg, setMotivationalMsg] = useState(getRandomMessage());
-  const [funFact, setFunFact] = useState(getRandomFunFact());
-  const [queueCount, setQueueCount] = useState(0);
-  const [userAvatar, setUserAvatar] = useState<string>('🐱');
+  const [theme] = useState('rainy_cafe');
 
-  // Rotate messages every 5 seconds during matching phase
+  // Matching state
+  const [matchTimer, setMatchTimer] = useState(30);
+  const [funFact, setFunFact] = useState(getRandomFunFact());
+  const [userAvatar, setUserAvatar] = useState('🐱');
+
+  // Reveal state
+  const [partner, setPartner] = useState<PartnerPreview | null>(null);
+  const [revealCountdown, setRevealCountdown] = useState(5);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Adaptive intent: if returning user, show their last intent
+  const showAdaptive = userIntent?.hasIntent && userIntent.lastIntent;
+
+  // Auto-select from last intent
+  useEffect(() => {
+    if (userIntent?.lastIntent) {
+      setSelectedIntent(userIntent.lastIntent);
+      setDuration(userIntent.lastDuration || 25);
+    }
+  }, [userIntent]);
+
+  // Rotate fun facts during matching
   useEffect(() => {
     if (phase !== 'matching') return;
-    const interval = setInterval(() => {
-      setMotivationalMsg(getRandomMessage());
-      setFunFact(getRandomFunFact());
-    }, 5000);
+    const interval = setInterval(() => setFunFact(getRandomFunFact()), 6000);
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Load user avatar and subscribe to queue count
+  // Load user avatar
   useEffect(() => {
-    if (phase !== 'matching') return;
-    const supabase = createClient();
-
-    // Get user avatar
-    const loadAvatar = async () => {
+    const load = async () => {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -48,46 +76,26 @@ export default function QuickMatchPage() {
           .eq('id', user.id)
           .single();
         if (profile) {
-          const avatar = AVATARS.find(a => a.id === profile.avatar_id);
+          const avatar = AVATARS.find(a => a.id === (profile as { avatar_id: number }).avatar_id);
           if (avatar) setUserAvatar(avatar.emoji);
         }
       }
     };
-    loadAvatar();
+    load();
+  }, []);
 
-    // Get initial queue count
-    const getQueueCount = async () => {
-      const { count } = await supabase
-        .from('matching_queue')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'waiting');
-      setQueueCount(count || 0);
-    };
-    getQueueCount();
+  // ---- START MATCHING ----
+  const handleStartMatching = useCallback(async () => {
+    if (!selectedIntent) return;
 
-    // Subscribe to queue changes
-    const channel = supabase
-      .channel('queue-count')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'matching_queue'
-      }, () => {
-        getQueueCount();
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [phase]);
-
-  const handleStartMatching = async () => {
     const supabase = createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
 
-    // Trust score kontrol
+    // Save intent for adaptive flow
+    await saveIntent(selectedIntent, duration);
+
+    // Trust check
     const { data: profile } = await supabase
       .from('users')
       .select('trust_score')
@@ -95,15 +103,13 @@ export default function QuickMatchPage() {
       .single();
 
     if (!profile || (profile as User).trust_score < TRUST.SOLO_ONLY_THRESHOLD) {
-      // Trust çok düşük, sadece solo
       handleStartSolo(authUser.id);
       return;
     }
 
     setPhase('matching');
 
-    // Kuyruğa ekle - CHECK FIRST pattern (409 Conflict fix)
-    // Önce kullanıcının kuyrukta bekleyen kaydı var mı kontrol et
+    // Queue management
     const priority = (profile as User).trust_score >= TRUST.HIGH_PRIORITY_THRESHOLD ? 2 :
       (profile as User).trust_score >= TRUST.LOW_PRIORITY_THRESHOLD ? 1 : 0;
 
@@ -114,16 +120,8 @@ export default function QuickMatchPage() {
       .eq('status', 'waiting')
       .maybeSingle();
 
-    // Eğer zaten bekleyen kayıt varsa, yeni insert yapma
-    // Sadece kayıt yoksa veya başka status'teyse insert yap
     if (!existingQueue) {
-      // Önce eski kayıtları temizle (expired, cancelled, matched olabilir)
-      await supabase
-        .from('matching_queue')
-        .delete()
-        .eq('user_id', authUser.id);
-
-      // Yeni kayıt ekle
+      await supabase.from('matching_queue').delete().eq('user_id', authUser.id);
       await supabase.from('matching_queue').insert({
         user_id: authUser.id,
         duration,
@@ -134,107 +132,121 @@ export default function QuickMatchPage() {
       });
     }
 
-    // Eşleşme dene (RPC)
-    const { data: sessionId } = await supabase.rpc('find_match', {
+    // Try match
+    const { data: foundSessionId } = await supabase.rpc('find_match', {
       p_user_id: authUser.id,
       p_duration: duration,
       p_theme: theme,
     });
 
-    if (sessionId) {
-      // Eşleşme bulundu!
-      await loadSession(sessionId as string, authUser.id);
-      setPhase('found');
-
-      // Fetch matchId from matches table
-      const { data: matchData } = await supabase
-        .from('matches')
-        .select('id')
-        .eq('session_id', sessionId)
-        .single();
-
-      const matchId = matchData?.id || '';
-
-      // 3sn sonra prepare ekranına git
-      setTimeout(() => {
-        router.push(`/session/prepare?id=${sessionId}&matchId=${matchId}&duration=${duration}`);
-      }, 3000);
+    if (foundSessionId) {
+      await handleMatchFound(foundSessionId as string, authUser.id);
       return;
     }
 
-    // Eşleşme bulunamadı, realtime dinle
+    // Listen for match via realtime
     const channel = supabase
-      .channel('matching')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'session_participants',
-          filter: `user_id=eq.${authUser.id}`,
-        },
-        async (payload) => {
-          const participant = payload.new as SessionParticipant;
-          await loadSession(participant.session_id, authUser.id);
-          setPhase('found');
-          channel.unsubscribe();
-
-          // Fetch matchId from matches table
-          const { data: matchData } = await supabase
-            .from('matches')
-            .select('id')
-            .eq('session_id', participant.session_id)
-            .single();
-
-          const matchId = matchData?.id || '';
-
-          setTimeout(() => {
-            router.push(`/session/prepare?id=${participant.session_id}&matchId=${matchId}&duration=${duration}`);
-          }, 3000);
-        }
-      )
+      .channel('matching-redesign')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'session_participants',
+        filter: `user_id=eq.${authUser.id}`,
+      }, async (payload) => {
+        const participant = payload.new as SessionParticipant;
+        await handleMatchFound(participant.session_id, authUser.id);
+        channel.unsubscribe();
+      })
       .subscribe();
 
-    // Countdown
+    // Countdown timer
+    let count = 30;
     const interval = setInterval(() => {
-      setMatchTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          channel.unsubscribe();
-          // Kuyruktan çık
-          supabase.from('matching_queue')
-            .update({ status: 'expired' })
-            .eq('user_id', authUser.id)
-            .eq('status', 'waiting')
-            .then();
-          setPhase('solo-offer');
-          return 0;
-        }
-        return prev - 1;
-      });
+      count--;
+      setMatchTimer(count);
+      if (count <= 0) {
+        clearInterval(interval);
+        channel.unsubscribe();
+        supabase.from('matching_queue')
+          .update({ status: 'expired' })
+          .eq('user_id', authUser.id)
+          .eq('status', 'waiting')
+          .then();
+        setPhase('solo-offer');
+      }
     }, 1000);
-  };
 
-  const loadSession = async (sessionId: string, userId: string) => {
+    return () => {
+      clearInterval(interval);
+      channel.unsubscribe();
+    };
+  }, [selectedIntent, duration, theme, saveIntent]);
+
+  // ---- MATCH FOUND → Go to reveal ----
+  const handleMatchFound = async (sid: string, userId: string) => {
     const supabase = createClient();
 
+    // Load session
     const { data: session } = await supabase
       .from('sessions')
       .select('*')
-      .eq('id', sessionId)
+      .eq('id', sid)
       .single();
 
     const { data: myPart } = await supabase
       .from('session_participants')
       .select('*')
-      .eq('session_id', sessionId)
+      .eq('session_id', sid)
       .eq('user_id', userId)
       .single();
 
     if (session) setSession(session as Session);
     if (myPart) setMyParticipation(myPart as SessionParticipant);
+
+    // Get match & mark ready (returns partner preview)
+    const { data: matchData } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('session_id', sid)
+      .single();
+
+    if (matchData) {
+      const { data: readyResult } = await supabase.rpc('mark_match_ready', {
+        p_match_id: matchData.id,
+      });
+
+      if (readyResult?.partner) {
+        setPartner({
+          name: readyResult.partner.name,
+          sessions: readyResult.partner.sessions,
+          trustScore: readyResult.partner.trust_score,
+          streak: readyResult.partner.streak,
+          intent: readyResult.partner.intent,
+        });
+      }
+    }
+
+    setSessionId(sid);
+    setPhase('reveal');
   };
 
+  // ---- REVEAL COUNTDOWN → navigate to active ----
+  useEffect(() => {
+    if (phase !== 'reveal' || !sessionId) return;
+    const interval = setInterval(() => {
+      setRevealCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          router.push(`/session/active?id=${sessionId}`);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, sessionId, router]);
+
+  // ---- SOLO SESSION ----
   const handleStartSolo = async (userId?: string) => {
     const supabase = createClient();
     if (!userId) {
@@ -242,269 +254,412 @@ export default function QuickMatchPage() {
       userId = user?.id;
     }
     if (!userId) return;
+    if (selectedIntent) await saveIntent(selectedIntent, duration);
 
-    // Solo session oluştur
     const { data: session } = await supabase
       .from('sessions')
-      .insert({
-        duration,
-        mode: 'solo',
-        theme,
-        status: 'waiting',
-      })
+      .insert({ duration, mode: 'solo', theme, status: 'active', started_at: new Date().toISOString() })
       .select()
       .single();
-
     if (!session) return;
 
     await supabase.from('session_participants').insert({
       session_id: (session as Session).id,
       user_id: userId,
-      status: 'waiting',
+      status: 'active',
+      joined_at: new Date().toISOString(),
     });
 
     setSession(session as Session);
     router.push(`/session/active?id=${(session as Session).id}`);
   };
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-[#221b10] text-white font-[family-name:var(--font-geist-sans)]">
+      {/* Background */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#221b10]/70 to-[#221b10]/90 -z-10" />
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-5">
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#eea62b]/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-[#eea62b]/5 blur-[100px] rounded-full" />
+      </div>
+
+      {/* Main Content */}
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6">
         <AnimatePresence mode="wait">
-          {/* ---- CONFIG PHASE ---- */}
-          {phase === 'config' && (
+
+          {/* ============================================= */}
+          {/* PHASE 1: INTENT + CONFIG                      */}
+          {/* ============================================= */}
+          {phase === 'intent' && (
             <motion.div
-              key="config"
+              key="intent"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, x: -20 }}
+              className="w-full max-w-lg"
             >
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="text-gray-500 hover:text-white mb-6 text-sm"
-              >
-                ← Dashboard
-              </button>
+              <div className="bg-[#221b10]/85 backdrop-blur-xl border border-[#eea62b]/20 rounded-xl shadow-2xl p-6 md:p-8 space-y-6">
 
-              <h2 className="text-xl font-bold text-white mb-6">Hızlı Eşleşme</h2>
-
-              {/* Süre seçimi */}
-              <p className="text-gray-400 text-sm mb-3">Kaç dakika çalışacaksın?</p>
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                {DURATIONS.map((d) => (
+                {/* Header */}
+                <div className="flex items-center justify-between">
                   <button
-                    key={d.value}
-                    onClick={() => setDuration(d.value)}
-                    className={`
-                      p-3 rounded-xl text-center transition-all
-                      ${duration === d.value
-                        ? 'bg-[#ffcb77]/20 border-2 border-[#ffcb77] text-white'
-                        : 'bg-white/5 border-2 border-transparent text-gray-400 hover:bg-white/10'
-                      }
-                    `}
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center gap-1.5 text-[#eea62b]/60 hover:text-[#eea62b] transition-colors text-sm"
                   >
-                    <p className="font-bold">{d.label}</p>
-                    <p className="text-xs mt-1 opacity-60">{d.description}</p>
+                    ← Geri
                   </button>
-                ))}
-              </div>
+                  {userIntent && userIntent.currentStreak > 0 && (
+                    <div className="flex items-center gap-1.5 bg-[#eea62b]/10 border border-[#eea62b]/20 rounded-full px-3 py-1.5">
+                      <span className="text-base">🔥</span>
+                      <span className="text-[#eea62b] text-sm font-bold">
+                        {userIntent.currentStreak} günlük seri!
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Tema seçimi */}
-              <p className="text-gray-400 text-sm mb-3">Tema</p>
-              <div className="flex flex-col gap-2 mb-8">
-                {THEMES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTheme(t.id)}
-                    className={`
-                      flex items-center gap-3 p-3 rounded-xl transition-all
-                      ${theme === t.id
-                        ? 'bg-[#ffcb77]/20 border-2 border-[#ffcb77]'
-                        : 'bg-white/5 border-2 border-transparent hover:bg-white/10'
-                      }
-                    `}
+                {/* Adaptive Intent Banner */}
+                {showAdaptive && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-[#eea62b]/[0.08] border border-[#eea62b]/20 rounded-xl p-4 flex items-center gap-4"
                   >
-                    <span className="text-xl">{t.emoji}</span>
-                    <span className="text-white text-sm">{t.name}</span>
-                  </button>
-                ))}
-              </div>
+                    <div className="w-12 h-12 bg-[#eea62b]/15 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                      {INTENT_MAP[userIntent!.lastIntent!]?.emoji ?? '🎯'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs uppercase tracking-widest text-[#eea62b]/50 font-semibold">Son seçimin</p>
+                      <p className="text-white font-bold">
+                        {INTENT_MAP[userIntent!.lastIntent!]?.label ?? userIntent!.lastIntent}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleStartMatching();
+                      }}
+                      className="bg-[#eea62b] text-[#221b10] font-bold text-sm px-4 py-2 rounded-lg shadow-[0_0_15px_rgba(238,166,43,0.3)] hover:shadow-[0_0_25px_rgba(238,166,43,0.5)] transition-all"
+                    >
+                      Devam ✨
+                    </button>
+                  </motion.div>
+                )}
 
-              {/* Start */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleStartMatching}
-                className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-4 rounded-2xl text-lg"
-              >
-                Eşleş
-              </motion.button>
+                {/* Title */}
+                <div className="text-center space-y-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">Bugün ne yapacaksın?</h1>
+                  <p className="text-[#eea62b]/60 text-sm">Bir niyet seç, odaklan</p>
+                </div>
+
+                {/* Intent Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {INTENTS.map((intent) => (
+                    <button
+                      key={intent.id}
+                      onClick={() => setSelectedIntent(intent.id)}
+                      className={`
+                        p-4 rounded-xl border text-center transition-all duration-300
+                        flex flex-col items-center gap-2
+                        ${selectedIntent === intent.id
+                          ? 'bg-[#eea62b]/15 border-[#eea62b]/60 shadow-[0_0_25px_rgba(238,166,43,0.2)]'
+                          : 'bg-white/[0.03] border-[#eea62b]/10 hover:border-[#eea62b]/30 hover:-translate-y-0.5'
+                        }
+                      `}
+                    >
+                      <span className="text-3xl">{intent.emoji}</span>
+                      <span className="text-white font-semibold text-sm">{intent.label}</span>
+                      <span className="text-[#eea62b]/40 text-xs">{intent.desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Duration Selector */}
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-widest text-[#eea62b]/50 font-semibold text-center">
+                    Süre Seç
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    {DURATIONS.map((d) => (
+                      <button
+                        key={d.value}
+                        onClick={() => setDuration(d.value)}
+                        className={`
+                          px-4 py-2 rounded-full text-sm font-semibold border transition-all
+                          ${duration === d.value
+                            ? 'bg-[#eea62b] text-[#221b10] border-[#eea62b] shadow-[0_0_15px_rgba(238,166,43,0.35)]'
+                            : 'bg-white/[0.05] text-[#eea62b]/60 border-[#eea62b]/10 hover:border-[#eea62b]/30'
+                          }
+                        `}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* FOMO Stats */}
+                <LiveStatsPanel selectedDuration={duration} />
+
+                {/* CTA */}
+                <motion.button
+                  whileHover={{ scale: 1.01, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleStartMatching}
+                  disabled={!selectedIntent}
+                  className={`
+                    w-full py-4 font-bold text-lg rounded-xl flex items-center justify-center gap-2
+                    transition-all
+                    ${selectedIntent
+                      ? 'bg-[#eea62b] text-[#221b10] shadow-[0_0_20px_rgba(238,166,43,0.3)] hover:shadow-[0_0_35px_rgba(238,166,43,0.5)]'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  <span className="material-icons-round">bolt</span>
+                  ✨ Eşleş ve Başla
+                </motion.button>
+
+                <p className="text-center text-[#eea62b]/40 text-xs">
+                  Eşleşme genellikle 5-15 saniye sürer
+                </p>
+              </div>
             </motion.div>
           )}
 
-          {/* ---- MATCHING PHASE ---- */}
+          {/* ============================================= */}
+          {/* PHASE 2: MATCHING                             */}
+          {/* ============================================= */}
           {phase === 'matching' && (
             <motion.div
               key="matching"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center max-w-sm mx-auto"
+              className="w-full max-w-lg"
             >
-              {/* Animated Avatar */}
-              <div className="relative w-24 h-24 mx-auto mb-6">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
-                  className="absolute inset-0 border-4 border-[#ffcb77]/30 border-t-[#ffcb77] rounded-full"
-                />
-                <div className="absolute inset-2 bg-white/10 rounded-full flex items-center justify-center">
-                  <motion.span
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                    className="text-4xl"
-                  >
-                    {userAvatar}
-                  </motion.span>
-                </div>
-              </div>
+              <div className="bg-[#221b10]/85 backdrop-blur-xl border border-[#eea62b]/20 rounded-xl shadow-2xl p-6 md:p-8 space-y-6">
 
-              {/* Title */}
-              <p className="text-white text-lg mb-2">{COPY.MATCHING_SEARCHING}</p>
+                {/* Avatar Connection */}
+                <div className="flex items-center justify-center gap-6 py-4">
+                  {/* User avatar */}
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-20 h-20 rounded-full bg-[#eea62b]/15 border-2 border-[#eea62b]/40 flex items-center justify-center text-4xl">
+                      {userAvatar}
+                    </div>
+                    <span className="text-xs text-[#eea62b]/60 font-medium">Sen</span>
+                  </div>
 
-              {/* Timer */}
-              <p className="text-[#ffcb77] text-4xl font-bold mb-2">
-                ⏱️ {matchTimer} saniye
-              </p>
+                  {/* Connection animation */}
+                  <div className="w-16 h-0.5 bg-gradient-to-r from-[#eea62b]/30 via-[#eea62b] to-[#eea62b]/30 relative">
+                    <motion.div
+                      animate={{ x: [0, 48, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                      className="absolute top-[-3px] left-0 w-4 h-2 bg-[#eea62b] rounded-full"
+                    />
+                  </div>
 
-              {/* Progress bar */}
-              <div className="w-full bg-white/10 rounded-full h-2 mb-6">
-                <motion.div
-                  className="bg-[#ffcb77] h-2 rounded-full"
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${(matchTimer / 30) * 100}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-white/10 my-6" />
-
-              {/* Fun Fact */}
-              <motion.div
-                key={funFact}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 text-left"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">💡</span>
-                  <div>
-                    <p className="text-[#ffcb77] text-xs font-semibold mb-1">Bilgin var mıydı?</p>
-                    <p className="text-white/80 text-sm">{funFact}</p>
+                  {/* Partner (unknown) */}
+                  <div className="flex flex-col items-center gap-2">
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1], borderColor: ['rgba(238,166,43,0.2)', 'rgba(238,166,43,0.5)', 'rgba(238,166,43,0.2)'] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="w-20 h-20 rounded-full bg-[#eea62b]/8 border-2 border-dashed border-[#eea62b]/30 flex items-center justify-center text-3xl"
+                    >
+                      ❓
+                    </motion.div>
+                    <span className="text-xs text-[#eea62b]/40 font-medium">Ortağın</span>
                   </div>
                 </div>
-              </motion.div>
 
-              {/* Divider */}
-              <div className="border-t border-white/10 my-6" />
-
-              {/* Queue Count */}
-              {queueCount > 0 && (
-                <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mb-4">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>{queueCount} kişi şu an bekliyor</span>
+                {/* Search text */}
+                <div className="text-center space-y-3">
+                  <h2 className="text-xl font-semibold text-white/90">Sessiz ortağın aranıyor...</h2>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-2 border-[#eea62b]/10 border-t-[#eea62b] rounded-full animate-spin" />
+                    <span className="text-[#eea62b] text-2xl font-bold">{matchTimer}</span>
+                    <span className="text-[#eea62b]/60 text-sm">saniye</span>
+                  </div>
                 </div>
-              )}
 
-              {/* Motivational Message */}
-              <motion.p
-                key={motivationalMsg}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-gray-400 text-sm italic mb-6"
-              >
-                {`"${motivationalMsg}"`}
-              </motion.p>
+                {/* Progress bar */}
+                <div className="w-full space-y-2">
+                  <div className="h-2 w-full bg-[#eea62b]/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-[#eea62b] rounded-full shadow-[0_0_10px_rgba(238,166,43,0.3)]"
+                      initial={{ width: '100%' }}
+                      animate={{ width: `${(matchTimer / 30) * 100}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-[#eea62b]/40">
+                    <span>Eşleşme aranıyor</span>
+                    <span>{duration}dk seans</span>
+                  </div>
+                </div>
 
-              {/* Solo Mode Button */}
-              <button
-                onClick={() => {
-                  setPhase('solo-offer');
-                }}
-                className="text-gray-500 hover:text-white text-sm transition-colors border border-white/20 hover:border-white/40 px-4 py-2 rounded-lg"
-              >
-                {COPY.MATCHING_SOLO}
-              </button>
-              <p className="text-gray-600 text-xs mt-2">
-                (İsterseniz hemen)
-              </p>
+                {/* Recent Matches Feed (FOMO) */}
+                <RecentMatchesFeed />
+
+                {/* Fun Fact */}
+                <motion.div
+                  key={funFact}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-[#eea62b]/[0.06] border border-[#eea62b]/10 rounded-xl p-4 flex gap-3"
+                >
+                  <span className="text-xl mt-0.5">💡</span>
+                  <p className="text-sm text-white/80">{funFact}</p>
+                </motion.div>
+
+                {/* Solo fallback */}
+                <button
+                  onClick={() => setPhase('solo-offer')}
+                  className="w-full text-[#eea62b]/40 hover:text-[#eea62b]/70 transition-colors text-sm font-medium"
+                >
+                  Solo devam et →
+                </button>
+              </div>
             </motion.div>
           )}
 
-          {/* ---- FOUND PHASE ---- */}
-          {phase === 'found' && (
+          {/* ============================================= */}
+          {/* PHASE 3: PARTNER REVEAL                       */}
+          {/* ============================================= */}
+          {phase === 'reveal' && (
             <motion.div
-              key="found"
+              key="reveal"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
-              className="text-center"
+              className="w-full max-w-lg"
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring' }}
-                className="text-6xl mb-4"
-              >
-                🎉
-              </motion.div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {COPY.MATCHING_FOUND}
-              </h2>
-              <p className="text-gray-400">Seans başlıyor...</p>
+              <div className="bg-[#221b10]/85 backdrop-blur-xl border border-[#eea62b]/30 rounded-xl shadow-2xl p-8 space-y-8">
+                {/* Header */}
+                <div className="text-center">
+                  <motion.h1
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring' }}
+                    className="text-3xl font-bold text-[#eea62b] mb-2"
+                    style={{ textShadow: '0 0 10px rgba(238,166,43,0.5)' }}
+                  >
+                    🎉 Eşleşme Bulundu!
+                  </motion.h1>
+                  <p className="text-[#eea62b]/70 font-medium">Odaklanma seansınız başlamak üzere</p>
+                </div>
+
+                {/* Partner Avatar */}
+                <div className="flex justify-center">
+                  <motion.div
+                    animate={{ scale: [1, 1.03, 1] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                    className="w-32 h-32 rounded-full bg-[#eea62b]/10 border-4 border-[#eea62b]/50 flex items-center justify-center text-6xl shadow-[0_0_25px_rgba(238,166,43,0.25)]"
+                  >
+                    🦊
+                  </motion.div>
+                </div>
+
+                {/* Partner Info */}
+                <div className="text-center space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <h2 className="text-2xl font-semibold text-white">{partner?.name ?? '?***'}</h2>
+                    {partner && partner.trustScore >= 90 && (
+                      <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full text-xs font-bold border border-green-500/30">
+                        <span className="w-2 h-2 bg-green-500 rounded-full" />
+                        Doğrulanmış
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-center gap-4 text-[#eea62b]/80 text-sm">
+                    <span>{partner?.sessions ?? 0} seans</span>
+                    <span>·</span>
+                    <span>%{partner?.trustScore ?? 100} Güven</span>
+                  </div>
+                </div>
+
+                {/* Intent Comparison */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#eea62b]/5 border border-[#eea62b]/10 rounded-lg p-4 text-center">
+                    <span className="text-xs uppercase tracking-widest text-[#eea62b]/60 block mb-1">Senin Hedefin</span>
+                    <div className="flex items-center justify-center gap-2 text-[#eea62b] font-semibold">
+                      <span>{INTENT_MAP[selectedIntent ?? '']?.emoji ?? '🎯'}</span>
+                      <span>{INTENT_MAP[selectedIntent ?? '']?.label ?? selectedIntent}</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#eea62b]/5 border border-[#eea62b]/10 rounded-lg p-4 text-center">
+                    <span className="text-xs uppercase tracking-widest text-[#eea62b]/60 block mb-1">Ortağının Hedefi</span>
+                    <div className="flex items-center justify-center gap-2 text-[#eea62b] font-semibold">
+                      <span>{INTENT_MAP[partner?.intent ?? '']?.emoji ?? '🎯'}</span>
+                      <span>{INTENT_MAP[partner?.intent ?? '']?.label ?? partner?.intent ?? '—'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress */}
+                <div className="space-y-3">
+                  <div className="w-full h-2.5 bg-[#221b10] rounded-full overflow-hidden border border-[#eea62b]/20">
+                    <motion.div
+                      className="h-full bg-[#eea62b] rounded-full shadow-[0_0_10px_#eea62b]"
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${((5 - revealCountdown) / 5) * 100}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                  <p className="text-center text-[#eea62b]/60 text-sm italic">
+                    Seans <span className="text-[#eea62b] font-bold">{revealCountdown} saniye</span> içinde başlıyor...
+                  </p>
+                </div>
+              </div>
             </motion.div>
           )}
 
-          {/* ---- SOLO OFFER PHASE ---- */}
+          {/* ============================================= */}
+          {/* PHASE: SOLO OFFER (timeout fallback)          */}
+          {/* ============================================= */}
           {phase === 'solo-offer' && (
             <motion.div
               key="solo"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              className="w-full max-w-sm"
             >
-              <p className="text-gray-400 text-lg mb-6">
-                {COPY.MATCHING_TIMEOUT}
-              </p>
+              <div className="bg-[#221b10]/85 backdrop-blur-xl border border-[#eea62b]/20 rounded-xl shadow-2xl p-8 text-center space-y-6">
+                <p className="text-white/70 text-lg">Eşleşme bulunamadı 😔</p>
+                <p className="text-[#eea62b]/50 text-sm">Solo modda da harikasın!</p>
 
-              <div className="flex flex-col gap-3">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleStartSolo()}
-                  className="w-full bg-[#ffcb77] text-[#1a1a2e] font-semibold py-3 rounded-xl"
+                  className="w-full bg-[#eea62b] text-[#221b10] font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(238,166,43,0.3)]"
                 >
-                  {COPY.MATCHING_SOLO}
+                  🧘 Solo Başla
                 </motion.button>
-                <button
-                  onClick={() => {
-                    setMatchTimer(30);
-                    handleStartMatching();
-                  }}
-                  className="text-gray-400 hover:text-white text-sm"
-                >
-                  {COPY.MATCHING_RETRY}
-                </button>
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="text-gray-600 hover:text-gray-400 text-sm"
-                >
-                  Vazgeç
-                </button>
+
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setMatchTimer(30);
+                      setPhase('intent');
+                    }}
+                    className="text-[#eea62b]/50 hover:text-[#eea62b] text-sm transition-colors"
+                  >
+                    Tekrar dene
+                  </button>
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="text-white/30 hover:text-white/60 text-sm transition-colors"
+                  >
+                    Vazgeç
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>
